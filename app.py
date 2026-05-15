@@ -24,6 +24,33 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+def build_tied_podium(drinkers, max_medals=3):
+    """Construit un podium (or/argent/bronze) en regroupant les ex-aequo."""
+    podium = []
+
+    for drinker in drinkers:
+        liters = drinker['total_liters'] if drinker['total_liters'] is not None else 0
+
+        if not podium:
+            podium.append({'medal_index': 1, 'total_liters': liters, 'users': [drinker]})
+            continue
+
+        last_group = podium[-1]
+        if liters == last_group['total_liters']:
+            last_group['users'].append(drinker)
+            continue
+
+        if len(podium) >= max_medals:
+            break
+
+        podium.append({
+            'medal_index': len(podium) + 1,
+            'total_liters': liters,
+            'users': [drinker]
+        })
+
+    return podium
+
 
 @app.context_processor
 def inject_language():
@@ -131,17 +158,19 @@ def dashboard():
 
     current_year = date.today().year
     current_month = date.today().month
-    top_month_drinkers = get_top_drinkers_for_month(current_year, current_month)[:3]
-    top_drinkers = get_top_drinkers(current_year)[:3]
+    top_month_drinkers = get_top_drinkers_for_month(current_year, current_month)
+    top_drinkers = get_top_drinkers(current_year)
+    top_month_podium = build_tied_podium(top_month_drinkers)
+    top_year_podium = build_tied_podium(top_drinkers)
 
-    show_monthly_ranking = len(top_month_drinkers) >= 1
-    show_ranking = len(top_drinkers) >= 2
+    show_monthly_ranking = len(top_month_podium) >= 1
+    show_ranking = len(top_year_podium) >= 2
 
     return render_template(
         'dashboard.html',
         username=session['username'],
-        top_month_drinkers=top_month_drinkers,
-        top_drinkers=top_drinkers,
+        top_month_podium=top_month_podium,
+        top_year_podium=top_year_podium,
         show_monthly_ranking=show_monthly_ranking,
         show_ranking=show_ranking,
         ranking_month=current_month,
