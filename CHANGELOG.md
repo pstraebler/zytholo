@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.1.1 - 2026-05-
+	- fix : display bug in the header with Safari / iOS
+
 ## 2.1.0 - 2026-04-29
 	- add : top 3 consummers of current month
 

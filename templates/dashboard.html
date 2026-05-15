@@ -13,7 +13,7 @@
     <div class="navbar">
     <div class="navbar-content">
         <h2>🍺 BeerTracker - {{ username }}</h2>
-        <div style="display: flex; gap: 1rem;">
+        <div class="navbar-actions">
             <button type="button" class="btn-secondary language-toggle-btn"></button>
             <a href="{{ url_for('change_password') }}" class="btn-secondary" data-i18n="navbar_change_password">🔒 Changer mot de passe</a>
             <a href="{{ url_for('logout') }}" class="btn-secondary" data-i18n="navbar_logout">Déconnexion</a>
