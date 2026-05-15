@@ -132,10 +132,9 @@
             </div>
         </div>
 
-{% if show_monthly_ranking %}
-<div class="card">
+<div class="card" id="monthly-ranking-card" {% if not show_monthly_ranking %}style="display:none;"{% endif %}>
     <h3 data-i18n-with-month-year="ranking_month_title" data-month="{{ ranking_month }}" data-year="{{ ranking_year }}">Classement des plus gros buveurs (mois en cours)</h3>
-    <div class="trophy-podium">
+    <div class="trophy-podium" id="monthly-ranking-podium">
         {% for group in top_month_podium %}
         <div class="trophy-card trophy-{{ group.medal_index }}">
             <div class="trophy-icon">
@@ -158,12 +157,10 @@
         {% endfor %}
     </div>
 </div>
-{% endif %}
 
-{% if show_ranking %}
-<div class="card">
+<div class="card" id="yearly-ranking-card" {% if not show_ranking %}style="display:none;"{% endif %}>
     <h3 data-i18n-with-year="ranking_title" data-year="{{ ranking_year }}">Classement des plus gros buveurs (pour l'année {{ ranking_year }})</h3>
-    <div class="trophy-podium">
+    <div class="trophy-podium" id="yearly-ranking-podium">
         {% for group in top_year_podium %}
         <div class="trophy-card trophy-{{ group.medal_index }}">
             <div class="trophy-icon">
@@ -186,7 +183,6 @@
         {% endfor %}
     </div>
 </div>
-{% endif %}
         
         <div class="export-section">
             <div class="card">

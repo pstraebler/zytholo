@@ -212,6 +212,33 @@ def api_consumption():
         'weekly_stats': weekly_stats  # AJOUTER CETTE LIGNE
     })
 
+@app.route('/api/rankings', methods=['GET'])
+@login_required
+def api_rankings():
+    if session.get('is_admin'):
+        return jsonify({'monthly_podium': [], 'yearly_podium': [], 'show_monthly_ranking': False, 'show_ranking': False})
+
+    current_year = date.today().year
+    current_month = date.today().month
+    top_month_drinkers = get_top_drinkers_for_month(current_year, current_month)
+    top_drinkers = get_top_drinkers(current_year)
+    top_month_podium = build_tied_podium(top_month_drinkers)
+    top_year_podium = build_tied_podium(top_drinkers)
+
+    def serialize_group(group):
+        return {
+            'medal_index': group['medal_index'],
+            'total_liters': group['total_liters'],
+            'users': [{'username': user['username']} for user in group['users']]
+        }
+
+    return jsonify({
+        'monthly_podium': [serialize_group(group) for group in top_month_podium],
+        'yearly_podium': [serialize_group(group) for group in top_year_podium],
+        'show_monthly_ranking': len(top_month_podium) >= 1,
+        'show_ranking': len(top_year_podium) >= 2
+    })
+
 @app.route('/api/export', methods=['GET'])
 @login_required
 def api_export():

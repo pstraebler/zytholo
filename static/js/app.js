@@ -306,6 +306,7 @@ function saveBeerAutomatic(type, value) {
     .then(data => {
         showSaveNotification(type, value);
         loadStats();
+        refreshRankings();
         savingInProgress = false;
     })
     .catch(error => {
@@ -315,6 +316,64 @@ function saveBeerAutomatic(type, value) {
         document.getElementById(`${type}-count`).innerText = currentBeer[type];
         alert(t('error_save_connection'));
     });
+}
+
+function medalLabel(medalIndex) {
+    if (medalIndex === 1) return t('medal_gold');
+    if (medalIndex === 2) return t('medal_silver');
+    return t('medal_bronze');
+}
+
+function medalIcon(medalIndex) {
+    if (medalIndex === 1) return '🥇';
+    if (medalIndex === 2) return '🥈';
+    return '🥉';
+}
+
+function renderPodium(container, podium) {
+    if (!container) return;
+
+    container.innerHTML = '';
+
+    podium.forEach(group => {
+        const trophyCard = document.createElement('div');
+        trophyCard.className = `trophy-card trophy-${group.medal_index}`;
+
+        const usersHtml = (group.users || [])
+            .map(user => `<div class="trophy-user">${user.username}</div>`)
+            .join('');
+
+        trophyCard.innerHTML = `
+            <div class="trophy-icon">${medalIcon(group.medal_index)}</div>
+            <div class="trophy-rank">${medalLabel(group.medal_index)}</div>
+            ${usersHtml}
+            <div class="trophy-liters">${group.total_liters || 0} L</div>
+        `;
+
+        container.appendChild(trophyCard);
+    });
+}
+
+function refreshRankings() {
+    fetch('/api/rankings')
+        .then(response => response.json())
+        .then(data => {
+            const monthlyCard = document.getElementById('monthly-ranking-card');
+            const yearlyCard = document.getElementById('yearly-ranking-card');
+            const monthlyPodium = document.getElementById('monthly-ranking-podium');
+            const yearlyPodium = document.getElementById('yearly-ranking-podium');
+
+            if (monthlyCard) {
+                monthlyCard.style.display = data.show_monthly_ranking ? '' : 'none';
+            }
+            if (yearlyCard) {
+                yearlyCard.style.display = data.show_ranking ? '' : 'none';
+            }
+
+            renderPodium(monthlyPodium, data.monthly_podium || []);
+            renderPodium(yearlyPodium, data.yearly_podium || []);
+        })
+        .catch(error => console.error('Error while refreshing rankings:', error));
 }
 
 function showSaveNotification(type, value) {
