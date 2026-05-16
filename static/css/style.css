@@ -694,6 +694,7 @@ body {
     .navbar h2 {
         width: 100%;
         font-size: 1.35rem;
+        text-align: center;
     }
 
     .navbar-actions {

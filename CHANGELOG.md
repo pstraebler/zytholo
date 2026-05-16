@@ -4,6 +4,7 @@
 	- fix : display bug in the header with Safari / iOS
 	- fix : ex-aequo are now displayed together on the same medal 
 	- change : rankings are updated automatically without reloading the page
+	- fix : text align center for title in the dashboard
 
 ## 2.1.0 - 2026-04-29
 	- add : top 3 consummers of current month
