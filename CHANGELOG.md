@@ -5,6 +5,7 @@
 	- fix : ex-aequo are now displayed together on the same medal 
 	- change : rankings are updated automatically without reloading the page
 	- fix : text align center for title in the dashboard
+	- change : full timeline now indicate the period in the title
 
 ## 2.1.0 - 2026-04-29
 	- add : top 3 consummers of current month

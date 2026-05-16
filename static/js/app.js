@@ -438,6 +438,7 @@ document.head.appendChild(style);
 function loadStats() {
     const startDate = document.getElementById('start-date')?.value || '';
     const endDate = document.getElementById('end-date')?.value || '';
+    updateTotalTimelineTitle(startDate, endDate);
     
     const url = `/api/consumption?start_date=${startDate}&end_date=${endDate}`;
     
@@ -448,6 +449,27 @@ function loadStats() {
             updateCharts(data);
         })
         .catch(error => console.error('Error:', error));
+}
+
+function formatSelectedDate(dateValue) {
+    if (!dateValue) return '';
+    const date = new Date(`${dateValue}T00:00:00`);
+    return date.toLocaleDateString(currentLocale());
+}
+
+function updateTotalTimelineTitle(startDate, endDate) {
+    const title = document.getElementById('total-timeline-title');
+    if (!title) return;
+
+    if (startDate && endDate) {
+        title.textContent = t('total_timeline_with_period', {
+            start: formatSelectedDate(startDate),
+            end: formatSelectedDate(endDate)
+        });
+        return;
+    }
+
+    title.textContent = t('total_timeline');
 }
 
 // Fonction pour formater l'heure en format court (14h56)
