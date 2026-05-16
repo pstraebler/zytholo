@@ -6,6 +6,7 @@
 	- change : rankings are updated automatically without reloading the page
 	- fix : text align center for title in the dashboard
 	- change : full timeline now indicate the period in the title
+	- change : full timeline graph has been moved
 
 ## 2.1.0 - 2026-04-29
 	- add : top 3 consummers of current month
