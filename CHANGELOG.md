@@ -1,6 +1,6 @@
 # Changelog
 
-## 2.2.0 - 2026-05-
+## 2.2.0 - 2026-05-17
 	- fix : display bug in the header with Safari / iOS
 	- fix : ex-aequo are now displayed together on the same medal 
 	- change : rankings are updated automatically without reloading the page
