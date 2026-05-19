@@ -28,6 +28,7 @@
             total_timeline: "Timeline totale",
             total_timeline_with_period: "Timeline totale du {start} au {end}",
             ranking_title: "Classement des plus gros buveurs de l'année ({year})",
+            ranking_week_title: "Classement des plus gros buveurs de la semaine (du {start} au {end})",
             ranking_month_title: "Classement des plus gros buveurs du mois ({month} {year})",
             medal_gold: "Or",
             medal_silver: "Argent",
@@ -131,6 +132,7 @@
             total_timeline: "Full timeline",
             total_timeline_with_period: "Full timeline from {start} to {end}",
             ranking_title: "Top drinkers ranking of the year ({year})",
+            ranking_week_title: "Top drinkers ranking of the week (from {start} to {end})",
             ranking_month_title: "Top drinkers ranking of the month ({month} {year})",
             medal_gold: "Gold",
             medal_silver: "Silver",
@@ -235,6 +237,37 @@
         return value;
     }
 
+    function parseLocalDate(isoDate) {
+        const parts = (isoDate || "").split("-").map(Number);
+        if (parts.length !== 3 || parts.some(Number.isNaN)) {
+            return null;
+        }
+        return new Date(parts[0], parts[1] - 1, parts[2]);
+    }
+
+    function formatWeekRange(start, end) {
+        if (!start || !end) {
+            return { start: "", end: "" };
+        }
+
+        if (currentLanguage === "fr") {
+            const sameMonth = start.getMonth() === end.getMonth() && start.getFullYear() === end.getFullYear();
+            const startOptions = sameMonth
+                ? { day: "numeric" }
+                : { day: "numeric", month: "long" };
+            return {
+                start: start.toLocaleDateString("fr-FR", startOptions),
+                end: end.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" })
+            };
+        }
+
+        const sameYear = start.getFullYear() === end.getFullYear();
+        return {
+            start: start.toLocaleDateString("en-US", { month: "long", day: "numeric", year: sameYear ? undefined : "numeric" }),
+            end: end.toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })
+        };
+    }
+
     function applyBasicTranslations() {
         const titleKey = document.body ? document.body.getAttribute("data-i18n-title") : null;
         if (titleKey) {
@@ -266,6 +299,13 @@
             const monthDate = new Date(Number(year), month - 1, 1);
             const monthLabel = monthDate.toLocaleString(currentLanguage, { month: "long" });
             element.textContent = t(key, { month: monthLabel, year });
+        });
+
+        document.querySelectorAll("[data-i18n-with-week-range]").forEach((element) => {
+            const key = element.getAttribute("data-i18n-with-week-range");
+            const start = parseLocalDate(element.getAttribute("data-week-start"));
+            const end = parseLocalDate(element.getAttribute("data-week-end"));
+            element.textContent = t(key, formatWeekRange(start, end));
         });
     }
 

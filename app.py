@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, session, redirect, url_for, j
 from datetime import datetime, timedelta, date
 from models import Database
 from auth import hash_password, verify_password, login_required, admin_required, verify_user_exists, bcrypt
-from utils import calculate_stats, export_csv, import_csv, get_top_drinkers, get_top_drinkers_for_month, calculate_weekly_stats
+from utils import calculate_stats, export_csv, import_csv, get_top_drinkers, get_top_drinkers_for_month, get_top_drinkers_for_week, calculate_weekly_stats
 from config import Config
 from flask_wtf.csrf import CSRFProtect
 from i18n import get_request_language, t
@@ -50,6 +50,12 @@ def build_tied_podium(drinkers, max_medals=3):
         })
 
     return podium
+
+def current_week_range():
+    today = date.today()
+    week_start = today - timedelta(days=today.weekday())
+    week_end = week_start + timedelta(days=6)
+    return week_start, week_end
 
 
 @app.context_processor
@@ -158,21 +164,29 @@ def dashboard():
 
     current_year = date.today().year
     current_month = date.today().month
+    week_start, week_end = current_week_range()
+    top_week_drinkers = get_top_drinkers_for_week()
     top_month_drinkers = get_top_drinkers_for_month(current_year, current_month)
     top_drinkers = get_top_drinkers(current_year)
+    top_week_podium = build_tied_podium(top_week_drinkers)
     top_month_podium = build_tied_podium(top_month_drinkers)
     top_year_podium = build_tied_podium(top_drinkers)
 
+    show_weekly_ranking = len(top_week_podium) >= 1
     show_monthly_ranking = len(top_month_podium) >= 1
     show_ranking = len(top_year_podium) >= 2
 
     return render_template(
         'dashboard.html',
         username=session['username'],
+        top_week_podium=top_week_podium,
         top_month_podium=top_month_podium,
         top_year_podium=top_year_podium,
+        show_weekly_ranking=show_weekly_ranking,
         show_monthly_ranking=show_monthly_ranking,
         show_ranking=show_ranking,
+        ranking_week_start=week_start.isoformat(),
+        ranking_week_end=week_end.isoformat(),
         ranking_month=current_month,
         ranking_year=current_year
     )
@@ -216,12 +230,14 @@ def api_consumption():
 @login_required
 def api_rankings():
     if session.get('is_admin'):
-        return jsonify({'monthly_podium': [], 'yearly_podium': [], 'show_monthly_ranking': False, 'show_ranking': False})
+        return jsonify({'weekly_podium': [], 'monthly_podium': [], 'yearly_podium': [], 'show_weekly_ranking': False, 'show_monthly_ranking': False, 'show_ranking': False})
 
     current_year = date.today().year
     current_month = date.today().month
+    top_week_drinkers = get_top_drinkers_for_week()
     top_month_drinkers = get_top_drinkers_for_month(current_year, current_month)
     top_drinkers = get_top_drinkers(current_year)
+    top_week_podium = build_tied_podium(top_week_drinkers)
     top_month_podium = build_tied_podium(top_month_drinkers)
     top_year_podium = build_tied_podium(top_drinkers)
 
@@ -233,8 +249,10 @@ def api_rankings():
         }
 
     return jsonify({
+        'weekly_podium': [serialize_group(group) for group in top_week_podium],
         'monthly_podium': [serialize_group(group) for group in top_month_podium],
         'yearly_podium': [serialize_group(group) for group in top_year_podium],
+        'show_weekly_ranking': len(top_week_podium) >= 1,
         'show_monthly_ranking': len(top_month_podium) >= 1,
         'show_ranking': len(top_year_podium) >= 2
     })

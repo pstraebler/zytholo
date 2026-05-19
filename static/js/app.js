@@ -358,11 +358,16 @@ function refreshRankings() {
     fetch('/api/rankings')
         .then(response => response.json())
         .then(data => {
+            const weeklyCard = document.getElementById('weekly-ranking-card');
             const monthlyCard = document.getElementById('monthly-ranking-card');
             const yearlyCard = document.getElementById('yearly-ranking-card');
+            const weeklyPodium = document.getElementById('weekly-ranking-podium');
             const monthlyPodium = document.getElementById('monthly-ranking-podium');
             const yearlyPodium = document.getElementById('yearly-ranking-podium');
 
+            if (weeklyCard) {
+                weeklyCard.style.display = data.show_weekly_ranking ? '' : 'none';
+            }
             if (monthlyCard) {
                 monthlyCard.style.display = data.show_monthly_ranking ? '' : 'none';
             }
@@ -370,6 +375,7 @@ function refreshRankings() {
                 yearlyCard.style.display = data.show_ranking ? '' : 'none';
             }
 
+            renderPodium(weeklyPodium, data.weekly_podium || []);
             renderPodium(monthlyPodium, data.monthly_podium || []);
             renderPodium(yearlyPodium, data.yearly_podium || []);
         })

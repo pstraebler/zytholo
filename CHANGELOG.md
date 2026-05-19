@@ -1,6 +1,7 @@
 # Changelog
 
 ## 2.3.0 - 2026-05-
+	- add : weekly ranking
 	- change : syntax modifications
 
 ## 2.2.0 - 2026-05-17
