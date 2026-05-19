@@ -618,6 +618,18 @@ body {
     color: #1f2937;
 }
 
+.ranking-empty-message {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 1rem;
+    text-align: center;
+    font-weight: 700;
+    color: var(--text-color);
+    background: #f8f9fa;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+}
+
 
 /* IMPORT/EXPORT */
 .import-export {

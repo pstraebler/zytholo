@@ -330,10 +330,18 @@ function medalIcon(medalIndex) {
     return '🥉';
 }
 
-function renderPodium(container, podium) {
+function renderPodium(container, podium, hasDrinks = true, emptyMessageKey = null) {
     if (!container) return;
 
     container.innerHTML = '';
+
+    if (!hasDrinks) {
+        const emptyMessage = document.createElement('p');
+        emptyMessage.className = 'ranking-empty-message';
+        emptyMessage.textContent = t(emptyMessageKey);
+        container.appendChild(emptyMessage);
+        return;
+    }
 
     podium.forEach(group => {
         const trophyCard = document.createElement('div');
@@ -375,9 +383,9 @@ function refreshRankings() {
                 yearlyCard.style.display = data.show_ranking ? '' : 'none';
             }
 
-            renderPodium(weeklyPodium, data.weekly_podium || []);
-            renderPodium(monthlyPodium, data.monthly_podium || []);
-            renderPodium(yearlyPodium, data.yearly_podium || []);
+            renderPodium(weeklyPodium, data.weekly_podium || [], data.weekly_has_drinks, 'ranking_empty_week');
+            renderPodium(monthlyPodium, data.monthly_podium || [], data.monthly_has_drinks, 'ranking_empty_month');
+            renderPodium(yearlyPodium, data.yearly_podium || [], data.yearly_has_drinks, 'ranking_empty_year');
         })
         .catch(error => console.error('Error while refreshing rankings:', error));
 }

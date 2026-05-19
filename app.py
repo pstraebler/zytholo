@@ -51,6 +51,9 @@ def build_tied_podium(drinkers, max_medals=3):
 
     return podium
 
+def podium_has_drinks(podium):
+    return bool(podium) and (podium[0]['total_liters'] or 0) > 0
+
 def current_week_range():
     today = date.today()
     week_start = today - timedelta(days=today.weekday())
@@ -174,7 +177,7 @@ def dashboard():
 
     show_weekly_ranking = len(top_week_podium) >= 1
     show_monthly_ranking = len(top_month_podium) >= 1
-    show_ranking = len(top_year_podium) >= 2
+    show_ranking = len(top_year_podium) >= 1
 
     return render_template(
         'dashboard.html',
@@ -182,6 +185,9 @@ def dashboard():
         top_week_podium=top_week_podium,
         top_month_podium=top_month_podium,
         top_year_podium=top_year_podium,
+        weekly_has_drinks=podium_has_drinks(top_week_podium),
+        monthly_has_drinks=podium_has_drinks(top_month_podium),
+        yearly_has_drinks=podium_has_drinks(top_year_podium),
         show_weekly_ranking=show_weekly_ranking,
         show_monthly_ranking=show_monthly_ranking,
         show_ranking=show_ranking,
@@ -230,7 +236,17 @@ def api_consumption():
 @login_required
 def api_rankings():
     if session.get('is_admin'):
-        return jsonify({'weekly_podium': [], 'monthly_podium': [], 'yearly_podium': [], 'show_weekly_ranking': False, 'show_monthly_ranking': False, 'show_ranking': False})
+        return jsonify({
+            'weekly_podium': [],
+            'monthly_podium': [],
+            'yearly_podium': [],
+            'weekly_has_drinks': False,
+            'monthly_has_drinks': False,
+            'yearly_has_drinks': False,
+            'show_weekly_ranking': False,
+            'show_monthly_ranking': False,
+            'show_ranking': False
+        })
 
     current_year = date.today().year
     current_month = date.today().month
@@ -252,9 +268,12 @@ def api_rankings():
         'weekly_podium': [serialize_group(group) for group in top_week_podium],
         'monthly_podium': [serialize_group(group) for group in top_month_podium],
         'yearly_podium': [serialize_group(group) for group in top_year_podium],
+        'weekly_has_drinks': podium_has_drinks(top_week_podium),
+        'monthly_has_drinks': podium_has_drinks(top_month_podium),
+        'yearly_has_drinks': podium_has_drinks(top_year_podium),
         'show_weekly_ranking': len(top_week_podium) >= 1,
         'show_monthly_ranking': len(top_month_podium) >= 1,
-        'show_ranking': len(top_year_podium) >= 2
+        'show_ranking': len(top_year_podium) >= 1
     })
 
 @app.route('/api/export', methods=['GET'])
