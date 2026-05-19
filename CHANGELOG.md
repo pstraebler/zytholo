@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.3.0 - 2026-05-
+	- change : syntax modifications
+
 ## 2.2.0 - 2026-05-17
 	- fix : display bug in the header with Safari / iOS
 	- fix : ex-aequo are now displayed together on the same medal 

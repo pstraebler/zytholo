@@ -133,7 +133,7 @@
         </div>
 
 <div class="card" id="monthly-ranking-card" {% if not show_monthly_ranking %}style="display:none;"{% endif %}>
-    <h3 data-i18n-with-month-year="ranking_month_title" data-month="{{ ranking_month }}" data-year="{{ ranking_year }}">Classement des plus gros buveurs (mois en cours)</h3>
+    <h3 data-i18n-with-month-year="ranking_month_title" data-month="{{ ranking_month }}" data-year="{{ ranking_year }}">Classement des plus gros buveurs du mois ({ranking_month} {ranking_year})</h3>
     <div class="trophy-podium" id="monthly-ranking-podium">
         {% for group in top_month_podium %}
         <div class="trophy-card trophy-{{ group.medal_index }}">
@@ -159,7 +159,7 @@
 </div>
 
 <div class="card" id="yearly-ranking-card" {% if not show_ranking %}style="display:none;"{% endif %}>
-    <h3 data-i18n-with-year="ranking_title" data-year="{{ ranking_year }}">Classement des plus gros buveurs (pour l'année {{ ranking_year }})</h3>
+    <h3 data-i18n-with-year="ranking_title" data-year="{{ ranking_year }}">Classement des plus gros buveurs de l'année ({ranking_year})</h3>
     <div class="trophy-podium" id="yearly-ranking-podium">
         {% for group in top_year_podium %}
         <div class="trophy-card trophy-{{ group.medal_index }}">
