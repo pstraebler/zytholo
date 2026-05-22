@@ -2,6 +2,7 @@
 
 ## 2.3.0 - 2026-05-
 	- add : weekly ranking
+	- add : ranking for other users
 	- change : message if no drinker for a ranking
 	- change : syntax modifications
 

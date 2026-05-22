@@ -362,6 +362,63 @@ function renderPodium(container, podium, hasDrinks = true, emptyMessageKey = nul
     });
 }
 
+function renderOtherRankings(container, others = []) {
+    if (!container) return;
+
+    const section = container.closest('.other-ranking-section');
+    if (!section) return;
+
+    const existingTable = section.querySelector('.other-ranking-table');
+    const existingEmpty = section.querySelector('.other-ranking-empty');
+
+    if (!others.length) {
+        if (existingTable) {
+            existingTable.remove();
+        }
+        if (!existingEmpty) {
+            const emptyMessage = document.createElement('p');
+            emptyMessage.className = 'ranking-empty-message other-ranking-empty';
+            emptyMessage.setAttribute('data-i18n', 'ranking_others_empty');
+            emptyMessage.textContent = t('ranking_others_empty');
+            section.appendChild(emptyMessage);
+        } else {
+            existingEmpty.textContent = t('ranking_others_empty');
+        }
+        return;
+    }
+
+    if (existingEmpty) {
+        existingEmpty.remove();
+    }
+
+    if (!existingTable) {
+        const table = document.createElement('table');
+        table.className = 'ranking-table other-ranking-table';
+        table.innerHTML = `
+            <thead>
+                <tr>
+                    <th data-i18n="rank">${t('rank')}</th>
+                    <th data-i18n="user">${t('user')}</th>
+                    <th data-i18n="liters_total_short">${t('liters_total_short')}</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        `;
+        section.appendChild(table);
+    }
+
+    const tbody = section.querySelector('.other-ranking-table tbody');
+    tbody.innerHTML = others
+        .map(drinker => `
+            <tr>
+                <td>${drinker.rank}</td>
+                <td>${drinker.username}</td>
+                <td>${drinker.total_liters} L</td>
+            </tr>
+        `)
+        .join('');
+}
+
 function refreshRankings() {
     fetch('/api/rankings')
         .then(response => response.json())
@@ -372,6 +429,9 @@ function refreshRankings() {
             const weeklyPodium = document.getElementById('weekly-ranking-podium');
             const monthlyPodium = document.getElementById('monthly-ranking-podium');
             const yearlyPodium = document.getElementById('yearly-ranking-podium');
+            const weeklyOthers = document.getElementById('weekly-other-ranking-body');
+            const monthlyOthers = document.getElementById('monthly-other-ranking-body');
+            const yearlyOthers = document.getElementById('yearly-other-ranking-body');
 
             if (weeklyCard) {
                 weeklyCard.style.display = data.show_weekly_ranking ? '' : 'none';
@@ -386,6 +446,9 @@ function refreshRankings() {
             renderPodium(weeklyPodium, data.weekly_podium || [], data.weekly_has_drinks, 'ranking_empty_week');
             renderPodium(monthlyPodium, data.monthly_podium || [], data.monthly_has_drinks, 'ranking_empty_month');
             renderPodium(yearlyPodium, data.yearly_podium || [], data.yearly_has_drinks, 'ranking_empty_year');
+            renderOtherRankings(weeklyOthers, data.weekly_others || []);
+            renderOtherRankings(monthlyOthers, data.monthly_others || []);
+            renderOtherRankings(yearlyOthers, data.yearly_others || []);
         })
         .catch(error => console.error('Error while refreshing rankings:', error));
 }

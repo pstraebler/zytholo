@@ -630,6 +630,23 @@ body {
     border-radius: 8px;
 }
 
+.other-ranking-section {
+    margin-top: 1.25rem;
+}
+
+.other-ranking-section h4 {
+    margin-bottom: 0.75rem;
+    color: var(--primary-color);
+}
+
+.other-ranking-table {
+    margin-top: 0;
+}
+
+.other-ranking-empty {
+    margin-top: 0;
+}
+
 
 /* IMPORT/EXPORT */
 .import-export {

@@ -160,6 +160,31 @@
         <p class="ranking-empty-message" data-i18n="ranking_empty_week">Personne n'a bu cette semaine 😇</p>
         {% endif %}
     </div>
+    <div class="other-ranking-section">
+        <h4 data-i18n="ranking_other_users_title">Classement des autres utilisateurs</h4>
+        {% if weekly_other_rankings %}
+        <table class="ranking-table other-ranking-table" id="weekly-other-ranking-table">
+            <thead>
+                <tr>
+                    <th data-i18n="rank">Rang</th>
+                    <th data-i18n="user">Utilisateur</th>
+                    <th data-i18n="liters_total_short">Total (en L)</th>
+                </tr>
+            </thead>
+            <tbody id="weekly-other-ranking-body">
+                {% for drinker in weekly_other_rankings %}
+                <tr>
+                    <td>{{ drinker.rank }}</td>
+                    <td>{{ drinker.username }}</td>
+                    <td>{{ drinker.total_liters }} L</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="ranking-empty-message other-ranking-empty" data-i18n="ranking_others_empty">Aucun autre utilisateur à afficher sur cette période.</p>
+        {% endif %}
+    </div>
 </div>
 
 <div class="card" id="monthly-ranking-card" {% if not show_monthly_ranking %}style="display:none;"{% endif %}>
@@ -190,6 +215,31 @@
         <p class="ranking-empty-message" data-i18n="ranking_empty_month">Personne n'a bu ce mois 😇</p>
         {% endif %}
     </div>
+    <div class="other-ranking-section">
+        <h4 data-i18n="ranking_other_users_title">Classement des autres utilisateurs</h4>
+        {% if monthly_other_rankings %}
+        <table class="ranking-table other-ranking-table" id="monthly-other-ranking-table">
+            <thead>
+                <tr>
+                    <th data-i18n="rank">Rang</th>
+                    <th data-i18n="user">Utilisateur</th>
+                    <th data-i18n="liters_total_short">Total (en L)</th>
+                </tr>
+            </thead>
+            <tbody id="monthly-other-ranking-body">
+                {% for drinker in monthly_other_rankings %}
+                <tr>
+                    <td>{{ drinker.rank }}</td>
+                    <td>{{ drinker.username }}</td>
+                    <td>{{ drinker.total_liters }} L</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="ranking-empty-message other-ranking-empty" data-i18n="ranking_others_empty">Aucun autre utilisateur à afficher sur cettr période.</p>
+        {% endif %}
+    </div>
 </div>
 
 <div class="card" id="yearly-ranking-card" {% if not show_ranking %}style="display:none;"{% endif %}>
@@ -218,6 +268,31 @@
         {% endfor %}
         {% else %}
         <p class="ranking-empty-message" data-i18n="ranking_empty_year">Personne n'a bu cette année 😇</p>
+        {% endif %}
+    </div>
+    <div class="other-ranking-section">
+        <h4 data-i18n="ranking_other_users_title">Classement des autres utilisateurs</h4>
+        {% if yearly_other_rankings %}
+        <table class="ranking-table other-ranking-table" id="yearly-other-ranking-table">
+            <thead>
+                <tr>
+                    <th data-i18n="rank">Rang</th>
+                    <th data-i18n="user">Utilisateur</th>
+                    <th data-i18n="liters_total_short">Total (en L)</th>
+                </tr>
+            </thead>
+            <tbody id="yearly-other-ranking-body">
+                {% for drinker in yearly_other_rankings %}
+                <tr>
+                    <td>{{ drinker.rank }}</td>
+                    <td>{{ drinker.username }}</td>
+                    <td>{{ drinker.total_liters }} L</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="ranking-empty-message other-ranking-empty" data-i18n="ranking_others_empty">Aucun autre utilisateur à afficher sur cette période.</p>
         {% endif %}
     </div>
 </div>

@@ -54,6 +54,34 @@ def build_tied_podium(drinkers, max_medals=3):
 def podium_has_drinks(podium):
     return bool(podium) and (podium[0]['total_liters'] or 0) > 0
 
+def build_other_rankings(drinkers, podium):
+    """Construit le classement des utilisateurs hors podium avec rang et litres."""
+    podium_usernames = {
+        user['username']
+        for group in podium
+        for user in group['users']
+    }
+    others = []
+    previous_liters = None
+    current_rank = 0
+
+    for index, drinker in enumerate(drinkers, start=1):
+        liters = drinker['total_liters'] if drinker['total_liters'] is not None else 0
+        if previous_liters is None or liters != previous_liters:
+            current_rank = index
+            previous_liters = liters
+
+        if drinker['username'] in podium_usernames:
+            continue
+
+        others.append({
+            'rank': current_rank,
+            'username': drinker['username'],
+            'total_liters': liters
+        })
+
+    return others
+
 def current_week_range():
     today = date.today()
     week_start = today - timedelta(days=today.weekday())
@@ -174,6 +202,9 @@ def dashboard():
     top_week_podium = build_tied_podium(top_week_drinkers)
     top_month_podium = build_tied_podium(top_month_drinkers)
     top_year_podium = build_tied_podium(top_drinkers)
+    weekly_other_rankings = build_other_rankings(top_week_drinkers, top_week_podium)
+    monthly_other_rankings = build_other_rankings(top_month_drinkers, top_month_podium)
+    yearly_other_rankings = build_other_rankings(top_drinkers, top_year_podium)
 
     show_weekly_ranking = len(top_week_podium) >= 1
     show_monthly_ranking = len(top_month_podium) >= 1
@@ -185,6 +216,9 @@ def dashboard():
         top_week_podium=top_week_podium,
         top_month_podium=top_month_podium,
         top_year_podium=top_year_podium,
+        weekly_other_rankings=weekly_other_rankings,
+        monthly_other_rankings=monthly_other_rankings,
+        yearly_other_rankings=yearly_other_rankings,
         weekly_has_drinks=podium_has_drinks(top_week_podium),
         monthly_has_drinks=podium_has_drinks(top_month_podium),
         yearly_has_drinks=podium_has_drinks(top_year_podium),
@@ -243,6 +277,9 @@ def api_rankings():
             'weekly_has_drinks': False,
             'monthly_has_drinks': False,
             'yearly_has_drinks': False,
+            'weekly_others': [],
+            'monthly_others': [],
+            'yearly_others': [],
             'show_weekly_ranking': False,
             'show_monthly_ranking': False,
             'show_ranking': False
@@ -256,6 +293,9 @@ def api_rankings():
     top_week_podium = build_tied_podium(top_week_drinkers)
     top_month_podium = build_tied_podium(top_month_drinkers)
     top_year_podium = build_tied_podium(top_drinkers)
+    weekly_other_rankings = build_other_rankings(top_week_drinkers, top_week_podium)
+    monthly_other_rankings = build_other_rankings(top_month_drinkers, top_month_podium)
+    yearly_other_rankings = build_other_rankings(top_drinkers, top_year_podium)
 
     def serialize_group(group):
         return {
@@ -268,6 +308,9 @@ def api_rankings():
         'weekly_podium': [serialize_group(group) for group in top_week_podium],
         'monthly_podium': [serialize_group(group) for group in top_month_podium],
         'yearly_podium': [serialize_group(group) for group in top_year_podium],
+        'weekly_others': weekly_other_rankings,
+        'monthly_others': monthly_other_rankings,
+        'yearly_others': yearly_other_rankings,
         'weekly_has_drinks': podium_has_drinks(top_week_podium),
         'monthly_has_drinks': podium_has_drinks(top_month_podium),
         'yearly_has_drinks': podium_has_drinks(top_year_podium),
