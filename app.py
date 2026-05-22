@@ -30,6 +30,9 @@ def build_tied_podium(drinkers, max_medals=3):
 
     for drinker in drinkers:
         liters = drinker['total_liters'] if drinker['total_liters'] is not None else 0
+        if liters <= 0:
+            # Pas de médaille si aucune consommation
+            break
 
         if not podium:
             podium.append({'medal_index': 1, 'total_liters': liters, 'users': [drinker]})
@@ -206,9 +209,9 @@ def dashboard():
     monthly_other_rankings = build_other_rankings(top_month_drinkers, top_month_podium)
     yearly_other_rankings = build_other_rankings(top_drinkers, top_year_podium)
 
-    show_weekly_ranking = len(top_week_podium) >= 1
-    show_monthly_ranking = len(top_month_podium) >= 1
-    show_ranking = len(top_year_podium) >= 1
+    show_weekly_ranking = len(top_week_drinkers) >= 1
+    show_monthly_ranking = len(top_month_drinkers) >= 1
+    show_ranking = len(top_drinkers) >= 1
 
     return render_template(
         'dashboard.html',
@@ -314,9 +317,9 @@ def api_rankings():
         'weekly_has_drinks': podium_has_drinks(top_week_podium),
         'monthly_has_drinks': podium_has_drinks(top_month_podium),
         'yearly_has_drinks': podium_has_drinks(top_year_podium),
-        'show_weekly_ranking': len(top_week_podium) >= 1,
-        'show_monthly_ranking': len(top_month_podium) >= 1,
-        'show_ranking': len(top_year_podium) >= 1
+        'show_weekly_ranking': len(top_week_drinkers) >= 1,
+        'show_monthly_ranking': len(top_month_drinkers) >= 1,
+        'show_ranking': len(top_drinkers) >= 1
     })
 
 @app.route('/api/export', methods=['GET'])
