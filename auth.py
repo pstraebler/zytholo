@@ -19,7 +19,7 @@ def verify_user_exists(user_id):
     from models import Database
     conn = Database.get_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT id FROM users WHERE id = ?', (user_id,))
+    cursor.execute('SELECT id FROM users WHERE id = %s', (user_id,))
     user_exists = cursor.fetchone()
     conn.close()
     return user_exists is not None

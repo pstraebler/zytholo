@@ -58,6 +58,12 @@ cp .env.example .env
 - `ADMIN_USERNAME` : Facultatif. Nom d'utilisateur de l'administrateur (par défaut : `admin`)
 - `ADMIN_PASSWORD` : Mot de passe de l'administrateur
 - `USE_HTTPS` : À ne pas activer sur des environnements locaux (défaut : `0`)
+- `DB_HOST` : Hôte MariaDB (par défaut Docker : `mariadb`)
+- `DB_PORT` : Port MariaDB (défaut : `3306`)
+- `DB_NAME` : Nom de la base
+- `DB_USER` : Utilisateur applicatif de la base
+- `DB_PASSWORD` : Mot de passe de l'utilisateur applicatif
+- `DB_ROOT_PASSWORD` : Mot de passe root MariaDB (service Docker)
 
 ### Via Docker (recommandé)
 
@@ -65,12 +71,7 @@ cp .env.example .env
 docker-compose up -d --build
 ```
 
-Il est également possible d'utiliser l'image Beertracker depuis le *Docker Hub* :
-
-```bash
-mkdir beertracker-data
-docker run --rm -v ./beertracker-data:/app/data --env-file=.env -p 8080:8080 pierrestraebler/beertracker:latest
-```
+Avec `docker-compose`, BeerTracker démarre l'application web et un service MariaDB.
 
 ### Via Python
 
@@ -93,8 +94,7 @@ L'application est accessible sur **http://localhost:8080**
 
 ## Stockage des données
 
-La base de données SQLite est stockée dans le volume Docker `beertracker_data`
-Le fichier est situé dans `./data/db.sqlite3`.
+Les données MariaDB sont stockées dans le volume Docker `mariadb_data`.
 
 ## Format d'import CSV
 

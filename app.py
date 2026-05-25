@@ -111,7 +111,7 @@ conn = Database.get_connection()
 cursor = conn.cursor()
 
 cursor.execute(
-    "SELECT id FROM users WHERE username = ? AND is_admin = 1",
+    "SELECT id FROM users WHERE username = %s AND is_admin = 1",
     (admin_username,)
 )
 admin = cursor.fetchone()
@@ -119,13 +119,13 @@ admin = cursor.fetchone()
 if admin:
     # Mise à jour systématique
     cursor.execute(
-        "UPDATE users SET password = ? WHERE username = ? AND is_admin = 1",
+        "UPDATE users SET password = %s WHERE username = %s AND is_admin = 1",
         (admin_password_hash, admin_username)
     )
 else:
     # Création
     cursor.execute(
-        "INSERT INTO users (id, username, password, is_admin) VALUES (?, ?, ?, 1)",
+        "INSERT INTO users (id, username, password, is_admin) VALUES (%s, %s, %s, 1)",
         (str(uuid.uuid4()), admin_username, admin_password_hash)
     )
 
@@ -159,7 +159,7 @@ def login():
             conn = Database.get_connection()
             cursor = conn.cursor()
             cursor.execute(
-                'SELECT id, password, is_admin FROM users WHERE username = ?',
+                'SELECT id, password, is_admin FROM users WHERE username = %s',
                 (username,)
             )
             user = cursor.fetchone()
@@ -379,12 +379,12 @@ def admin_change_password(user_id):
     
     conn = Database.get_connection()
     cursor = conn.cursor()
-    cursor.execute('SELECT username FROM users WHERE id = ?', (user_id,))
+    cursor.execute('SELECT username FROM users WHERE id = %s', (user_id,))
     result = cursor.fetchone()
     conn.close()
     
     if result:
-        username = result[0]
+        username = result['username']
         password_hash = hash_password(new_password)
         Database.update_user_password(username, password_hash)
     
@@ -511,7 +511,7 @@ def change_password():
         username = session['username']
         conn = Database.get_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT password FROM users WHERE username = ?", (username,))
+        cursor.execute("SELECT password FROM users WHERE username = %s", (username,))
         user = cursor.fetchone()
         conn.close()
         

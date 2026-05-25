@@ -236,16 +236,16 @@ def get_top_drinkers(year=None):
             SUM(consumption.pints) AS total_pints,
             SUM(consumption.half_pints) AS total_half_pints,
             SUM(consumption.liters_33) AS total_33cl,
-            ROUND(
+            COALESCE(ROUND(
                 SUM(consumption.pints) * 0.5 +
                 SUM(consumption.half_pints) * 0.25 +
                 SUM(consumption.liters_33) * 0.33, 2
-            ) AS total_liters
+            ), 0) AS total_liters
         FROM users
         LEFT JOIN consumption
             ON users.id = consumption.user_id
-            AND consumption.date >= ?
-            AND consumption.date <= ?
+            AND consumption.date >= %s
+            AND consumption.date <= %s
         WHERE users.is_admin = 0
         GROUP BY users.id, users.username
         ORDER BY total_liters DESC
@@ -277,16 +277,16 @@ def get_top_drinkers_for_month(year=None, month=None):
             SUM(consumption.pints) AS total_pints,
             SUM(consumption.half_pints) AS total_half_pints,
             SUM(consumption.liters_33) AS total_33cl,
-            ROUND(
+            COALESCE(ROUND(
                 SUM(consumption.pints) * 0.5 +
                 SUM(consumption.half_pints) * 0.25 +
                 SUM(consumption.liters_33) * 0.33, 2
-            ) AS total_liters
+            ), 0) AS total_liters
         FROM users
         LEFT JOIN consumption
             ON users.id = consumption.user_id
-            AND consumption.date >= ?
-            AND consumption.date <= ?
+            AND consumption.date >= %s
+            AND consumption.date <= %s
         WHERE users.is_admin = 0
         GROUP BY users.id, users.username
         ORDER BY total_liters DESC
@@ -313,16 +313,16 @@ def get_top_drinkers_for_week(reference_date=None):
             SUM(consumption.pints) AS total_pints,
             SUM(consumption.half_pints) AS total_half_pints,
             SUM(consumption.liters_33) AS total_33cl,
-            ROUND(
+            COALESCE(ROUND(
                 SUM(consumption.pints) * 0.5 +
                 SUM(consumption.half_pints) * 0.25 +
                 SUM(consumption.liters_33) * 0.33, 2
-            ) AS total_liters
+            ), 0) AS total_liters
         FROM users
         LEFT JOIN consumption
             ON users.id = consumption.user_id
-            AND consumption.date >= ?
-            AND consumption.date <= ?
+            AND consumption.date >= %s
+            AND consumption.date <= %s
         WHERE users.is_admin = 0
         GROUP BY users.id, users.username
         ORDER BY total_liters DESC
@@ -355,13 +355,13 @@ def check_weekly_drinking_days(user_id, current_date):
     cursor.execute("""
         SELECT DISTINCT date 
         FROM consumption 
-        WHERE user_id = ? 
-        AND date >= ? 
-        AND date <= ?
+        WHERE user_id = %s 
+        AND date >= %s 
+        AND date <= %s
         ORDER BY date
     """, (user_id, week_start.isoformat(), week_end.isoformat()))
     
-    drinking_days = [row[0] for row in cursor.fetchall()]
+    drinking_days = [row['date'] for row in cursor.fetchall()]
     conn.close()
     
     return len(drinking_days) >= 3, drinking_days

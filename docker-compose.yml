@@ -1,14 +1,32 @@
 services:
+  mariadb:
+    image: mariadb:11
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-uroot", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   beer-tracker:
     build: .
+    restart: unless-stopped
     ports:
       - "${HOST_PORT}:${APP_PORT}"
-    volumes:
-      - beertracker_data:/app/data
+    depends_on:
+      mariadb:
+        condition: service_healthy
     env_file:
       - .env
     command: python app.py
 
 volumes:
-  beertracker_data:
+  mariadb_data:
     driver: local

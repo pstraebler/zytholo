@@ -1,235 +1,256 @@
-import sqlite3
+import os
 from datetime import datetime, timedelta
-from pathlib import Path
 import uuid
 
-DB_PATH = '/app/data/db.sqlite3'
+import pymysql
+from pymysql.cursors import DictCursor
+
+DB_HOST = os.environ.get('DB_HOST', 'mariadb')
+DB_PORT = int(os.environ.get('DB_PORT', '3306'))
+DB_NAME = os.environ.get('DB_NAME', 'beertracker')
+DB_USER = os.environ.get('DB_USER', 'beertracker')
+DB_PASSWORD = os.environ.get('DB_PASSWORD', '')
+
 
 class Database:
     @staticmethod
     def init_db():
-        """Initialiser la base de données"""
-        Path(DB_PATH).parent.mkdir(parents=True, exist_ok=True)
-        
-        conn = sqlite3.connect(DB_PATH)
+        """Initialiser le schema de la base de donnees MariaDB"""
+        conn = Database.get_connection()
         cursor = conn.cursor()
-        
-       # Table utilisateurs avec UUID comme clé primaire
-        cursor.execute('''
-            CREATE TABLE IF NOT EXISTS users (
-                id TEXT PRIMARY KEY,
-                username TEXT UNIQUE NOT NULL,
-                password TEXT NOT NULL,
-                is_admin INTEGER DEFAULT 0,
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                night_mode_until TIMESTAMP DEFAULT NULL
-            )
 
-        ''')
-        
-        # Table consommation avec user_id en TEXT pour UUID
-        cursor.execute('''
+        cursor.execute(
+            '''
+            CREATE TABLE IF NOT EXISTS users (
+                id CHAR(36) PRIMARY KEY,
+                username VARCHAR(255) UNIQUE NOT NULL,
+                password VARCHAR(255) NOT NULL,
+                is_admin TINYINT(1) DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                night_mode_until DATETIME DEFAULT NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            '''
+        )
+
+        cursor.execute(
+            '''
             CREATE TABLE IF NOT EXISTS consumption (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                user_id TEXT NOT NULL,
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                user_id CHAR(36) NOT NULL,
                 date DATE NOT NULL,
                 time TIME NOT NULL DEFAULT '00:00:00',
-                pints INTEGER DEFAULT 0,
-                half_pints INTEGER DEFAULT 0,
-                liters_33 INTEGER DEFAULT 0,
-                FOREIGN KEY (user_id) REFERENCES users(id),
-                UNIQUE(user_id, date, time)
-            )
-        ''')
-        
+                pints INT DEFAULT 0,
+                half_pints INT DEFAULT 0,
+                liters_33 INT DEFAULT 0,
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+                UNIQUE KEY unique_user_date_time (user_id, date, time)
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            '''
+        )
+
         conn.commit()
         conn.close()
 
     @staticmethod
     def get_connection():
-        """Obtenir une connexion à la base de données"""
-        conn = sqlite3.connect(DB_PATH)
-        conn.row_factory = sqlite3.Row
-        return conn
-    
+        """Obtenir une connexion MariaDB"""
+        return pymysql.connect(
+            host=DB_HOST,
+            port=DB_PORT,
+            user=DB_USER,
+            password=DB_PASSWORD,
+            database=DB_NAME,
+            charset='utf8mb4',
+            autocommit=False,
+            cursorclass=DictCursor,
+        )
+
     @staticmethod
     def user_exists(username):
-        """Vérifier si un utilisateur existe"""
+        """Verifier si un utilisateur existe"""
         conn = Database.get_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT id FROM users WHERE username = ?', (username,))
+        cursor.execute('SELECT id FROM users WHERE username = %s', (username,))
         result = cursor.fetchone()
         conn.close()
         return result is not None
-    
+
     @staticmethod
     def get_user_id(username):
         """Obtenir l'ID (UUID) d'un utilisateur"""
         conn = Database.get_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT id FROM users WHERE username = ?', (username,))
+        cursor.execute('SELECT id FROM users WHERE username = %s', (username,))
         result = cursor.fetchone()
         conn.close()
-        return result[0] if result else None  # Retourne un UUID string
+        return result['id'] if result else None
 
     @staticmethod
     def create_user(username, password):
-        """Créer un nouvel utilisateur avec UUID aléatoire"""
-        # Vérifier d'abord si l'utilisateur existe déjà
+        """Creer un nouvel utilisateur avec UUID aleatoire"""
         if Database.user_exists(username):
-            return False, "Un utilisateur avec ce nom existe déjà"
-    
+            return False, "Un utilisateur avec ce nom existe deja"
+
         conn = Database.get_connection()
         cursor = conn.cursor()
-    
+
         try:
-            # Générer un UUID v4 aléatoire
             user_id = str(uuid.uuid4())
-    
             cursor.execute(
-                'INSERT INTO users (id, username, password) VALUES (?, ?, ?)',
-                (user_id, username, password)
+                'INSERT INTO users (id, username, password) VALUES (%s, %s, %s)',
+                (user_id, username, password),
             )
             conn.commit()
             conn.close()
-            return True, "Utilisateur créé avec succès"
-        except sqlite3.IntegrityError:
+            return True, "Utilisateur cree avec succes"
+        except pymysql.IntegrityError:
+            conn.rollback()
             conn.close()
-            return False, "Erreur lors de la création de l'utilisateur"
+            return False, "Erreur lors de la creation de l'utilisateur"
 
     @staticmethod
     def update_user_password(username, new_password):
-        """Mettre à jour le mot de passe d'un utilisateur"""
+        """Mettre a jour le mot de passe d'un utilisateur"""
         conn = Database.get_connection()
         cursor = conn.cursor()
-        cursor.execute('UPDATE users SET password = ? WHERE username = ?', 
-                      (new_password, username))
+        cursor.execute(
+            'UPDATE users SET password = %s WHERE username = %s',
+            (new_password, username),
+        )
         conn.commit()
         conn.close()
-    
+
     @staticmethod
     def get_all_users():
         """Obtenir tous les utilisateurs"""
         conn = Database.get_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT id, username, created_at FROM users WHERE is_admin = 0 ORDER BY username')
+        cursor.execute(
+            'SELECT id, username, created_at FROM users WHERE is_admin = 0 ORDER BY username'
+        )
         users = cursor.fetchall()
         conn.close()
         return users
-    
+
     @staticmethod
     def add_consumption(user_id, date, pints=0, half_pints=0, liters_33=0, time='00:00:00'):
         """Ajouter une consommation avec heure (AJOUTER, non remplacer)"""
         conn = Database.get_connection()
         cursor = conn.cursor()
-        
-        # Vérifier si l'entrée existe (même date ET même heure)
+
         cursor.execute(
-            'SELECT pints, half_pints, liters_33 FROM consumption WHERE user_id = ? AND date = ? AND time = ?',
-            (user_id, date, time)
+            'SELECT pints, half_pints, liters_33 FROM consumption WHERE user_id = %s AND date = %s AND time = %s',
+            (user_id, date, time),
         )
         existing = cursor.fetchone()
-        
+
         if existing:
-            # AJOUTER aux valeurs existantes
             new_pints = (existing['pints'] or 0) + pints
             new_half_pints = (existing['half_pints'] or 0) + half_pints
             new_liters_33 = (existing['liters_33'] or 0) + liters_33
-            
-            cursor.execute('''
-                UPDATE consumption 
-                SET pints = ?, half_pints = ?, liters_33 = ?
-                WHERE user_id = ? AND date = ? AND time = ?
-            ''', (new_pints, new_half_pints, new_liters_33, user_id, date, time))
+
+            cursor.execute(
+                '''
+                UPDATE consumption
+                SET pints = %s, half_pints = %s, liters_33 = %s
+                WHERE user_id = %s AND date = %s AND time = %s
+                ''',
+                (new_pints, new_half_pints, new_liters_33, user_id, date, time),
+            )
         else:
-            # Créer une nouvelle entrée
-            cursor.execute('''
+            cursor.execute(
+                '''
                 INSERT INTO consumption (user_id, date, time, pints, half_pints, liters_33)
-                VALUES (?, ?, ?, ?, ?, ?)
-            ''', (user_id, date, time, pints, half_pints, liters_33))
-        
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ''',
+                (user_id, date, time, pints, half_pints, liters_33),
+            )
+
         conn.commit()
         conn.close()
-    
+
     @staticmethod
     def get_consumption(user_id, start_date=None, end_date=None):
         """Obtenir la consommation d'un utilisateur"""
         conn = Database.get_connection()
         cursor = conn.cursor()
-        
-        query = 'SELECT * FROM consumption WHERE user_id = ?'
+
+        query = '''
+            SELECT
+                id,
+                user_id,
+                DATE_FORMAT(date, '%%Y-%%m-%%d') AS date,
+                TIME_FORMAT(time, '%%H:%%i:%%s') AS time,
+                pints,
+                half_pints,
+                liters_33
+            FROM consumption
+            WHERE user_id = %s
+        '''
         params = [user_id]
-        
+
         if start_date:
-            query += ' AND date >= ?'
+            query += ' AND date >= %s'
             params.append(start_date)
-        
+
         if end_date:
-            query += ' AND date <= ?'
+            query += ' AND date <= %s'
             params.append(end_date)
-        
+
         query += ' ORDER BY date DESC, time DESC'
-        
+
         cursor.execute(query, params)
         records = cursor.fetchall()
         conn.close()
-        
+
         return records
-    
+
     @staticmethod
     def delete_user(user_id):
-        """Supprimer un utilisateur et ses données"""
+        """Supprimer un utilisateur et ses donnees"""
         conn = Database.get_connection()
         cursor = conn.cursor()
-        cursor.execute('DELETE FROM consumption WHERE user_id = ?', (user_id,))
-        cursor.execute('DELETE FROM users WHERE id = ?', (user_id,))
+        cursor.execute('DELETE FROM users WHERE id = %s', (user_id,))
         conn.commit()
         conn.close()
 
     @staticmethod
     def set_night_mode(user_id, enabled):
-        """Active/Désactive le mode soirée"""
+        """Active/Desactive le mode soiree"""
         conn = Database.get_connection()
         cursor = conn.cursor()
-    
+
         if enabled:
-            # Mode soirée activé jusqu'à demain 7h
             tomorrow_7am = datetime.now().replace(hour=7, minute=0, second=0, microsecond=0) + timedelta(days=1)
             cursor.execute(
-                'UPDATE users SET night_mode_until = ? WHERE id = ?',
-                (tomorrow_7am.isoformat(), user_id)
+                'UPDATE users SET night_mode_until = %s WHERE id = %s',
+                (tomorrow_7am, user_id),
             )
         else:
-            # Désactiver le mode soirée
             cursor.execute(
-                'UPDATE users SET night_mode_until = NULL WHERE id = ?',
-                (user_id,)
+                'UPDATE users SET night_mode_until = NULL WHERE id = %s',
+                (user_id,),
             )
-    
+
         conn.commit()
         conn.close()
 
     @staticmethod
     def get_night_mode_status(user_id):
-        """Récupère le statut du mode soirée"""
+        """Recupere le statut du mode soiree"""
         conn = Database.get_connection()
         cursor = conn.cursor()
-        cursor.execute('SELECT night_mode_until FROM users WHERE id = ?', (user_id,))
+        cursor.execute('SELECT night_mode_until FROM users WHERE id = %s', (user_id,))
         result = cursor.fetchone()
         conn.close()
-    
-        if not result or not result[0]:
+
+        if not result or not result['night_mode_until']:
             return False
-    
-        night_mode_until = datetime.fromisoformat(result[0])
-    
-        # Si le mode soirée est expiré, le désactiver
+
+        night_mode_until = result['night_mode_until']
+
         if datetime.now() > night_mode_until:
             Database.set_night_mode(user_id, False)
             return False
-    
+
         return True
-
-
-    
-    

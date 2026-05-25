@@ -3,3 +3,4 @@ Werkzeug==3.0.0
 flask-bcrypt
 flask-wtf
 python-dotenv
+PyMySQL==1.1.1

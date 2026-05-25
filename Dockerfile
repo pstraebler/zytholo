@@ -7,8 +7,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-RUN mkdir -p /app/data && \
-    chmod -R 775 /app && \
+RUN chmod -R 775 /app && \
     chgrp -R 0 /app
 
 USER 1001
@@ -16,4 +15,3 @@ USER 1001
 EXPOSE 8080
 
 CMD ["python", "app.py"]
-
