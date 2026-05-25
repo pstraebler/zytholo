@@ -160,7 +160,7 @@
         <p class="ranking-empty-message" data-i18n="ranking_empty_week">Personne n'a bu cette semaine 😇</p>
         {% endif %}
     </div>
-    <div class="other-ranking-section">
+    <div class="other-ranking-section" id="weekly-other-ranking-section" {% if not weekly_has_drinks %}style="display:none;"{% endif %}>
         <h4 data-i18n="ranking_other_users_title">Classement des autres utilisateurs</h4>
         {% if weekly_other_rankings %}
         <table class="ranking-table other-ranking-table" id="weekly-other-ranking-table">
@@ -215,7 +215,7 @@
         <p class="ranking-empty-message" data-i18n="ranking_empty_month">Personne n'a bu ce mois 😇</p>
         {% endif %}
     </div>
-    <div class="other-ranking-section">
+    <div class="other-ranking-section" id="monthly-other-ranking-section" {% if not monthly_has_drinks %}style="display:none;"{% endif %}>
         <h4 data-i18n="ranking_other_users_title">Classement des autres utilisateurs</h4>
         {% if monthly_other_rankings %}
         <table class="ranking-table other-ranking-table" id="monthly-other-ranking-table">
@@ -270,7 +270,7 @@
         <p class="ranking-empty-message" data-i18n="ranking_empty_year">Personne n'a bu cette année 😇</p>
         {% endif %}
     </div>
-    <div class="other-ranking-section">
+    <div class="other-ranking-section" id="yearly-other-ranking-section" {% if not yearly_has_drinks %}style="display:none;"{% endif %}>
         <h4 data-i18n="ranking_other_users_title">Classement des autres utilisateurs</h4>
         {% if yearly_other_rankings %}
         <table class="ranking-table other-ranking-table" id="yearly-other-ranking-table">

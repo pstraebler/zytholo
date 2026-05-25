@@ -1,5 +1,8 @@
 # Changelog
 
+## 2.3.1 - 2026-05-25
+	- fix : Hide other users ranking when no one drank in period
+
 ## 2.3.0 - 2026-05-22
 	- add : weekly ranking
 	- add : ranking for other users

@@ -205,9 +205,12 @@ def dashboard():
     top_week_podium = build_tied_podium(top_week_drinkers)
     top_month_podium = build_tied_podium(top_month_drinkers)
     top_year_podium = build_tied_podium(top_drinkers)
-    weekly_other_rankings = build_other_rankings(top_week_drinkers, top_week_podium)
-    monthly_other_rankings = build_other_rankings(top_month_drinkers, top_month_podium)
-    yearly_other_rankings = build_other_rankings(top_drinkers, top_year_podium)
+    weekly_has_drinks = podium_has_drinks(top_week_podium)
+    monthly_has_drinks = podium_has_drinks(top_month_podium)
+    yearly_has_drinks = podium_has_drinks(top_year_podium)
+    weekly_other_rankings = build_other_rankings(top_week_drinkers, top_week_podium) if weekly_has_drinks else []
+    monthly_other_rankings = build_other_rankings(top_month_drinkers, top_month_podium) if monthly_has_drinks else []
+    yearly_other_rankings = build_other_rankings(top_drinkers, top_year_podium) if yearly_has_drinks else []
 
     show_weekly_ranking = len(top_week_drinkers) >= 1
     show_monthly_ranking = len(top_month_drinkers) >= 1
@@ -222,9 +225,9 @@ def dashboard():
         weekly_other_rankings=weekly_other_rankings,
         monthly_other_rankings=monthly_other_rankings,
         yearly_other_rankings=yearly_other_rankings,
-        weekly_has_drinks=podium_has_drinks(top_week_podium),
-        monthly_has_drinks=podium_has_drinks(top_month_podium),
-        yearly_has_drinks=podium_has_drinks(top_year_podium),
+        weekly_has_drinks=weekly_has_drinks,
+        monthly_has_drinks=monthly_has_drinks,
+        yearly_has_drinks=yearly_has_drinks,
         show_weekly_ranking=show_weekly_ranking,
         show_monthly_ranking=show_monthly_ranking,
         show_ranking=show_ranking,
@@ -296,9 +299,12 @@ def api_rankings():
     top_week_podium = build_tied_podium(top_week_drinkers)
     top_month_podium = build_tied_podium(top_month_drinkers)
     top_year_podium = build_tied_podium(top_drinkers)
-    weekly_other_rankings = build_other_rankings(top_week_drinkers, top_week_podium)
-    monthly_other_rankings = build_other_rankings(top_month_drinkers, top_month_podium)
-    yearly_other_rankings = build_other_rankings(top_drinkers, top_year_podium)
+    weekly_has_drinks = podium_has_drinks(top_week_podium)
+    monthly_has_drinks = podium_has_drinks(top_month_podium)
+    yearly_has_drinks = podium_has_drinks(top_year_podium)
+    weekly_other_rankings = build_other_rankings(top_week_drinkers, top_week_podium) if weekly_has_drinks else []
+    monthly_other_rankings = build_other_rankings(top_month_drinkers, top_month_podium) if monthly_has_drinks else []
+    yearly_other_rankings = build_other_rankings(top_drinkers, top_year_podium) if yearly_has_drinks else []
 
     def serialize_group(group):
         return {
@@ -314,9 +320,9 @@ def api_rankings():
         'weekly_others': weekly_other_rankings,
         'monthly_others': monthly_other_rankings,
         'yearly_others': yearly_other_rankings,
-        'weekly_has_drinks': podium_has_drinks(top_week_podium),
-        'monthly_has_drinks': podium_has_drinks(top_month_podium),
-        'yearly_has_drinks': podium_has_drinks(top_year_podium),
+        'weekly_has_drinks': weekly_has_drinks,
+        'monthly_has_drinks': monthly_has_drinks,
+        'yearly_has_drinks': yearly_has_drinks,
         'show_weekly_ranking': len(top_week_drinkers) >= 1,
         'show_monthly_ranking': len(top_month_drinkers) >= 1,
         'show_ranking': len(top_drinkers) >= 1

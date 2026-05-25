@@ -362,11 +362,14 @@ function renderPodium(container, podium, hasDrinks = true, emptyMessageKey = nul
     });
 }
 
-function renderOtherRankings(container, others = []) {
-    if (!container) return;
-
-    const section = container.closest('.other-ranking-section');
+function renderOtherRankings(section, others = [], hasDrinks = true) {
     if (!section) return;
+
+    if (!hasDrinks) {
+        section.style.display = 'none';
+        return;
+    }
+    section.style.display = '';
 
     const existingTable = section.querySelector('.other-ranking-table');
     const existingEmpty = section.querySelector('.other-ranking-empty');
@@ -429,9 +432,9 @@ function refreshRankings() {
             const weeklyPodium = document.getElementById('weekly-ranking-podium');
             const monthlyPodium = document.getElementById('monthly-ranking-podium');
             const yearlyPodium = document.getElementById('yearly-ranking-podium');
-            const weeklyOthers = document.getElementById('weekly-other-ranking-body');
-            const monthlyOthers = document.getElementById('monthly-other-ranking-body');
-            const yearlyOthers = document.getElementById('yearly-other-ranking-body');
+            const weeklyOtherSection = document.getElementById('weekly-other-ranking-section');
+            const monthlyOtherSection = document.getElementById('monthly-other-ranking-section');
+            const yearlyOtherSection = document.getElementById('yearly-other-ranking-section');
 
             if (weeklyCard) {
                 weeklyCard.style.display = data.show_weekly_ranking ? '' : 'none';
@@ -446,9 +449,9 @@ function refreshRankings() {
             renderPodium(weeklyPodium, data.weekly_podium || [], data.weekly_has_drinks, 'ranking_empty_week');
             renderPodium(monthlyPodium, data.monthly_podium || [], data.monthly_has_drinks, 'ranking_empty_month');
             renderPodium(yearlyPodium, data.yearly_podium || [], data.yearly_has_drinks, 'ranking_empty_year');
-            renderOtherRankings(weeklyOthers, data.weekly_others || []);
-            renderOtherRankings(monthlyOthers, data.monthly_others || []);
-            renderOtherRankings(yearlyOthers, data.yearly_others || []);
+            renderOtherRankings(weeklyOtherSection, data.weekly_others || [], data.weekly_has_drinks);
+            renderOtherRankings(monthlyOtherSection, data.monthly_others || [], data.monthly_has_drinks);
+            renderOtherRankings(yearlyOtherSection, data.yearly_others || [], data.yearly_has_drinks);
         })
         .catch(error => console.error('Error while refreshing rankings:', error));
 }
