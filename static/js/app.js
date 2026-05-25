@@ -27,6 +27,7 @@ let savingInProgress = false;
 let nightModeEnabled = false;
 let lastClickTime = 0;
 let weeklyChart = null;
+let userMenuOpen = false;
 
 document.addEventListener('DOMContentLoaded', function() {
     const today = new Date().toISOString().split('T')[0];
@@ -58,12 +59,48 @@ document.addEventListener('DOMContentLoaded', function() {
     
     loadTodayConsumption();
     loadNightModeStatus();
+    initUserMenu();
 
     document.addEventListener('languageChanged', function() {
         updateNightModeUI();
         loadStats();
     });
 });
+
+function initUserMenu() {
+    const toggleBtn = document.getElementById('user-menu-toggle');
+    const dropdown = document.getElementById('user-menu-dropdown');
+    if (!toggleBtn || !dropdown) return;
+
+    toggleBtn.addEventListener('click', function(event) {
+        event.stopPropagation();
+        setUserMenuOpen(!userMenuOpen);
+    });
+
+    document.addEventListener('click', function(event) {
+        if (!userMenuOpen) return;
+        if (!dropdown.contains(event.target) && !toggleBtn.contains(event.target)) {
+            setUserMenuOpen(false);
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && userMenuOpen) {
+            setUserMenuOpen(false);
+        }
+    });
+}
+
+function setUserMenuOpen(open) {
+    const toggleBtn = document.getElementById('user-menu-toggle');
+    const dropdown = document.getElementById('user-menu-dropdown');
+    if (!toggleBtn || !dropdown) return;
+
+    userMenuOpen = open;
+    dropdown.classList.toggle('open', open);
+    dropdown.setAttribute('aria-hidden', open ? 'false' : 'true');
+    toggleBtn.setAttribute('aria-expanded', open ? 'true' : 'false');
+}
 
 function loadNightModeStatus() {
     fetch('/api/night-mode')

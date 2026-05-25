@@ -56,6 +56,63 @@ body {
     flex-wrap: wrap;
 }
 
+.user-menu {
+    position: relative;
+}
+
+.user-menu-toggle {
+    width: 46px;
+    height: 42px;
+    padding: 0.5rem;
+}
+
+.hamburger-icon {
+    display: inline-flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+}
+
+.hamburger-icon span {
+    display: block;
+    width: 20px;
+    height: 2px;
+    background-color: var(--primary-color);
+    border-radius: 2px;
+}
+
+.user-menu-dropdown {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.4rem);
+    min-width: 220px;
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
+    padding: 0.35rem;
+    display: none;
+    z-index: 1200;
+}
+
+.user-menu-dropdown.open {
+    display: block;
+}
+
+.user-menu-item {
+    display: block;
+    width: 100%;
+    text-decoration: none;
+    color: var(--primary-color);
+    border-radius: 6px;
+    padding: 0.7rem 0.8rem;
+    font-weight: 600;
+}
+
+.user-menu-item:hover {
+    background: #f1f5f9;
+}
+
 
 .container {
     max-width: 1200px;
@@ -728,19 +785,9 @@ body {
 
     .navbar-actions {
         width: 100%;
-        display: grid;
-        grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
-        gap: 0.5rem;
-        align-items: stretch;
-        justify-content: initial;
-    }
-
-    .navbar-actions .btn-secondary:not(.language-toggle-btn) {
-        white-space: normal;
-        text-align: center;
-        line-height: 1.25;
-        min-height: 44px;
-        padding: 0.65rem 0.75rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
     }
 
     .language-toggle-btn {
@@ -748,6 +795,12 @@ body {
         align-self: center;
         font-size: 1.6rem;
         padding: 0.2rem 0.3rem;
+    }
+
+    .user-menu-dropdown {
+        right: 0;
+        left: auto;
+        min-width: 200px;
     }
 
     .date-section {
