@@ -113,6 +113,25 @@ body {
     background: #f1f5f9;
 }
 
+.menu-language-toggle {
+    border: none;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--primary-color);
+    width: 100%;
+    justify-content: flex-start;
+    font-size: 1rem;
+    line-height: 1.25;
+    min-height: auto;
+    padding: 0.7rem 0.8rem;
+}
+
+.menu-language-toggle:hover,
+.menu-language-toggle:focus {
+    background: #f1f5f9 !important;
+    opacity: 1;
+}
+
 
 .container {
     max-width: 1200px;
@@ -795,6 +814,13 @@ body {
         align-self: center;
         font-size: 1.6rem;
         padding: 0.2rem 0.3rem;
+    }
+
+    .menu-language-toggle {
+        justify-self: auto;
+        align-self: auto;
+        font-size: 1rem;
+        padding: 0.7rem 0.8rem;
     }
 
     .user-menu-dropdown {

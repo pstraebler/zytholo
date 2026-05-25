@@ -14,7 +14,6 @@
     <div class="navbar-content">
         <h2>🍺 BeerTracker - {{ username }}</h2>
         <div class="navbar-actions">
-            <button type="button" class="btn-secondary language-toggle-btn"></button>
             <div class="user-menu">
                 <button type="button" class="btn-secondary user-menu-toggle" id="user-menu-toggle" aria-expanded="false" aria-controls="user-menu-dropdown" aria-label="Menu utilisateur">
                     <span class="hamburger-icon" aria-hidden="true">
@@ -24,6 +23,7 @@
                     </span>
                 </button>
                 <div class="user-menu-dropdown" id="user-menu-dropdown" role="menu" aria-hidden="true">
+                    <button type="button" class="user-menu-item language-toggle-btn menu-language-toggle" role="menuitem"></button>
                     <a href="{{ url_for('change_password') }}" class="user-menu-item" role="menuitem" data-i18n="navbar_change_password">🔒 Changer mot de passe</a>
                     <a href="{{ url_for('logout') }}" class="user-menu-item" role="menuitem" data-i18n="navbar_logout">Déconnexion</a>
                 </div>
