@@ -29,6 +29,14 @@ let lastClickTime = 0;
 let weeklyChart = null;
 let userMenuOpen = false;
 
+function getChartThemeColors() {
+    const styles = getComputedStyle(document.documentElement);
+    return {
+        textColor: styles.getPropertyValue('--chart-text-color').trim() || '#2c3e50',
+        gridColor: styles.getPropertyValue('--chart-grid-color').trim() || 'rgba(44, 62, 80, 0.15)'
+    };
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     const today = new Date().toISOString().split('T')[0];
     
@@ -63,6 +71,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.addEventListener('languageChanged', function() {
         updateNightModeUI();
+        loadStats();
+    });
+
+    document.addEventListener('themeChanged', function() {
         loadStats();
     });
 });
@@ -691,6 +703,7 @@ function updateCharts(data) {
 }
 
 function updateMonthlyChart(monthlyStats) {
+    const chartTheme = getChartThemeColors();
     const ctx = document.getElementById('monthlyChart');
     if (!ctx) {
         console.warn('Element monthlyChart non trouvé');
@@ -742,13 +755,28 @@ function updateMonthlyChart(monthlyStats) {
             plugins: {
                 legend: {
                     position: 'top',
+                    labels: {
+                        color: chartTheme.textColor
+                    }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
+                    grid: {
+                        color: chartTheme.gridColor
+                    },
                     ticks: {
-                        stepSize: 1
+                        stepSize: 1,
+                        color: chartTheme.textColor
+                    }
+                },
+                x: {
+                    grid: {
+                        color: chartTheme.gridColor
+                    },
+                    ticks: {
+                        color: chartTheme.textColor
                     }
                 }
             }
@@ -757,6 +785,7 @@ function updateMonthlyChart(monthlyStats) {
 }
 
 function updateTotalChart(records) {
+    const chartTheme = getChartThemeColors();
     const ctx = document.getElementById('totalChart');
     if (!ctx) {
         console.warn('Element totalChart not found');
@@ -808,11 +837,28 @@ function updateTotalChart(records) {
             plugins: {
                 legend: {
                     position: 'top',
+                    labels: {
+                        color: chartTheme.textColor
+                    }
                 }
             },
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    grid: {
+                        color: chartTheme.gridColor
+                    },
+                    ticks: {
+                        color: chartTheme.textColor
+                    }
+                },
+                x: {
+                    grid: {
+                        color: chartTheme.gridColor
+                    },
+                    ticks: {
+                        color: chartTheme.textColor
+                    }
                 }
             }
         }
@@ -820,6 +866,7 @@ function updateTotalChart(records) {
 }
 
 function updateWeeklyChart(weeklyStats) {
+    const chartTheme = getChartThemeColors();
     const ctx = document.getElementById('weeklyChart');
     if (!ctx) {
         console.warn('Element weeklyChart not found');
@@ -863,7 +910,8 @@ function updateWeeklyChart(weeklyStats) {
                     text: t('chart_weekly_title'),
                     font: {
                         size: 16
-                    }
+                    },
+                    color: chartTheme.textColor
                 },
                 tooltip: {
                     callbacks: {
@@ -876,10 +924,22 @@ function updateWeeklyChart(weeklyStats) {
             scales: {
                 y: {
                     beginAtZero: true,
+                    grid: {
+                        color: chartTheme.gridColor
+                    },
                     ticks: {
+                        color: chartTheme.textColor,
                         callback: function(value) {
                             return value + ' ' + t('chart_unit_liters');
                         }
+                    }
+                },
+                x: {
+                    grid: {
+                        color: chartTheme.gridColor
+                    },
+                    ticks: {
+                        color: chartTheme.textColor
                     }
                 }
             }

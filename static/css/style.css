@@ -15,6 +15,28 @@
     --text-color: #2c3e50;
     --border-color: #bdc3c7;
     --danger-color: #e74c3c;
+    --card-bg: #ffffff;
+    --muted-surface: #f8f9fa;
+    --input-bg: #ffffff;
+    --chart-grid-color: rgba(44, 62, 80, 0.15);
+    --chart-text-color: #2c3e50;
+}
+
+:root[data-theme="dark"] {
+    --primary-color: #16243a;
+    --secondary-color: #2f6fbd;
+    --accent-color: #c65151;
+    --success-color: #2f9e67;
+    --warning-color: #d29b2f;
+    --bg-color: #0b1220;
+    --text-color: #e5edf8;
+    --border-color: #32455f;
+    --danger-color: #d06262;
+    --card-bg: #111c2e;
+    --muted-surface: #17263c;
+    --input-bg: #0f1a2b;
+    --chart-grid-color: rgba(229, 237, 248, 0.18);
+    --chart-text-color: #e5edf8;
 }
 
 
@@ -64,6 +86,7 @@ body {
     width: 46px;
     height: 42px;
     padding: 0.5rem;
+    color: var(--text-color);
 }
 
 .hamburger-icon {
@@ -77,7 +100,7 @@ body {
     display: block;
     width: 20px;
     height: 2px;
-    background-color: var(--primary-color);
+    background-color: currentColor;
     border-radius: 2px;
 }
 
@@ -86,7 +109,7 @@ body {
     right: 0;
     top: calc(100% + 0.4rem);
     min-width: 220px;
-    background: white;
+    background: var(--card-bg);
     border: 1px solid var(--border-color);
     border-radius: 8px;
     box-shadow: 0 12px 24px rgba(0, 0, 0, 0.15);
@@ -103,21 +126,21 @@ body {
     display: block;
     width: 100%;
     text-decoration: none;
-    color: var(--primary-color);
+    color: var(--text-color);
     border-radius: 6px;
     padding: 0.7rem 0.8rem;
     font-weight: 600;
 }
 
 .user-menu-item:hover {
-    background: #f1f5f9;
+    background: var(--muted-surface);
 }
 
 .menu-language-toggle {
     border: none;
     background: transparent !important;
     box-shadow: none !important;
-    color: var(--primary-color);
+    color: var(--text-color);
     width: 100%;
     justify-content: flex-start;
     font-size: 1rem;
@@ -132,6 +155,25 @@ body {
     opacity: 1;
 }
 
+.menu-theme-toggle {
+    border: none;
+    background: transparent !important;
+    box-shadow: none !important;
+    color: var(--text-color);
+    width: 100%;
+    justify-content: flex-start;
+    font-size: 1rem;
+    line-height: 1.25;
+    min-height: auto;
+    padding: 0.7rem 0.8rem;
+}
+
+.menu-theme-toggle:hover,
+.menu-theme-toggle:focus {
+    background: var(--muted-surface) !important;
+    opacity: 1;
+}
+
 
 .container {
     max-width: 1200px;
@@ -141,7 +183,7 @@ body {
 
 
 .card {
-    background: white;
+    background: var(--card-bg);
     border-radius: 8px;
     padding: 2rem;
     margin-bottom: 2rem;
@@ -153,7 +195,7 @@ body {
 
 .card h3 {
     margin-bottom: 1.5rem;
-    color: var(--primary-color);
+    color: var(--text-color);
     border-bottom: 2px solid var(--secondary-color);
     padding-bottom: 0.5rem;
 }
@@ -162,7 +204,7 @@ body {
 .card h4 {
     margin-top: 1rem;
     margin-bottom: 1rem;
-    color: var(--primary-color);
+    color: var(--text-color);
 }
 
 
@@ -197,7 +239,7 @@ body {
 .login-box h1 {
     text-align: center;
     margin-bottom: 2rem;
-    color: var(--primary-color);
+    color: var(--text-color);
 }
 
 
@@ -210,12 +252,14 @@ body {
     display: block;
     margin-bottom: 0.5rem;
     font-weight: 600;
-    color: var(--primary-color);
+    color: var(--text-color);
 }
 
 
 .form-group input,
 .form-group select {
+    background-color: var(--input-bg);
+    color: var(--text-color);
     width: 100%;
     padding: 0.75rem;
     border: 1px solid var(--border-color);
@@ -275,7 +319,7 @@ body {
 
 .btn-secondary {
     background-color: var(--border-color);
-    color: var(--primary-color);
+    color: var(--text-color);
     text-decoration: none;
     display: inline-flex;
     align-items: center;
@@ -367,7 +411,7 @@ body {
 .beer-type {
     text-align: center;
     padding: 1rem;
-    background-color: #f8f9fa;
+    background-color: var(--muted-surface);
     border-radius: 8px;
     border: 2px solid var(--border-color);
 }
@@ -377,7 +421,7 @@ body {
     display: block;
     margin-bottom: 1rem;
     font-weight: 600;
-    color: var(--primary-color);
+    color: var(--text-color);
 }
 
 
@@ -419,6 +463,7 @@ body {
     display: block;
     margin-bottom: 0.5rem;
     font-weight: 600;
+    color: var(--text-color);
 }
 
 
@@ -491,7 +536,7 @@ body {
 
 .card.warning {
     border-left: 4px solid var(--warning-color);
-    background-color: #fef5e7;
+    background-color: var(--muted-surface);
 }
 
 
@@ -556,7 +601,7 @@ body {
 .admin-form {
     margin-bottom: 2rem;
     padding: 1.5rem;
-    background-color: #f8f9fa;
+    background-color: var(--muted-surface);
     border-radius: 8px;
 }
 
@@ -591,7 +636,7 @@ body {
     border: 1px solid var(--border-color);
     border-radius: 4px;
     margin-bottom: 0.5rem;
-    background-color: #f8f9fa;
+    background-color: var(--muted-surface);
 }
 
 
@@ -630,12 +675,12 @@ body {
 
 
 .ranking-table tbody tr:hover {
-    background-color: #f8f9fa;
+    background-color: var(--muted-surface);
 }
 
 
 .ranking-table tbody tr:nth-child(even) {
-    background-color: #f8f9fa;
+    background-color: var(--muted-surface);
 }
 
 /* USER DASHBOARD TROPHIES */
@@ -651,7 +696,7 @@ body {
     padding: 1.25rem;
     text-align: center;
     border: 2px solid var(--border-color);
-    background: #f8f9fa;
+    background: var(--muted-surface);
 }
 
 .trophy-card.trophy-1 {
@@ -679,19 +724,19 @@ body {
     font-weight: 700;
     font-size: 1rem;
     margin-bottom: 0.25rem;
-    color: var(--primary-color);
+    color: var(--text-color);
 }
 
 .trophy-user {
     font-weight: 700;
-    color: var(--primary-color);
+    color: var(--text-color);
     margin-bottom: 0.4rem;
 }
 
 .trophy-liters {
     font-size: 1.1rem;
     font-weight: 700;
-    color: #1f2937;
+    color: var(--text-color);
 }
 
 .ranking-empty-message {
@@ -701,7 +746,7 @@ body {
     text-align: center;
     font-weight: 700;
     color: var(--text-color);
-    background: #f8f9fa;
+    background: var(--muted-surface);
     border: 1px solid var(--border-color);
     border-radius: 8px;
 }
@@ -712,7 +757,7 @@ body {
 
 .other-ranking-section h4 {
     margin-bottom: 0.75rem;
-    color: var(--primary-color);
+    color: var(--text-color);
 }
 
 .other-ranking-table {
@@ -735,7 +780,7 @@ body {
 
 .import-export div {
     padding: 1.5rem;
-    background-color: #f8f9fa;
+    background-color: var(--muted-surface);
     border-radius: 8px;
 }
 
@@ -763,13 +808,64 @@ body {
     bottom: 20px;
     left: 50%;
     transform: translateX(-50%);
-    color: #333;
+    color: var(--text-color);
     font-size: 14px;
     font-weight: 500;
     text-align: center;
     z-index: 1000;
     margin: 0;
     white-space: nowrap;
+}
+
+.bottom-message a {
+    color: var(--secondary-color);
+}
+
+:root[data-theme="dark"] .login-page {
+    background: linear-gradient(135deg, #0f1a2b, #1e3f6b);
+}
+
+:root[data-theme="dark"] .login-box {
+    background: #111c2e;
+    color: var(--text-color);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.45);
+}
+
+:root[data-theme="dark"] .stat-box {
+    background: linear-gradient(135deg, #2f6fbd, #234f8a);
+}
+
+:root[data-theme="dark"] .btn-secondary {
+    color: var(--text-color);
+}
+
+:root[data-theme="dark"] .admin-form input::placeholder,
+:root[data-theme="dark"] .form-group input::placeholder {
+    color: #9fb0c7;
+}
+
+:root[data-theme="dark"] .user-item code {
+    color: var(--text-color);
+}
+
+:root[data-theme="dark"] p[style*="color: #666"] {
+    color: #c4d1e5 !important;
+}
+
+:root[data-theme="dark"] p[style*="color: #e67e22"] {
+    color: #f0c27c !important;
+}
+
+:root[data-theme="dark"] .trophy-card.trophy-1 {
+    background: linear-gradient(145deg, #5f5325, #3f3717);
+}
+
+:root[data-theme="dark"] .trophy-card.trophy-2 {
+    background: linear-gradient(145deg, #44505c, #2e3845);
+}
+
+:root[data-theme="dark"] .trophy-card.trophy-3 {
+    background: linear-gradient(145deg, #6f4b2a, #493019);
 }
 
 /* RESPONSIVE */
@@ -817,6 +913,13 @@ body {
     }
 
     .menu-language-toggle {
+        justify-self: auto;
+        align-self: auto;
+        font-size: 1rem;
+        padding: 0.7rem 0.8rem;
+    }
+
+    .menu-theme-toggle {
         justify-self: auto;
         align-self: auto;
         font-size: 1rem;

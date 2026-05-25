@@ -23,6 +23,7 @@
                     </span>
                 </button>
                 <div class="user-menu-dropdown" id="user-menu-dropdown" role="menu" aria-hidden="true">
+                    <button type="button" class="user-menu-item theme-toggle-btn menu-theme-toggle" role="menuitem"></button>
                     <button type="button" class="user-menu-item language-toggle-btn menu-language-toggle" role="menuitem"></button>
                     <a href="{{ url_for('change_password') }}" class="user-menu-item" role="menuitem" data-i18n="navbar_change_password">🔒 Changer mot de passe</a>
                     <a href="{{ url_for('logout') }}" class="user-menu-item" role="menuitem" data-i18n="navbar_logout">Déconnexion</a>
@@ -316,6 +317,7 @@
         </div>
     </div>
     
+    <script src="{{ url_for('static', filename='js/theme.js') }}"></script>
     <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
     <script src="{{ url_for('static', filename='js/app.js') }}"></script>
 </body>
