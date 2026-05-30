@@ -713,6 +713,21 @@ body.modal-open {
     z-index: 100;
 }
 
+.export-section .card {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.export-section .card h3 {
+    width: 100%;
+}
+
+body.exporting-dashboard .export-section {
+    display: none;
+}
+
 
 /* ADMIN STYLES */
 .admin-section {

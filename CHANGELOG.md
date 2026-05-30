@@ -8,6 +8,7 @@
 
 	- add : navigation menu
 	- add : dark mode
+	- add : dahsboard can now be exported in a png file
 	- change : migrate from SQLite to MySQL
 	- change : change password is now a pop up
 	- change : temporary password for imported use
