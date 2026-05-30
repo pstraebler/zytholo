@@ -24,7 +24,7 @@
                 </button>
                 <div class="user-menu-dropdown" id="user-menu-dropdown" role="menu" aria-hidden="true">
                     <button type="button" class="user-menu-item theme-toggle-btn menu-theme-toggle" role="menuitem"></button>
-                    <button type="button" class="user-menu-item language-toggle-btn menu-language-toggle" role="menuitem"></button>
+                    <button type="button" class="user-menu-item" id="settings-menu-item" role="menuitem" data-i18n="navbar_settings">⚙️ Réglages</button>
                     <button type="button" class="user-menu-item" id="change-password-menu-item" role="menuitem" data-i18n="navbar_change_password">🔒 Changer mot de passe</button>
                     <a href="{{ url_for('logout') }}" class="user-menu-item" role="menuitem" data-i18n="navbar_logout">Déconnexion</a>
                 </div>
@@ -67,6 +67,23 @@
                     <button type="submit" class="btn-primary" id="change-password-submit" data-i18n="change_password_button">Modifier le mot de passe</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <div class="password-modal-backdrop" id="settings-modal" aria-hidden="true">
+        <div class="password-modal-dialog settings-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="settings-modal-title">
+            <div class="password-modal-header">
+                <h2 id="settings-modal-title" data-i18n="settings_title">⚙️ Réglages</h2>
+                <button type="button" class="password-modal-close" id="settings-modal-close" aria-label="Fermer">×</button>
+            </div>
+
+            <div class="settings-section">
+                <h3 data-i18n="settings_language">Langue</h3>
+                <div class="settings-language-options" role="group" aria-labelledby="settings-modal-title">
+                    <button type="button" class="settings-language-button" data-settings-language="fr" data-i18n-title="language_french">🇫🇷</button>
+                    <button type="button" class="settings-language-button" data-settings-language="en" data-i18n-title="language_english">🇬🇧</button>
+                </div>
+            </div>
         </div>
     </div>
 

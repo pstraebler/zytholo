@@ -5,6 +5,7 @@
             page_admin_title: "Administration - BeerTracker",
             page_login_title: "BeerTracker - Connexion",
             page_password_title: "Changer le mot de passe - BeerTracker",
+            navbar_settings: "⚙️ Réglages",
             navbar_change_password: "🔒 Changer mot de passe",
             navbar_logout: "Déconnexion",
             navbar_back_dashboard: "Retour au tableau de bord",
@@ -81,6 +82,10 @@
             confirm_new_password: "Confirmer le nouveau mot de passe",
             change_password_button: "Modifier le mot de passe",
             password_change_required_message: "Vous devez changer votre mot de passe temporaire avant de continuer.",
+            settings_title: "⚙️ Réglages",
+            settings_language: "Langue",
+            language_french: "Français",
+            language_english: "English",
             confirm_delete_user: "Êtes-vous sûr ?",
             switch_to_other_language: "English",
             theme_switch_to_dark: "Activer le mode sombre",
@@ -119,6 +124,7 @@
             page_admin_title: "Administration - BeerTracker",
             page_login_title: "BeerTracker - Login",
             page_password_title: "Change Password - BeerTracker",
+            navbar_settings: "⚙️ Settings",
             navbar_change_password: "🔒 Change password",
             navbar_logout: "Log out",
             navbar_back_dashboard: "Back to dashboard",
@@ -195,6 +201,10 @@
             confirm_new_password: "Confirm new password",
             change_password_button: "Update password",
             password_change_required_message: "You must change your temporary password before continuing.",
+            settings_title: "⚙️ Settings",
+            settings_language: "Language",
+            language_french: "Français",
+            language_english: "English",
             confirm_delete_user: "Are you sure?",
             switch_to_other_language: "Français",
             theme_switch_to_dark: "Enable dark mode",
@@ -304,6 +314,11 @@
 
         document.querySelectorAll("[data-i18n-html]").forEach((element) => {
             element.innerHTML = t(element.getAttribute("data-i18n-html"));
+        });
+
+        document.querySelectorAll("[data-i18n-title]").forEach((element) => {
+            element.title = t(element.getAttribute("data-i18n-title"));
+            element.setAttribute("aria-label", t(element.getAttribute("data-i18n-title")));
         });
 
         document.querySelectorAll("[data-i18n-with-year]").forEach((element) => {

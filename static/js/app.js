@@ -66,8 +66,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     initUserMenu();
     initPasswordModal();
+    initSettingsModal();
 
     document.addEventListener('languageChanged', function() {
+        updateSettingsLanguageSelection();
         updateNightModeUI();
         if (!passwordChangeRequired) {
             loadStats();
@@ -154,6 +156,75 @@ function initPasswordModal() {
     if (passwordChangeRequired) {
         openPasswordModal();
     }
+}
+
+function initSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    const openBtn = document.getElementById('settings-menu-item');
+    const closeBtn = document.getElementById('settings-modal-close');
+    if (!modal || !openBtn) return;
+
+    openBtn.addEventListener('click', function() {
+        setUserMenuOpen(false);
+        openSettingsModal();
+    });
+
+    if (closeBtn) {
+        closeBtn.addEventListener('click', closeSettingsModal);
+    }
+
+    modal.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            closeSettingsModal();
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && modal.classList.contains('open')) {
+            closeSettingsModal();
+        }
+    });
+
+    document.querySelectorAll('[data-settings-language]').forEach(function(button) {
+        button.addEventListener('click', function() {
+            if (i18n && typeof i18n.setLanguage === 'function') {
+                i18n.setLanguage(button.dataset.settingsLanguage);
+            }
+        });
+    });
+
+    updateSettingsLanguageSelection();
+}
+
+function openSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    if (!modal) return;
+
+    updateSettingsLanguageSelection();
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('modal-open');
+    modal.querySelector('.settings-language-button.active')?.focus();
+}
+
+function closeSettingsModal() {
+    const modal = document.getElementById('settings-modal');
+    if (!modal) return;
+
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('modal-open');
+}
+
+function updateSettingsLanguageSelection() {
+    if (!i18n || typeof i18n.getCurrentLanguage !== 'function') return;
+
+    const currentLanguage = i18n.getCurrentLanguage();
+    document.querySelectorAll('[data-settings-language]').forEach(function(button) {
+        const active = button.dataset.settingsLanguage === currentLanguage;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
 }
 
 function openPasswordModal() {
