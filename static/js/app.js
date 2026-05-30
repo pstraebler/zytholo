@@ -1150,7 +1150,11 @@ function updateTotalChart(records) {
     const recordDates = Object.keys(dailyLitersMap).sort((a, b) => new Date(a) - new Date(b));
     const startDateInput = document.getElementById('start-date')?.value;
     const endDateInput = document.getElementById('end-date')?.value;
-    const startDate = parseLocalDate(startDateInput || recordDates[0]);
+    const requestedStartDate = parseLocalDate(startDateInput || recordDates[0]);
+    const firstConsumptionDate = parseLocalDate(recordDates[0]);
+    const startDate = requestedStartDate && firstConsumptionDate && requestedStartDate < firstConsumptionDate
+        ? firstConsumptionDate
+        : requestedStartDate;
     const requestedEndDate = parseLocalDate(endDateInput || recordDates[recordDates.length - 1]);
     const today = parseLocalDate(formatLocalDate(new Date()));
     const endDate = requestedEndDate && requestedEndDate > today ? today : requestedEndDate;
