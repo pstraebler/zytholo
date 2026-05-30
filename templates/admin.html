@@ -101,6 +101,13 @@
                         <div class="user-item">
                             <span>{{ user.username }}</span>
                             <div class="user-actions">
+                                <form method="POST" action="/admin/user/{{ user.id }}/force-password-change" class="inline-form admin-checkbox-form">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <label class="admin-checkbox-label">
+                                        <input type="checkbox" name="force_password_change" {% if user.force_password_change %}checked{% endif %} onchange="this.form.submit()">
+                                        <span data-i18n="force_password_change_next_login">Forcer changement MDP</span>
+                                    </label>
+                                </form>
                                 <form method="POST" action="/admin/user/{{ user.id }}/password" class="inline-form">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <input type="password" name="password" placeholder="Nouveau mot de passe" data-i18n-placeholder="new_password_placeholder" required>

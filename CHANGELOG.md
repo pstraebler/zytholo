@@ -12,6 +12,7 @@
 	- add : dahsboard can now be exported in a png file
 	- add : average price of a beer can be set in the settings menu
 	- add : buttons to view consumption figures for the current month or year
+	- add : admin panel - add a button to force user to change password
 	- change : migrate from SQLite to MySQL
 	- change : change password is now a pop up
 	- change : temporary password for imported use

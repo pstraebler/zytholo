@@ -389,6 +389,13 @@ def admin_delete_user(user_id):
     Database.delete_user(user_id)
     return redirect(url_for('admin'))
 
+@app.route('/admin/user/<user_id>/force-password-change', methods=['POST'])
+@admin_required
+def admin_force_password_change(user_id):
+    required = request.form.get('force_password_change') == 'on'
+    Database.set_force_password_change_by_id(user_id, required)
+    return redirect(url_for('admin'))
+
 @app.route('/admin/user/<user_id>/password', methods=['POST'])
 @admin_required
 def admin_change_password(user_id):

@@ -154,12 +154,24 @@ class Database:
         conn.close()
 
     @staticmethod
+    def set_force_password_change_by_id(user_id, required):
+        """Marquer un utilisateur comme devant changer son mot de passe via son id."""
+        conn = Database.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            'UPDATE users SET force_password_change = %s WHERE id = %s AND is_admin = 0',
+            (1 if required else 0, user_id),
+        )
+        conn.commit()
+        conn.close()
+
+    @staticmethod
     def get_all_users():
         """Obtenir tous les utilisateurs"""
         conn = Database.get_connection()
         cursor = conn.cursor()
         cursor.execute(
-            'SELECT id, username, created_at FROM users WHERE is_admin = 0 ORDER BY username'
+            'SELECT id, username, created_at, force_password_change FROM users WHERE is_admin = 0 ORDER BY username'
         )
         users = cursor.fetchall()
         conn.close()
