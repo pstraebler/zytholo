@@ -768,6 +768,22 @@ function formatSelectedDate(dateValue) {
     return date.toLocaleDateString(currentLocale());
 }
 
+function parseLocalDate(dateValue) {
+    if (!dateValue) return null;
+    const parts = dateValue.split('-').map(Number);
+    if (parts.length !== 3 || parts.some(Number.isNaN)) {
+        return null;
+    }
+    return new Date(parts[0], parts[1] - 1, parts[2]);
+}
+
+function formatLocalDate(dateValue) {
+    const year = dateValue.getFullYear();
+    const month = String(dateValue.getMonth() + 1).padStart(2, '0');
+    const day = String(dateValue.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
 function updateTotalTimelineTitle(startDate, endDate) {
     const title = document.getElementById('total-timeline-title');
     if (!title) return;
@@ -985,12 +1001,25 @@ function updateTotalChart(records) {
         dailyLitersMap[key] += liters;
     });
 
-    const dates = Object.keys(dailyLitersMap).sort((a, b) => new Date(a) - new Date(b));
+    const recordDates = Object.keys(dailyLitersMap).sort((a, b) => new Date(a) - new Date(b));
+    const startDateInput = document.getElementById('start-date')?.value;
+    const endDateInput = document.getElementById('end-date')?.value;
+    const startDate = parseLocalDate(startDateInput || recordDates[0]);
+    const endDate = parseLocalDate(endDateInput || recordDates[recordDates.length - 1]);
+    const dates = [];
+
+    if (startDate && endDate && startDate <= endDate) {
+        const cursor = new Date(startDate);
+        while (cursor <= endDate) {
+            dates.push(formatLocalDate(cursor));
+            cursor.setDate(cursor.getDate() + 1);
+        }
+    }
 
     let cumulativeLiters = 0;
-    const labels = dates.map(d => new Date(d).toLocaleDateString(currentLocale()));
+    const labels = dates.map(d => parseLocalDate(d).toLocaleDateString(currentLocale()));
     const data = dates.map(d => {
-        cumulativeLiters += dailyLitersMap[d];
+        cumulativeLiters += dailyLitersMap[d] || 0;
         return parseFloat(cumulativeLiters.toFixed(2));
     });
     
@@ -1010,7 +1039,7 @@ function updateTotalChart(records) {
                     backgroundColor: 'rgba(39, 174, 96, 0.1)',
                     borderWidth: 2,
                     fill: true,
-                    tension: 0.4
+                    tension: 0
                 }
             ]
         },
