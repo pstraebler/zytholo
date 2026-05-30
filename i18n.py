@@ -58,7 +58,7 @@ def detect_language_from_header(header_value):
 
 
 def get_request_language():
-    if request.endpoint in {"login", "change_password"}:
+    if request.endpoint == "login":
         return detect_language_from_header(request.headers.get("Accept-Language", ""))
 
     cookie_lang = request.cookies.get("lang", "").lower()

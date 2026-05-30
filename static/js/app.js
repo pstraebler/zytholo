@@ -28,6 +28,7 @@ let nightModeEnabled = false;
 let lastClickTime = 0;
 let weeklyChart = null;
 let userMenuOpen = false;
+let passwordModalCloseTimer = null;
 
 function getChartThemeColors() {
     const styles = getComputedStyle(document.documentElement);
@@ -68,6 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
     loadTodayConsumption();
     loadNightModeStatus();
     initUserMenu();
+    initPasswordModal();
 
     document.addEventListener('languageChanged', function() {
         updateNightModeUI();
@@ -99,6 +101,144 @@ function initUserMenu() {
     document.addEventListener('keydown', function(event) {
         if (event.key === 'Escape' && userMenuOpen) {
             setUserMenuOpen(false);
+        }
+    });
+}
+
+function initPasswordModal() {
+    const modal = document.getElementById('password-modal');
+    const openBtn = document.getElementById('change-password-menu-item');
+    const closeBtn = document.getElementById('password-modal-close');
+    const cancelBtn = document.getElementById('password-modal-cancel');
+    const form = document.getElementById('change-password-form');
+
+    if (!modal || !openBtn || !form) return;
+
+    openBtn.addEventListener('click', function() {
+        setUserMenuOpen(false);
+        openPasswordModal();
+    });
+
+    [closeBtn, cancelBtn].forEach(function(button) {
+        if (button) {
+            button.addEventListener('click', closePasswordModal);
+        }
+    });
+
+    modal.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            closePasswordModal();
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && modal.classList.contains('open')) {
+            closePasswordModal();
+        }
+    });
+
+    form.addEventListener('submit', submitPasswordForm);
+}
+
+function openPasswordModal() {
+    const modal = document.getElementById('password-modal');
+    if (!modal) return;
+
+    clearPasswordModalCloseTimer();
+    setPasswordModalSuccessOnly(false);
+    resetPasswordMessages();
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('modal-open');
+    document.getElementById('current_password')?.focus();
+}
+
+function closePasswordModal() {
+    const modal = document.getElementById('password-modal');
+    const form = document.getElementById('change-password-form');
+    if (!modal) return;
+
+    clearPasswordModalCloseTimer();
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('modal-open');
+    form?.reset();
+    setPasswordModalSuccessOnly(false);
+    resetPasswordMessages();
+}
+
+function resetPasswordMessages() {
+    const errorBox = document.getElementById('password-modal-error');
+    const successBox = document.getElementById('password-modal-success');
+
+    [errorBox, successBox].forEach(function(box) {
+        if (box) {
+            box.textContent = '';
+            box.style.display = 'none';
+        }
+    });
+}
+
+function clearPasswordModalCloseTimer() {
+    if (passwordModalCloseTimer) {
+        clearTimeout(passwordModalCloseTimer);
+        passwordModalCloseTimer = null;
+    }
+}
+
+function setPasswordModalSuccessOnly(enabled) {
+    const dialog = document.querySelector('#password-modal .password-modal-dialog');
+    if (dialog) {
+        dialog.classList.toggle('success-only', enabled);
+    }
+}
+
+function showPasswordMessage(type, message) {
+    const box = document.getElementById(type === 'success' ? 'password-modal-success' : 'password-modal-error');
+    if (!box) return;
+
+    box.textContent = message;
+    box.style.display = 'block';
+}
+
+function submitPasswordForm(event) {
+    event.preventDefault();
+
+    const form = event.currentTarget;
+    const submitBtn = document.getElementById('change-password-submit');
+    resetPasswordMessages();
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+    }
+
+    fetch(form.action, {
+        method: 'POST',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'Accept': 'application/json'
+        },
+        body: new FormData(form)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            form.reset();
+            setPasswordModalSuccessOnly(true);
+            showPasswordMessage('success', data.message);
+            passwordModalCloseTimer = setTimeout(closePasswordModal, 2500);
+            return;
+        }
+
+        showPasswordMessage('error', data.message || t('error_generic_update'));
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        showPasswordMessage('error', t('error_generic_update'));
+    })
+    .finally(() => {
+        if (submitBtn) {
+            submitBtn.disabled = false;
         }
     });
 }

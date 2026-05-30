@@ -481,6 +481,20 @@ def get_night_mode_status(user_id):
 @login_required
 def change_password():
     """Permet à un utilisateur de changer son mot de passe"""
+    wants_json = (
+        request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+        or request.accept_mimetypes.best == 'application/json'
+    )
+
+    def password_response(success=False, message=None, status=200):
+        if wants_json:
+            return jsonify({'success': success, 'message': message}), status
+        template_key = 'success' if success else 'error'
+        return render_template(
+            'password.html',
+            **{template_key: message},
+            username=session['username']
+        ), status
     
     # Bloquer l'accès pour l'administrateur
     if session.get('is_admin'):
@@ -493,19 +507,13 @@ def change_password():
         
         # Validation
         if not current_password or not new_password or not confirm_password:
-            return render_template('password.html', 
-                                 error=t("password_all_fields_required"),
-                                 username=session['username'])
+            return password_response(False, t("password_all_fields_required"), 400)
         
         if new_password != confirm_password:
-            return render_template('password.html', 
-                                 error=t("password_mismatch"),
-                                 username=session['username'])
+            return password_response(False, t("password_mismatch"), 400)
         
         if len(new_password) < 6:
-            return render_template('password.html', 
-                                 error=t("password_too_short"),
-                                 username=session['username'])
+            return password_response(False, t("password_too_short"), 400)
         
         # Vérifier le mot de passe actuel
         username = session['username']
@@ -516,20 +524,16 @@ def change_password():
         conn.close()
         
         if not user or not verify_password(current_password, user['password']):
-            return render_template('password.html', 
-                                 error=t("password_current_incorrect"),
-                                 username=session['username'])
+            return password_response(False, t("password_current_incorrect"), 400)
         
         # Changer le mot de passe
         password_hash = hash_password(new_password)
         Database.update_user_password(username, password_hash)
         
         app.logger.info(f"Password changed successfully for user {username}")
-        return render_template('password.html', 
-                             success=t("password_changed_success"),
-                             username=session['username'])
+        return password_response(True, t("password_changed_success"))
     
-    return render_template('password.html', username=session['username'])
+    return redirect(url_for('dashboard'))
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=(Config.APP_PORT), debug=False)
