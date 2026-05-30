@@ -92,6 +92,7 @@
             theme_dark: "Sombre",
             theme_auto: "Système",
             settings_average_beer_price: "Prix moyen d'une bière (pour 50 cL)",
+            settings_three_hour_threshold: "Seuil d'alerte sur 3 heures",
             confirm_delete_user: "Êtes-vous sûr ?",
             switch_to_other_language: "English",
             theme_switch_to_dark: "Activer le mode sombre",
@@ -108,7 +109,7 @@
             night_mode_block_decrement: "⚠️ Mode Soirée actif : impossible de retirer une bière 😏",
             error_save_connection: "Erreur lors de l'enregistrement. Vérifiez votre connexion.",
             error_png_export_unavailable: "Export PNG indisponible. Vérifiez votre connexion puis réessayez.",
-            alert_three_hour_title: "⚠️ Plus de 1.5L bu depuis {time}",
+            alert_three_hour_title: "⚠️ Plus de {threshold}L bu depuis {time}",
             alert_total: "Total",
             chart_cumulative_label: "Total cumulé (L)",
             chart_weekly_dataset: "Litres consommés",
@@ -123,7 +124,8 @@
             day_4: "vendredi",
             day_5: "samedi",
             day_6: "dimanche",
-            error_generic_update: "Erreur lors de la modification"
+            error_generic_update: "Erreur lors de la modification",
+            error_settings_update: "Erreur lors de l'enregistrement des réglages"
         },
         en: {
             page_dashboard_title: "Dashboard - BeerTracker",
@@ -217,6 +219,7 @@
             theme_dark: "Dark",
             theme_auto: "System",
             settings_average_beer_price: "Average beer price (for 50 cL)",
+            settings_three_hour_threshold: "3-hour alert threshold",
             confirm_delete_user: "Are you sure?",
             switch_to_other_language: "Français",
             theme_switch_to_dark: "Enable dark mode",
@@ -233,7 +236,7 @@
             night_mode_block_decrement: "⚠️ Night mode is active: you cannot remove a beer 😏",
             error_save_connection: "Error while saving. Please check your connection.",
             error_png_export_unavailable: "PNG export is unavailable. Check your connection and try again.",
-            alert_three_hour_title: "⚠️ More than 1.5L consumed since {time}",
+            alert_three_hour_title: "⚠️ More than {threshold}L consumed since {time}",
             alert_total: "Total",
             chart_cumulative_label: "Cumulative total (L)",
             chart_weekly_dataset: "Liters consumed",
@@ -248,7 +251,8 @@
             day_4: "Friday",
             day_5: "Saturday",
             day_6: "Sunday",
-            error_generic_update: "Error while updating"
+            error_generic_update: "Error while updating",
+            error_settings_update: "Error while saving settings"
         }
     };
 

@@ -260,7 +260,9 @@ def api_consumption():
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     
-    stats = calculate_stats(user_id, start_date, end_date)
+    user_settings = Database.get_user_settings(user_id)
+    three_hour_threshold_liters = user_settings['three_hour_threshold_liters']
+    stats = calculate_stats(user_id, start_date, end_date, three_hour_threshold_liters)
     today = date.today()
     current_month_start = today.replace(day=1)
     previous_month_end = current_month_start - timedelta(days=1)
@@ -268,7 +270,8 @@ def api_consumption():
     monthly_chart_stats = calculate_stats(
         user_id,
         previous_month_start.isoformat(),
-        today.isoformat()
+        today.isoformat(),
+        three_hour_threshold_liters
     )['monthly_stats']
     for month in (previous_month_start, current_month_start):
         monthly_chart_stats.setdefault(
@@ -283,10 +286,36 @@ def api_consumption():
         'total_33cl': stats['total_33cl'],
         'total_liters': stats['total_liters'],
         'warnings': stats['warnings'], 
+        'settings': user_settings,
         'monthly_stats': stats['monthly_stats'],
         'monthly_chart_stats': monthly_chart_stats,
         'records': [dict(record) for record in stats['all_records']],
         'weekly_stats': weekly_stats  # AJOUTER CETTE LIGNE
+    })
+
+@app.route('/api/settings', methods=['GET', 'POST'])
+@login_required
+def api_settings():
+    user_id = session['user_id']
+
+    if request.method == 'GET':
+        return jsonify(Database.get_user_settings(user_id))
+
+    data = request.get_json() or {}
+
+    try:
+        three_hour_threshold_liters = float(data.get('three_hour_threshold_liters', 1.5))
+    except (TypeError, ValueError):
+        return jsonify({'success': False, 'message': t('invalid_settings')}), 400
+
+    if three_hour_threshold_liters < 0.1 or three_hour_threshold_liters > 10:
+        return jsonify({'success': False, 'message': t('invalid_settings')}), 400
+
+    Database.update_user_settings(user_id, round(three_hour_threshold_liters, 2))
+
+    return jsonify({
+        'success': True,
+        'three_hour_threshold_liters': round(three_hour_threshold_liters, 2)
     })
 
 @app.route('/api/rankings', methods=['GET'])

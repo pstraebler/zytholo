@@ -5,7 +5,7 @@ import csv
 import io
 import secrets
 
-def calculate_stats(user_id, start_date=None, end_date=None):
+def calculate_stats(user_id, start_date=None, end_date=None, three_hour_threshold_liters=1.5):
     """Calculer les statistiques de consommation avec détection de fenêtres de 3h"""
     records = Database.get_consumption(user_id, start_date, end_date)
     
@@ -86,11 +86,12 @@ def calculate_stats(user_id, start_date=None, end_date=None):
                         window_times.append(other_time_str)
                 
                 # Créer l'avertissement seulement si dépassement ET première fois
-                if window_liters >= 1.5:
+                if window_liters >= three_hour_threshold_liters:
                     three_hour_warnings.append({
                         'start_time': record_time_str,
                         'end_time': window_end.strftime('%H:%M:%S'),
                         'total_liters': round(window_liters, 2),
+                        'threshold_liters': round(three_hour_threshold_liters, 2),
                         'start_date': record['date'],
                         'end_date': window_end.strftime('%Y-%m-%d'),
                         'items': window_items
@@ -364,13 +365,13 @@ def check_weekly_drinking_days(user_id, current_date):
         WHERE user_id = %s 
         AND date >= %s 
         AND date <= %s
-        GROUP BY date
+        GROUP BY consumption.date
         HAVING (
             COALESCE(SUM(pints), 0) * 0.5
             + COALESCE(SUM(half_pints), 0) * 0.25
             + COALESCE(SUM(liters_33), 0) * 0.33
         ) > 0
-        ORDER BY date
+        ORDER BY consumption.date
     """, (user_id, week_start.isoformat(), week_end.isoformat()))
     
     drinking_days = [row['date'] for row in cursor.fetchall()]

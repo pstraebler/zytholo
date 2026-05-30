@@ -23,6 +23,7 @@ TRANSLATIONS = {
         "password_too_short": "Le mot de passe doit contenir au moins 6 caractères",
         "password_current_incorrect": "Mot de passe actuel incorrect",
         "password_changed_success": "Mot de passe modifié avec succès",
+        "invalid_settings": "Réglages invalides",
     },
     "en": {
         "login_incorrect_password": "Incorrect password",
@@ -43,6 +44,7 @@ TRANSLATIONS = {
         "password_too_short": "Password must contain at least 6 characters",
         "password_current_incorrect": "Current password is incorrect",
         "password_changed_success": "Password changed successfully",
+        "invalid_settings": "Invalid settings",
     },
 }
 

@@ -35,6 +35,8 @@ let lastStatsData = null;
 const averageBeerPriceStorageKey = 'beertracker_average_beer_price';
 const defaultAverageBeerPrice = 6;
 const averageBeerVolumeLiters = 0.5;
+const defaultThreeHourThresholdLiters = 1.5;
+let threeHourThresholdLiters = defaultThreeHourThresholdLiters;
 
 function getChartThemeColors() {
     const styles = getComputedStyle(document.documentElement);
@@ -226,9 +228,17 @@ function initSettingsModal() {
         });
     }
 
+    const threeHourThresholdInput = document.getElementById('three-hour-threshold');
+    if (threeHourThresholdInput) {
+        updateThreeHourThresholdInput();
+        threeHourThresholdInput.addEventListener('change', saveThreeHourThreshold);
+        threeHourThresholdInput.addEventListener('blur', saveThreeHourThreshold);
+    }
+
     updateSettingsLanguageSelection();
     updateSettingsThemeSelection();
     updateAverageBeerPriceInput();
+    loadSettings();
 }
 
 function openSettingsModal() {
@@ -237,6 +247,7 @@ function openSettingsModal() {
 
     updateSettingsLanguageSelection();
     updateAverageBeerPriceInput();
+    updateThreeHourThresholdInput();
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('modal-open');
@@ -295,6 +306,72 @@ function updateAverageBeerPriceInput() {
     if (input && document.activeElement !== input) {
         input.value = formatPriceInputValue(getAverageBeerPrice());
     }
+}
+
+function updateThreeHourThresholdInput() {
+    const input = document.getElementById('three-hour-threshold');
+    if (input && document.activeElement !== input) {
+        input.value = Number(threeHourThresholdLiters).toFixed(2);
+    }
+}
+
+function applySettings(settings) {
+    const threshold = parseFloat(settings?.three_hour_threshold_liters);
+    if (Number.isFinite(threshold) && threshold > 0) {
+        threeHourThresholdLiters = threshold;
+    }
+    updateThreeHourThresholdInput();
+}
+
+function loadSettings() {
+    if (passwordChangeRequired) return;
+
+    fetch('/api/settings')
+        .then(response => response.json())
+        .then(applySettings)
+        .catch(error => console.error('Settings error:', error));
+}
+
+function saveThreeHourThreshold() {
+    const input = document.getElementById('three-hour-threshold');
+    if (!input) return;
+
+    const threshold = parseFloat(input.value.replace(',', '.'));
+    if (!Number.isFinite(threshold) || threshold < 0.1 || threshold > 10) {
+        input.value = Number(threeHourThresholdLiters).toFixed(2);
+        return;
+    }
+
+    if (Math.abs(threshold - threeHourThresholdLiters) < 0.001) {
+        updateThreeHourThresholdInput();
+        return;
+    }
+
+    fetch('/api/settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            three_hour_threshold_liters: threshold
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Settings update failed');
+        }
+        return response.json();
+    })
+    .then(data => {
+        applySettings(data);
+        loadStats();
+    })
+    .catch(error => {
+        console.error('Settings error:', error);
+        input.value = Number(threeHourThresholdLiters).toFixed(2);
+        alert(t('error_settings_update'));
+    });
 }
 
 function openPasswordModal() {
@@ -897,6 +974,9 @@ function loadStats() {
     fetch(url)
         .then(response => response.json())
         .then(data => {
+            if (data.settings) {
+                applySettings(data.settings);
+            }
             updateStatsDisplay(data);
             updateCharts(data);
         })
@@ -1011,7 +1091,10 @@ function updateStatsDisplay(data) {
                     ).join('');
                     
                     warningDiv.innerHTML = `
-                        <strong>${t('alert_three_hour_title', { time: formatTime(warning.start_time) })}</strong><br>
+                        <strong>${t('alert_three_hour_title', {
+                            time: formatTime(warning.start_time),
+                            threshold: Number(warning.threshold_liters || threeHourThresholdLiters).toFixed(2)
+                        })}</strong><br>
                         ${t('alert_total')}: <strong>${warning.total_liters}L</strong><br>
                         <ul style="margin-top: 0.5rem; margin-bottom: 0;">
                             ${items}
