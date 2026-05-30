@@ -353,15 +353,23 @@ def check_weekly_drinking_days(user_id, current_date):
     week_start = current_date_obj - timedelta(days=days_since_monday)
     week_end = week_start + timedelta(days=6)
     
-    # Récupérer tous les jours de consommation de la semaine
+    # Récupérer les jours dont la consommation nette est positive.
+    # Un retrait crée une ligne négative horodatée, donc l'existence d'une
+    # ligne ne suffit pas pour considérer que le jour compte comme consommé.
     conn = Database.get_connection()
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT DISTINCT DATE_FORMAT(date, '%%Y-%%m-%%d') AS date
+        SELECT DATE_FORMAT(date, '%%Y-%%m-%%d') AS date
         FROM consumption 
         WHERE user_id = %s 
         AND date >= %s 
         AND date <= %s
+        GROUP BY date
+        HAVING (
+            COALESCE(SUM(pints), 0) * 0.5
+            + COALESCE(SUM(half_pints), 0) * 0.25
+            + COALESCE(SUM(liters_33), 0) * 0.33
+        ) > 0
         ORDER BY date
     """, (user_id, week_start.isoformat(), week_end.isoformat()))
     
