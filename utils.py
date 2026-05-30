@@ -5,7 +5,13 @@ import csv
 import io
 import secrets
 
-def calculate_stats(user_id, start_date=None, end_date=None, three_hour_threshold_liters=1.5):
+def calculate_stats(
+    user_id,
+    start_date=None,
+    end_date=None,
+    three_hour_threshold_liters=1.5,
+    weekly_drinking_days_threshold=3
+):
     """Calculer les statistiques de consommation avec détection de fenêtres de 3h"""
     records = Database.get_consumption(user_id, start_date, end_date)
     
@@ -102,9 +108,13 @@ def calculate_stats(user_id, start_date=None, end_date=None, three_hour_threshol
                         processed_times.add(time_str)
     
     # Vérifier si c'est le 3ème jour de la semaine
-    is_third_day_or_more, drinking_days = check_weekly_drinking_days(user_id, today_str)
+    is_weekly_threshold_reached, drinking_days = check_weekly_drinking_days(
+        user_id,
+        today_str,
+        weekly_drinking_days_threshold
+    )
     
-    if is_third_day_or_more:
+    if is_weekly_threshold_reached:
         day_indexes = []
         for day_str in sorted(drinking_days):
             if isinstance(day_str, date):
@@ -125,6 +135,7 @@ def calculate_stats(user_id, start_date=None, end_date=None, three_hour_threshol
             'items': [],
             'type': 'weekly',
             'num_days': num_days,
+            'threshold_days': weekly_drinking_days_threshold,
             'day_indexes': day_indexes
         })
     
@@ -336,10 +347,10 @@ def get_top_drinkers_for_week(reference_date=None):
     conn.close()
     return drinkers
 
-def check_weekly_drinking_days(user_id, current_date):
+def check_weekly_drinking_days(user_id, current_date, weekly_drinking_days_threshold=3):
     """
-    Vérifie si c'est le 3ème jour de consommation de la semaine (lundi-dimanche).
-    Retourne (is_third_day, drinking_days)
+    Vérifie si le seuil de jours de consommation de la semaine est atteint.
+    Retourne (is_threshold_reached, drinking_days)
     """
     from datetime import datetime, timedelta
     from models import Database
@@ -377,7 +388,7 @@ def check_weekly_drinking_days(user_id, current_date):
     drinking_days = [row['date'] for row in cursor.fetchall()]
     conn.close()
     
-    return len(drinking_days) >= 3, drinking_days
+    return len(drinking_days) >= weekly_drinking_days_threshold, drinking_days
 
 def calculate_weekly_stats(user_id):
     """Calculer les stats des 4 dernières semaines en litres (incluant la semaine en cours)"""

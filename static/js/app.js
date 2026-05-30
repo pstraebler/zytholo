@@ -37,6 +37,8 @@ const defaultAverageBeerPrice = 6;
 const averageBeerVolumeLiters = 0.5;
 const defaultThreeHourThresholdLiters = 1.5;
 let threeHourThresholdLiters = defaultThreeHourThresholdLiters;
+const defaultWeeklyDrinkingDaysThreshold = 3;
+let weeklyDrinkingDaysThreshold = defaultWeeklyDrinkingDaysThreshold;
 
 function getChartThemeColors() {
     const styles = getComputedStyle(document.documentElement);
@@ -231,8 +233,15 @@ function initSettingsModal() {
     const threeHourThresholdInput = document.getElementById('three-hour-threshold');
     if (threeHourThresholdInput) {
         updateThreeHourThresholdInput();
-        threeHourThresholdInput.addEventListener('change', saveThreeHourThreshold);
-        threeHourThresholdInput.addEventListener('blur', saveThreeHourThreshold);
+        threeHourThresholdInput.addEventListener('change', saveSettings);
+        threeHourThresholdInput.addEventListener('blur', saveSettings);
+    }
+
+    const weeklyDaysThresholdInput = document.getElementById('weekly-days-threshold');
+    if (weeklyDaysThresholdInput) {
+        updateWeeklyDaysThresholdInput();
+        weeklyDaysThresholdInput.addEventListener('change', saveSettings);
+        weeklyDaysThresholdInput.addEventListener('blur', saveSettings);
     }
 
     updateSettingsLanguageSelection();
@@ -248,6 +257,7 @@ function openSettingsModal() {
     updateSettingsLanguageSelection();
     updateAverageBeerPriceInput();
     updateThreeHourThresholdInput();
+    updateWeeklyDaysThresholdInput();
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('modal-open');
@@ -315,12 +325,26 @@ function updateThreeHourThresholdInput() {
     }
 }
 
+function updateWeeklyDaysThresholdInput() {
+    const input = document.getElementById('weekly-days-threshold');
+    if (input && document.activeElement !== input) {
+        input.value = weeklyDrinkingDaysThreshold;
+    }
+}
+
 function applySettings(settings) {
     const threshold = parseFloat(settings?.three_hour_threshold_liters);
     if (Number.isFinite(threshold) && threshold > 0) {
         threeHourThresholdLiters = threshold;
     }
+
+    const weeklyThreshold = parseInt(settings?.weekly_drinking_days_threshold, 10);
+    if (Number.isInteger(weeklyThreshold) && weeklyThreshold >= 2 && weeklyThreshold <= 7) {
+        weeklyDrinkingDaysThreshold = weeklyThreshold;
+    }
+
     updateThreeHourThresholdInput();
+    updateWeeklyDaysThresholdInput();
 }
 
 function loadSettings() {
@@ -332,18 +356,32 @@ function loadSettings() {
         .catch(error => console.error('Settings error:', error));
 }
 
-function saveThreeHourThreshold() {
-    const input = document.getElementById('three-hour-threshold');
-    if (!input) return;
+function saveSettings() {
+    const threeHourInput = document.getElementById('three-hour-threshold');
+    const weeklyDaysInput = document.getElementById('weekly-days-threshold');
+    if (!threeHourInput || !weeklyDaysInput) return;
 
-    const threshold = parseFloat(input.value.replace(',', '.'));
-    if (!Number.isFinite(threshold) || threshold < 0.1 || threshold > 10) {
-        input.value = Number(threeHourThresholdLiters).toFixed(2);
+    const threeHourThreshold = parseFloat(threeHourInput.value.replace(',', '.'));
+    const weeklyDaysThreshold = parseInt(weeklyDaysInput.value, 10);
+    if (
+        !Number.isFinite(threeHourThreshold)
+        || threeHourThreshold < 0.1
+        || threeHourThreshold > 10
+        || !Number.isInteger(weeklyDaysThreshold)
+        || weeklyDaysThreshold < 2
+        || weeklyDaysThreshold > 7
+    ) {
+        updateThreeHourThresholdInput();
+        updateWeeklyDaysThresholdInput();
         return;
     }
 
-    if (Math.abs(threshold - threeHourThresholdLiters) < 0.001) {
+    if (
+        Math.abs(threeHourThreshold - threeHourThresholdLiters) < 0.001
+        && weeklyDaysThreshold === weeklyDrinkingDaysThreshold
+    ) {
         updateThreeHourThresholdInput();
+        updateWeeklyDaysThresholdInput();
         return;
     }
 
@@ -354,7 +392,8 @@ function saveThreeHourThreshold() {
             'X-CSRFToken': csrfToken
         },
         body: JSON.stringify({
-            three_hour_threshold_liters: threshold
+            three_hour_threshold_liters: threeHourThreshold,
+            weekly_drinking_days_threshold: weeklyDaysThreshold
         })
     })
     .then(response => {
@@ -369,7 +408,8 @@ function saveThreeHourThreshold() {
     })
     .catch(error => {
         console.error('Settings error:', error);
-        input.value = Number(threeHourThresholdLiters).toFixed(2);
+        updateThreeHourThresholdInput();
+        updateWeeklyDaysThresholdInput();
         alert(t('error_settings_update'));
     });
 }

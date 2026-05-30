@@ -29,7 +29,8 @@ class Database:
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 night_mode_until DATETIME DEFAULT NULL,
                 force_password_change TINYINT(1) DEFAULT 0,
-                three_hour_threshold_liters DECIMAL(4,2) DEFAULT 1.50
+                three_hour_threshold_liters DECIMAL(4,2) DEFAULT 1.50,
+                weekly_drinking_days_threshold INT DEFAULT 3
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             '''
         )
@@ -65,6 +66,23 @@ class Database:
                 '''
                 ALTER TABLE users
                 ADD COLUMN three_hour_threshold_liters DECIMAL(4,2) DEFAULT 1.50
+                '''
+            )
+
+        cursor.execute(
+            '''
+            SELECT COUNT(*) AS column_exists
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'users'
+              AND COLUMN_NAME = 'weekly_drinking_days_threshold'
+            '''
+        )
+        if not cursor.fetchone()['column_exists']:
+            cursor.execute(
+                '''
+                ALTER TABLE users
+                ADD COLUMN weekly_drinking_days_threshold INT DEFAULT 3
                 '''
             )
 
@@ -324,25 +342,36 @@ class Database:
         conn = Database.get_connection()
         cursor = conn.cursor()
         cursor.execute(
-            'SELECT three_hour_threshold_liters FROM users WHERE id = %s',
+            '''
+            SELECT three_hour_threshold_liters, weekly_drinking_days_threshold
+            FROM users
+            WHERE id = %s
+            ''',
             (user_id,),
         )
         result = cursor.fetchone()
         conn.close()
 
-        threshold = result['three_hour_threshold_liters'] if result else 1.5
+        three_hour_threshold = result['three_hour_threshold_liters'] if result else 1.5
+        weekly_days_threshold = result['weekly_drinking_days_threshold'] if result else 3
         return {
-            'three_hour_threshold_liters': float(threshold or 1.5)
+            'three_hour_threshold_liters': float(three_hour_threshold or 1.5),
+            'weekly_drinking_days_threshold': int(weekly_days_threshold or 3)
         }
 
     @staticmethod
-    def update_user_settings(user_id, three_hour_threshold_liters):
+    def update_user_settings(user_id, three_hour_threshold_liters, weekly_drinking_days_threshold):
         """Met a jour les reglages utilisateur."""
         conn = Database.get_connection()
         cursor = conn.cursor()
         cursor.execute(
-            'UPDATE users SET three_hour_threshold_liters = %s WHERE id = %s',
-            (three_hour_threshold_liters, user_id),
+            '''
+            UPDATE users
+            SET three_hour_threshold_liters = %s,
+                weekly_drinking_days_threshold = %s
+            WHERE id = %s
+            ''',
+            (three_hour_threshold_liters, weekly_drinking_days_threshold, user_id),
         )
         conn.commit()
         conn.close()
