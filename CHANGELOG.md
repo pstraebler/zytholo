@@ -15,7 +15,7 @@
 	- add : admin panel - add a button to force user to change password
 	- change : migrate from SQLite to MySQL
 	- change : change password is now a pop up
-	- change : temporary password for imported use
+	- change : temporary password for imported user
 	- change : change password is now mandatory when an user has been imported
 	- change : total timeline is now displayong all days of the selected period
 	- fix : monthly consumption chart did not show all the beers
