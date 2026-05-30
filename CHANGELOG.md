@@ -6,6 +6,8 @@
 
 🌙 (Auto) dark mode is now available !
 
+⚙️ The app now has a menu that lets you adjust settings !
+
 	- add : navigation menu
 	- add : dark mode
 	- add : settings menu
