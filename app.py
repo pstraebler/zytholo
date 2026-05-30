@@ -246,13 +246,13 @@ def api_consumption():
     
     if request.method == 'POST':
         data = request.get_json()
-        date = data.get('date', datetime.now().strftime('%Y-%m-%d'))
+        consumption_date = data.get('date', datetime.now().strftime('%Y-%m-%d'))
         time = data.get('time', datetime.now().strftime('%H:%M:%S'))
         pints = int(data.get('pints', 0))
         half_pints = int(data.get('half_pints', 0))
         liters_33 = int(data.get('liters_33', 0))
         
-        Database.add_consumption(user_id, date, pints, half_pints, liters_33, time)
+        Database.add_consumption(user_id, consumption_date, pints, half_pints, liters_33, time)
         
         return jsonify({'success': True})
     
@@ -261,6 +261,20 @@ def api_consumption():
     end_date = request.args.get('end_date')
     
     stats = calculate_stats(user_id, start_date, end_date)
+    today = date.today()
+    current_month_start = today.replace(day=1)
+    previous_month_end = current_month_start - timedelta(days=1)
+    previous_month_start = previous_month_end.replace(day=1)
+    monthly_chart_stats = calculate_stats(
+        user_id,
+        previous_month_start.isoformat(),
+        today.isoformat()
+    )['monthly_stats']
+    for month in (previous_month_start, current_month_start):
+        monthly_chart_stats.setdefault(
+            month.strftime('%Y-%m'),
+            {'pints': 0, 'half_pints': 0, '33cl': 0}
+        )
     weekly_stats = calculate_weekly_stats(user_id)  # AJOUTER CETTE LIGNE
     
     return jsonify({
@@ -270,6 +284,7 @@ def api_consumption():
         'total_liters': stats['total_liters'],
         'warnings': stats['warnings'], 
         'monthly_stats': stats['monthly_stats'],
+        'monthly_chart_stats': monthly_chart_stats,
         'records': [dict(record) for record in stats['all_records']],
         'weekly_stats': weekly_stats  # AJOUTER CETTE LIGNE
     })

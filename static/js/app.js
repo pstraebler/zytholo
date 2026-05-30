@@ -879,7 +879,7 @@ function updateCharts(data) {
         console.error('Chart.js is not available');
         return;
     }
-    updateMonthlyChart(data.monthly_stats);
+    updateMonthlyChart(data.monthly_chart_stats || data.monthly_stats);
     updateTotalChart(data.records);
     updateWeeklyChart(data.weekly_stats); 
 }
