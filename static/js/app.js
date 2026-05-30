@@ -70,6 +70,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     document.addEventListener('languageChanged', function() {
         updateSettingsLanguageSelection();
+        updateSettingsThemeSelection();
         updateNightModeUI();
         if (!passwordChangeRequired) {
             loadStats();
@@ -77,6 +78,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     document.addEventListener('themeChanged', function() {
+        updateSettingsThemeSelection();
         if (!passwordChangeRequired) {
             loadStats();
         }
@@ -193,7 +195,16 @@ function initSettingsModal() {
         });
     });
 
+    document.querySelectorAll('[data-settings-theme]').forEach(function(button) {
+        button.addEventListener('click', function() {
+            if (window.BeerTrackerTheme && typeof window.BeerTrackerTheme.setTheme === 'function') {
+                window.BeerTrackerTheme.setTheme(button.dataset.settingsTheme);
+            }
+        });
+    });
+
     updateSettingsLanguageSelection();
+    updateSettingsThemeSelection();
 }
 
 function openSettingsModal() {
@@ -222,6 +233,17 @@ function updateSettingsLanguageSelection() {
     const currentLanguage = i18n.getCurrentLanguage();
     document.querySelectorAll('[data-settings-language]').forEach(function(button) {
         const active = button.dataset.settingsLanguage === currentLanguage;
+        button.classList.toggle('active', active);
+        button.setAttribute('aria-pressed', active ? 'true' : 'false');
+    });
+}
+
+function updateSettingsThemeSelection() {
+    if (!window.BeerTrackerTheme || typeof window.BeerTrackerTheme.getSelectedTheme !== 'function') return;
+
+    const selectedTheme = window.BeerTrackerTheme.getSelectedTheme();
+    document.querySelectorAll('[data-settings-theme]').forEach(function(button) {
+        const active = button.dataset.settingsTheme === selectedTheme;
         button.classList.toggle('active', active);
         button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });

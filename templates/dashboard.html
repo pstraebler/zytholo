@@ -23,7 +23,6 @@
                     </span>
                 </button>
                 <div class="user-menu-dropdown" id="user-menu-dropdown" role="menu" aria-hidden="true">
-                    <button type="button" class="user-menu-item theme-toggle-btn menu-theme-toggle" role="menuitem"></button>
                     <button type="button" class="user-menu-item" id="settings-menu-item" role="menuitem" data-i18n="navbar_settings">⚙️ Réglages</button>
                     <button type="button" class="user-menu-item" id="change-password-menu-item" role="menuitem" data-i18n="navbar_change_password">🔒 Changer mot de passe</button>
                     <a href="{{ url_for('logout') }}" class="user-menu-item" role="menuitem" data-i18n="navbar_logout">Déconnexion</a>
@@ -82,6 +81,15 @@
                 <div class="settings-language-options" role="group" aria-labelledby="settings-modal-title">
                     <button type="button" class="settings-language-button" data-settings-language="fr" data-i18n-title="language_french">🇫🇷</button>
                     <button type="button" class="settings-language-button" data-settings-language="en" data-i18n-title="language_english">🇬🇧</button>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <h3 data-i18n="settings_theme">Thème</h3>
+                <div class="settings-theme-options" role="group" aria-labelledby="settings-modal-title">
+                    <button type="button" class="settings-theme-button" data-settings-theme="light" data-i18n-title="theme_light">☀️</button>
+                    <button type="button" class="settings-theme-button" data-settings-theme="dark" data-i18n-title="theme_dark">🌙</button>
+                    <button type="button" class="settings-theme-button" data-settings-theme="auto" data-i18n-title="theme_auto">💻</button>
                 </div>
             </div>
         </div>

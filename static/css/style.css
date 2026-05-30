@@ -399,12 +399,18 @@ body {
     margin-bottom: 0.75rem;
 }
 
-.settings-language-options {
+.settings-section + .settings-section {
+    margin-top: 1.5rem;
+}
+
+.settings-language-options,
+.settings-theme-options {
     display: flex;
     gap: 0.75rem;
 }
 
-.settings-language-button {
+.settings-language-button,
+.settings-theme-button {
     display: flex;
     align-items: center;
     justify-content: center;
@@ -418,11 +424,13 @@ body {
     transition: border-color 0.2s, box-shadow 0.2s, transform 0.2s;
 }
 
-.settings-language-button:hover {
+.settings-language-button:hover,
+.settings-theme-button:hover {
     transform: translateY(-1px);
 }
 
-.settings-language-button.active {
+.settings-language-button.active,
+.settings-theme-button.active {
     border-color: var(--secondary-color);
     background: var(--card-bg);
     box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.18);
