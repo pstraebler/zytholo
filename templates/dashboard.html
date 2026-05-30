@@ -166,6 +166,10 @@
                     <label data-i18n="stats_to">jusqu'au</label>
                     <input type="date" id="end-date">
                     <button class="btn-secondary" onclick="updateStats()" data-i18n="update">Mettre à jour</button>
+                    <div class="date-range-shortcuts">
+                        <button class="btn-secondary" id="current-month-shortcut" onclick="setStatsPeriod('current-month')">Mois courant</button>
+                        <button class="btn-secondary" id="current-year-shortcut" onclick="setStatsPeriod('current-year')">Année en cours</button>
+                    </div>
                 </div>
                 
                 <div class="stats-grid">

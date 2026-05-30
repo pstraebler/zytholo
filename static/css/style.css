@@ -702,6 +702,14 @@ body.modal-open {
     margin-top: 0;
 }
 
+.date-range-shortcuts {
+    display: flex;
+    gap: 0.75rem;
+    margin-left: auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
 
 /* STATS GRID */
 .stats-grid {

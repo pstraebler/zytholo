@@ -69,6 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (!passwordChangeRequired) {
         refreshDashboardData();
     }
+    updateStatsShortcutLabels();
     initUserMenu();
     initPasswordModal();
     initSettingsModal();
@@ -76,6 +77,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.addEventListener('languageChanged', function() {
         updateSettingsLanguageSelection();
         updateSettingsThemeSelection();
+        updateStatsShortcutLabels();
         updateNightModeUI();
         if (!passwordChangeRequired) {
             loadStats();
@@ -1304,6 +1306,47 @@ function updateWeeklyChart(weeklyStats) {
 
 function updateStats() {
     loadStats();
+}
+
+function setStatsPeriod(period) {
+    const startDateInput = document.getElementById('start-date');
+    const endDateInput = document.getElementById('end-date');
+    if (!startDateInput || !endDateInput) return;
+
+    const today = new Date();
+    let startDate = null;
+    let endDate = null;
+
+    if (period === 'current-month') {
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    } else if (period === 'current-year') {
+        startDate = new Date(today.getFullYear(), 0, 1);
+        endDate = new Date(today.getFullYear(), 11, 31);
+    }
+
+    if (!startDate || !endDate) return;
+
+    startDateInput.value = formatLocalDate(startDate);
+    endDateInput.value = formatLocalDate(endDate);
+    loadStats();
+}
+
+function updateStatsShortcutLabels() {
+    const monthShortcut = document.getElementById('current-month-shortcut');
+    const yearShortcut = document.getElementById('current-year-shortcut');
+    const today = new Date();
+
+    if (monthShortcut) {
+        monthShortcut.textContent = today.toLocaleDateString(currentLocale(), {
+            month: 'long',
+            year: 'numeric'
+        });
+    }
+
+    if (yearShortcut) {
+        yearShortcut.textContent = String(today.getFullYear());
+    }
 }
 
 function exportData() {
