@@ -18,6 +18,7 @@
 	- change : change password is now mandatory when an user has been imported
 	- change : total timeline is now displayong all days of the selected period
 	- fix : monthly consumption chart did not show all the beers
+	- fix : total timeline cannot display dates later than the current date
 
 ## 2.3.1 - 2026-05-25
 	- fix : Hide other users ranking when no one drank in period

@@ -1151,7 +1151,9 @@ function updateTotalChart(records) {
     const startDateInput = document.getElementById('start-date')?.value;
     const endDateInput = document.getElementById('end-date')?.value;
     const startDate = parseLocalDate(startDateInput || recordDates[0]);
-    const endDate = parseLocalDate(endDateInput || recordDates[recordDates.length - 1]);
+    const requestedEndDate = parseLocalDate(endDateInput || recordDates[recordDates.length - 1]);
+    const today = parseLocalDate(formatLocalDate(new Date()));
+    const endDate = requestedEndDate && requestedEndDate > today ? today : requestedEndDate;
     const dates = [];
 
     if (startDate && endDate && startDate <= endDate) {
