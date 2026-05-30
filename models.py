@@ -27,10 +27,28 @@ class Database:
                 password VARCHAR(255) NOT NULL,
                 is_admin TINYINT(1) DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-                night_mode_until DATETIME DEFAULT NULL
+                night_mode_until DATETIME DEFAULT NULL,
+                force_password_change TINYINT(1) DEFAULT 0
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             '''
         )
+
+        cursor.execute(
+            '''
+            SELECT COUNT(*) AS column_exists
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'users'
+              AND COLUMN_NAME = 'force_password_change'
+            '''
+        )
+        if not cursor.fetchone()['column_exists']:
+            cursor.execute(
+                '''
+                ALTER TABLE users
+                ADD COLUMN force_password_change TINYINT(1) DEFAULT 0
+                '''
+            )
 
         cursor.execute(
             '''
@@ -86,7 +104,7 @@ class Database:
         return result['id'] if result else None
 
     @staticmethod
-    def create_user(username, password):
+    def create_user(username, password, force_password_change=False):
         """Creer un nouvel utilisateur avec UUID aleatoire"""
         if Database.user_exists(username):
             return False, "Un utilisateur avec ce nom existe deja"
@@ -97,8 +115,11 @@ class Database:
         try:
             user_id = str(uuid.uuid4())
             cursor.execute(
-                'INSERT INTO users (id, username, password) VALUES (%s, %s, %s)',
-                (user_id, username, password),
+                '''
+                INSERT INTO users (id, username, password, force_password_change)
+                VALUES (%s, %s, %s, %s)
+                ''',
+                (user_id, username, password, 1 if force_password_change else 0),
             )
             conn.commit()
             conn.close()
@@ -116,6 +137,18 @@ class Database:
         cursor.execute(
             'UPDATE users SET password = %s WHERE username = %s',
             (new_password, username),
+        )
+        conn.commit()
+        conn.close()
+
+    @staticmethod
+    def set_force_password_change(username, required):
+        """Marquer un utilisateur comme devant changer son mot de passe."""
+        conn = Database.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            'UPDATE users SET force_password_change = %s WHERE username = %s',
+            (1 if required else 0, username),
         )
         conn.commit()
         conn.close()

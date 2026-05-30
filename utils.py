@@ -3,6 +3,7 @@ from auth import hash_password
 from datetime import datetime, timedelta, date, time as dt_time
 import csv
 import io
+import secrets
 
 def calculate_stats(user_id, start_date=None, end_date=None):
     """Calculer les statistiques de consommation avec détection de fenêtres de 3h"""
@@ -189,9 +190,9 @@ def import_csv(file_content, user_id=None, all_users=False):
             # Vérifier si utilisateur existe
             if not Database.user_exists(username):
                 # Création automatique
-                temp_password = "changeme123"
+                temp_password = secrets.token_urlsafe(12)
                 password_hash = hash_password(temp_password)
-                success, message = Database.create_user(username, password_hash)
+                success, message = Database.create_user(username, password_hash, force_password_change=True)
 
                 if success:
                     created_users.append({

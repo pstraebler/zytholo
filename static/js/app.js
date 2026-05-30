@@ -29,6 +29,7 @@ let lastClickTime = 0;
 let weeklyChart = null;
 let userMenuOpen = false;
 let passwordModalCloseTimer = null;
+let passwordChangeRequired = false;
 
 function getChartThemeColors() {
     const styles = getComputedStyle(document.documentElement);
@@ -39,6 +40,7 @@ function getChartThemeColors() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    passwordChangeRequired = document.body?.dataset.forcePasswordChange === 'true';
     const today = new Date().toISOString().split('T')[0];
     
     const todayInput = document.getElementById('today-date');
@@ -59,27 +61,37 @@ document.addEventListener('DOMContentLoaded', function() {
         endDateInput.value = today;
     }
     
+    if (!passwordChangeRequired) {
+        refreshDashboardData();
+    }
+    initUserMenu();
+    initPasswordModal();
+
+    document.addEventListener('languageChanged', function() {
+        updateNightModeUI();
+        if (!passwordChangeRequired) {
+            loadStats();
+        }
+    });
+
+    document.addEventListener('themeChanged', function() {
+        if (!passwordChangeRequired) {
+            loadStats();
+        }
+    });
+});
+
+function refreshDashboardData() {
+    loadTodayConsumption();
+    loadNightModeStatus();
     if (typeof Chart !== 'undefined') {
         loadStats();
     } else {
         console.error('Chart.js n\'est pas chargé');
         setTimeout(loadStats, 1000);
     }
-    
-    loadTodayConsumption();
-    loadNightModeStatus();
-    initUserMenu();
-    initPasswordModal();
-
-    document.addEventListener('languageChanged', function() {
-        updateNightModeUI();
-        loadStats();
-    });
-
-    document.addEventListener('themeChanged', function() {
-        loadStats();
-    });
-});
+    refreshRankings();
+}
 
 function initUserMenu() {
     const toggleBtn = document.getElementById('user-menu-toggle');
@@ -126,43 +138,62 @@ function initPasswordModal() {
     });
 
     modal.addEventListener('click', function(event) {
-        if (event.target === modal) {
+        if (!passwordChangeRequired && event.target === modal) {
             closePasswordModal();
         }
     });
 
     document.addEventListener('keydown', function(event) {
-        if (event.key === 'Escape' && modal.classList.contains('open')) {
+        if (!passwordChangeRequired && event.key === 'Escape' && modal.classList.contains('open')) {
             closePasswordModal();
         }
     });
 
     form.addEventListener('submit', submitPasswordForm);
+
+    if (passwordChangeRequired) {
+        openPasswordModal();
+    }
 }
 
 function openPasswordModal() {
     const modal = document.getElementById('password-modal');
+    const dialog = document.querySelector('#password-modal .password-modal-dialog');
+    const currentPasswordInput = document.getElementById('current_password');
     if (!modal) return;
 
     clearPasswordModalCloseTimer();
     setPasswordModalSuccessOnly(false);
     resetPasswordMessages();
     modal.classList.add('open');
+    dialog?.classList.toggle('required', passwordChangeRequired);
     modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('modal-open');
-    document.getElementById('current_password')?.focus();
+
+    if (currentPasswordInput) {
+        currentPasswordInput.required = !passwordChangeRequired;
+        currentPasswordInput.value = '';
+    }
+
+    document.getElementById(passwordChangeRequired ? 'new_password' : 'current_password')?.focus();
 }
 
 function closePasswordModal() {
     const modal = document.getElementById('password-modal');
+    const dialog = document.querySelector('#password-modal .password-modal-dialog');
+    const currentPasswordInput = document.getElementById('current_password');
     const form = document.getElementById('change-password-form');
     if (!modal) return;
 
     clearPasswordModalCloseTimer();
     modal.classList.remove('open');
+    dialog?.classList.remove('required');
     modal.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('modal-open');
     form?.reset();
+    if (currentPasswordInput) {
+        currentPasswordInput.required = true;
+    }
     setPasswordModalSuccessOnly(false);
     resetPasswordMessages();
 }
@@ -223,7 +254,10 @@ function submitPasswordForm(event) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
+            passwordChangeRequired = false;
+            document.body.dataset.forcePasswordChange = 'false';
             form.reset();
+            refreshDashboardData();
             setPasswordModalSuccessOnly(true);
             showPasswordMessage('success', data.message);
             passwordModalCloseTimer = setTimeout(closePasswordModal, 2500);
@@ -255,6 +289,8 @@ function setUserMenuOpen(open) {
 }
 
 function loadNightModeStatus() {
+    if (passwordChangeRequired) return;
+
     fetch('/api/night-mode')
         .then(response => response.json())
         .then(data => {
@@ -433,6 +469,8 @@ function showNightModeDecrementNotification() {
 
 // Charger la consommation du jour entier (tous créneaux)
 function loadTodayConsumption() {
+    if (passwordChangeRequired) return;
+
     const selectedDate = document.getElementById('today-date').value;
     
     console.log('Chargement de la consommation pour:', selectedDate);
@@ -612,6 +650,8 @@ function renderOtherRankings(section, others = [], hasDrinks = true) {
 }
 
 function refreshRankings() {
+    if (passwordChangeRequired) return;
+
     fetch('/api/rankings')
         .then(response => response.json())
         .then(data => {
@@ -705,6 +745,8 @@ style.textContent = `
 document.head.appendChild(style);
 
 function loadStats() {
+    if (passwordChangeRequired) return;
+
     const startDate = document.getElementById('start-date')?.value || '';
     const endDate = document.getElementById('end-date')?.value || '';
     updateTotalTimelineTitle(startDate, endDate);

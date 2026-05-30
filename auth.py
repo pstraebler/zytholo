@@ -1,5 +1,5 @@
 from functools import wraps
-from flask import session, redirect, url_for
+from flask import session, redirect, url_for, request, jsonify
 from flask_bcrypt import Bcrypt
 
 bcrypt = Bcrypt()
@@ -33,6 +33,12 @@ def login_required(f):
         if not verify_user_exists(session['user_id']):
             session.clear()
             return redirect(url_for('login'))
+
+        allowed_endpoints = {'dashboard', 'change_password', 'logout', 'static'}
+        if session.get('force_password_change') and request.endpoint not in allowed_endpoints:
+            if request.path.startswith('/api/'):
+                return jsonify({'success': False, 'message': 'Password change required'}), 403
+            return redirect(url_for('dashboard'))
 
         return f(*args, **kwargs)
     return decorated_function

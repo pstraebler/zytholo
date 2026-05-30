@@ -9,6 +9,9 @@
 	- add : navigation menu
 	- add : dark mode
 	- change : migrate from SQLite to MySQL
+	- change : change password is now a pop up
+	- change : temporary password for imported use
+	- change : change password is now mandatory when an user has been imported
 
 ## 2.3.1 - 2026-05-25
 	- fix : Hide other users ranking when no one drank in period

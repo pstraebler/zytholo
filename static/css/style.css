@@ -341,6 +341,27 @@ body {
     line-height: 1.2;
 }
 
+.password-modal-required-message {
+    display: none;
+    margin-bottom: 1rem;
+    color: var(--warning-color);
+    font-weight: 600;
+}
+
+.password-modal-dialog.required .password-modal-required-message {
+    display: block;
+}
+
+.password-modal-dialog.required .password-modal-close,
+.password-modal-dialog.required #password-modal-cancel,
+.password-modal-dialog.required #current-password-group {
+    display: none;
+}
+
+.password-modal-dialog.required .password-modal-actions {
+    grid-template-columns: 1fr;
+}
+
 .password-modal-close {
     width: 2.25rem;
     height: 2.25rem;

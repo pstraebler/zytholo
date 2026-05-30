@@ -9,7 +9,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
-<body data-i18n-title="page_dashboard_title">
+<body data-i18n-title="page_dashboard_title" data-force-password-change="{{ 'true' if force_password_change else 'false' }}">
     <div class="navbar">
     <div class="navbar-content">
         <h2>🍺 BeerTracker - {{ username }}</h2>
@@ -39,6 +39,7 @@
                 <h2 id="password-modal-title" data-i18n="change_password_title">🔒 Changer le mot de passe</h2>
                 <button type="button" class="password-modal-close" id="password-modal-close" aria-label="Fermer">×</button>
             </div>
+            <p class="password-modal-required-message" data-i18n="password_change_required_message">Vous devez changer votre mot de passe temporaire avant de continuer.</p>
 
             <div class="error" id="password-modal-error" style="display:none;"></div>
             <div class="success-message" id="password-modal-success" style="display:none;"></div>
@@ -46,7 +47,7 @@
             <form method="POST" action="{{ url_for('change_password') }}" id="change-password-form">
                 <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
-                <div class="form-group">
+                <div class="form-group" id="current-password-group">
                     <label for="current_password" data-i18n="current_password">Mot de passe actuel</label>
                     <input type="password" id="current_password" name="current_password" required autocomplete="current-password">
                 </div>

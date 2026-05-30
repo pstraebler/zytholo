@@ -159,7 +159,7 @@ def login():
             conn = Database.get_connection()
             cursor = conn.cursor()
             cursor.execute(
-                'SELECT id, password, is_admin FROM users WHERE username = %s',
+                'SELECT id, password, is_admin, force_password_change FROM users WHERE username = %s',
                 (username,)
             )
             user = cursor.fetchone()
@@ -171,6 +171,7 @@ def login():
                 session['user_id'] = user['id']
                 session['username'] = username
                 session['is_admin'] = bool(user['is_admin'])
+                session['force_password_change'] = bool(user.get('force_password_change')) or password == "changeme123"
                 session.permanent = True
                 return redirect(url_for('index'))
 
@@ -234,7 +235,8 @@ def dashboard():
         ranking_week_start=week_start.isoformat(),
         ranking_week_end=week_end.isoformat(),
         ranking_month=current_month,
-        ranking_year=current_year
+        ranking_year=current_year,
+        force_password_change=session.get('force_password_change', False)
     )
 
 @app.route('/api/consumption', methods=['GET', 'POST'])
@@ -501,12 +503,13 @@ def change_password():
         return redirect(url_for('admin'))
     
     if request.method == 'POST':
+        password_change_required = bool(session.get('force_password_change'))
         current_password = request.form.get('current_password', '').strip()
         new_password = request.form.get('new_password', '').strip()
         confirm_password = request.form.get('confirm_password', '').strip()
         
         # Validation
-        if not current_password or not new_password or not confirm_password:
+        if (not password_change_required and not current_password) or not new_password or not confirm_password:
             return password_response(False, t("password_all_fields_required"), 400)
         
         if new_password != confirm_password:
@@ -515,20 +518,23 @@ def change_password():
         if len(new_password) < 6:
             return password_response(False, t("password_too_short"), 400)
         
-        # Vérifier le mot de passe actuel
         username = session['username']
-        conn = Database.get_connection()
-        cursor = conn.cursor()
-        cursor.execute("SELECT password FROM users WHERE username = %s", (username,))
-        user = cursor.fetchone()
-        conn.close()
-        
-        if not user or not verify_password(current_password, user['password']):
-            return password_response(False, t("password_current_incorrect"), 400)
+        if not password_change_required:
+            # Vérifier le mot de passe actuel
+            conn = Database.get_connection()
+            cursor = conn.cursor()
+            cursor.execute("SELECT password FROM users WHERE username = %s", (username,))
+            user = cursor.fetchone()
+            conn.close()
+
+            if not user or not verify_password(current_password, user['password']):
+                return password_response(False, t("password_current_incorrect"), 400)
         
         # Changer le mot de passe
         password_hash = hash_password(new_password)
         Database.update_user_password(username, password_hash)
+        Database.set_force_password_change(username, False)
+        session['force_password_change'] = False
         
         app.logger.info(f"Password changed successfully for user {username}")
         return password_response(True, t("password_changed_success"))
