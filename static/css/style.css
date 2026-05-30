@@ -436,6 +436,43 @@ body {
     box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.18);
 }
 
+.settings-number-field {
+    display: grid;
+    gap: 0.5rem;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.settings-number-input {
+    display: flex;
+    align-items: center;
+    width: min(100%, 180px);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--input-bg);
+    overflow: hidden;
+}
+
+.settings-number-input input {
+    width: 100%;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text-color);
+    padding: 0.75rem;
+    font-size: 1rem;
+}
+
+.settings-number-input input:focus {
+    outline: none;
+}
+
+.settings-number-input span {
+    padding: 0 0.75rem;
+    color: var(--text-color);
+    font-weight: 700;
+}
+
 .password-modal-dialog.success-only .password-modal-header,
 .password-modal-dialog.success-only form,
 .password-modal-dialog.success-only .error {

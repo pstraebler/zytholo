@@ -10,6 +10,7 @@
 	- add : dark mode
 	- add : settings menu
 	- add : dahsboard can now be exported in a png file
+	- add : average price of a beer can be set in the settings menu
 	- change : migrate from SQLite to MySQL
 	- change : change password is now a pop up
 	- change : temporary password for imported use

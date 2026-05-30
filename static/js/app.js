@@ -30,6 +30,11 @@ let weeklyChart = null;
 let userMenuOpen = false;
 let passwordModalCloseTimer = null;
 let passwordChangeRequired = false;
+let lastStatsData = null;
+
+const averageBeerPriceStorageKey = 'beertracker_average_beer_price';
+const defaultAverageBeerPrice = 6;
+const averageBeerVolumeLiters = 0.5;
 
 function getChartThemeColors() {
     const styles = getComputedStyle(document.documentElement);
@@ -203,8 +208,25 @@ function initSettingsModal() {
         });
     });
 
+    const averageBeerPriceInput = document.getElementById('average-beer-price');
+    if (averageBeerPriceInput) {
+        updateAverageBeerPriceInput();
+        averageBeerPriceInput.addEventListener('input', function() {
+            const price = parseFloat(averageBeerPriceInput.value.replace(',', '.'));
+            if (!Number.isFinite(price) || price < 0) {
+                return;
+            }
+
+            setAverageBeerPrice(price);
+            if (lastStatsData) {
+                updateEstimatedCost(lastStatsData.total_liters);
+            }
+        });
+    }
+
     updateSettingsLanguageSelection();
     updateSettingsThemeSelection();
+    updateAverageBeerPriceInput();
 }
 
 function openSettingsModal() {
@@ -212,6 +234,7 @@ function openSettingsModal() {
     if (!modal) return;
 
     updateSettingsLanguageSelection();
+    updateAverageBeerPriceInput();
     modal.classList.add('open');
     modal.setAttribute('aria-hidden', 'false');
     document.body.classList.add('modal-open');
@@ -247,6 +270,29 @@ function updateSettingsThemeSelection() {
         button.classList.toggle('active', active);
         button.setAttribute('aria-pressed', active ? 'true' : 'false');
     });
+}
+
+function getAverageBeerPrice() {
+    const storedPrice = parseFloat(localStorage.getItem(averageBeerPriceStorageKey));
+    if (Number.isFinite(storedPrice) && storedPrice >= 0) {
+        return storedPrice;
+    }
+    return defaultAverageBeerPrice;
+}
+
+function setAverageBeerPrice(price) {
+    localStorage.setItem(averageBeerPriceStorageKey, price.toString());
+}
+
+function formatPriceInputValue(price) {
+    return Number(price).toFixed(2);
+}
+
+function updateAverageBeerPriceInput() {
+    const input = document.getElementById('average-beer-price');
+    if (input && document.activeElement !== input) {
+        input.value = formatPriceInputValue(getAverageBeerPrice());
+    }
 }
 
 function openPasswordModal() {
@@ -899,22 +945,18 @@ function formatTime(timeString) {
 }
 
 function updateStatsDisplay(data) {
+    lastStatsData = data;
     const totalPintsEl = document.getElementById('total-pints');
     const totalHalfEl = document.getElementById('total-half');
     const total33El = document.getElementById('total-33');
     const totalLitersEl = document.getElementById('total-liters');
-    const totalCostEl = document.getElementById('total-cost');
     
     if (totalPintsEl) totalPintsEl.innerText = data.total_pints;
     if (totalHalfEl) totalHalfEl.innerText = data.total_half_pints;
     if (total33El) total33El.innerText = data.total_33cl;
     if (totalLitersEl) totalLitersEl.innerText = data.total_liters;
     
-    if (totalCostEl) {
-        const costPerLiter = 12;
-        const totalCost = (data.total_liters * costPerLiter).toFixed(2);
-        totalCostEl.innerText = totalCost;
-    }
+    updateEstimatedCost(data.total_liters);
     
     const warningsContainer = document.getElementById('warnings-container');
     const warningsList = document.getElementById('warnings-list');
@@ -981,6 +1023,15 @@ function updateStatsDisplay(data) {
             warningsContainer.style.display = 'none';
         }
     }
+}
+
+function updateEstimatedCost(totalLiters) {
+    const totalCostEl = document.getElementById('total-cost');
+    if (!totalCostEl) return;
+
+    const averageBeerPrice = getAverageBeerPrice();
+    const totalCost = ((Number(totalLiters) || 0) / averageBeerVolumeLiters * averageBeerPrice).toFixed(2);
+    totalCostEl.innerText = totalCost;
 }
 
 function updateCharts(data) {
