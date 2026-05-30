@@ -106,7 +106,10 @@ def calculate_stats(user_id, start_date=None, end_date=None):
     if is_third_day_or_more:
         day_indexes = []
         for day_str in sorted(drinking_days):
-            day_obj = datetime.strptime(day_str, '%Y-%m-%d')
+            if isinstance(day_str, date):
+                day_obj = datetime.combine(day_str, dt_time.min)
+            else:
+                day_obj = datetime.strptime(day_str, '%Y-%m-%d')
             day_indexes.append(day_obj.weekday())
         
         # Nombre de jours de consommation
@@ -354,7 +357,7 @@ def check_weekly_drinking_days(user_id, current_date):
     conn = Database.get_connection()
     cursor = conn.cursor()
     cursor.execute("""
-        SELECT DISTINCT date 
+        SELECT DISTINCT DATE_FORMAT(date, '%%Y-%%m-%%d') AS date
         FROM consumption 
         WHERE user_id = %s 
         AND date >= %s 
