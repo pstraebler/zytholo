@@ -2,7 +2,7 @@
 
 ## 3.0 - 2026-
 
-⚠️ **Breaking change** :  We are migrating from SQLite to MySQL. You must export the data to CSV before updating, and reimport it after updating; otherwise, all consumptions data will be lost.
+⚠️ **Breaking change** :  We are migrating from SQLite to MySQL. You must export the data to CSV before updating, and reimport it after updating; otherwise, **all consumptions data will be lost**.
 
 🌙 (Auto) dark mode is now available !
 
