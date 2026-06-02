@@ -141,13 +141,13 @@
                             <label for="today-date" data-i18n="date">Date</label>
                             <input type="date" id="today-date">
                         </div>
-                        <button id="night-mode-btn" class="btn-primary" onclick="toggleNightMode()" style="background-color: #3498db; width: auto; padding: 0.75rem 1.5rem;">
+                        <button id="night-mode-btn" class="btn-primary night-mode-button" onclick="toggleNightMode()">
                             🌙 Activer Mode Soirée
                         </button>
                     </div>
                 
                 <div class="beer-selector">
-                    <div class="beer-type">
+                    <div class="beer-type beer-type-pint">
                         <label data-i18n="beer_pints">Pintes (50cl)</label>
                         <div class="quantity-control">
                             <button class="btn-minus" onclick="changeBeer('pints', -1)">−</button>
@@ -156,7 +156,7 @@
                         </div>
                     </div>
                     
-                    <div class="beer-type">
+                    <div class="beer-type beer-type-half">
                         <label data-i18n="beer_halves">Demis (25cl)</label>
                         <div class="quantity-control">
                             <button class="btn-minus" onclick="changeBeer('half_pints', -1)">−</button>
@@ -165,7 +165,7 @@
                         </div>
                     </div>
                     
-                    <div class="beer-type">
+                    <div class="beer-type beer-type-33">
                         <label>33cl</label>
                         <div class="quantity-control">
                             <button class="btn-minus" onclick="changeBeer('liters_33', -1)">−</button>
@@ -209,7 +209,7 @@
                         <div class="stat-label">33cl</div>
                         <div class="stat-value" id="total-33">0</div>
                     </div>
-                    <div class="stat-box" style="background: linear-gradient(135deg, #e74c3c, #c0392b);">
+                    <div class="stat-box stat-box-cost">
                         <div class="stat-label" data-i18n="estimated_cost">Coût estimé</div>
                         <div class="stat-value"><span id="total-cost">0</span>€</div>
                     </div>

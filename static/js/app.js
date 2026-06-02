@@ -632,13 +632,11 @@ function updateNightModeUI() {
     if (nightModeBtn) {
         if (nightModeEnabled) {
             nightModeBtn.textContent = t('night_mode_active');
-            nightModeBtn.style.backgroundColor = '#e74c3c';
-            nightModeBtn.style.color = 'white';
+            nightModeBtn.classList.add('active');
             nightModeBtn.disabled = true;
         } else {
             nightModeBtn.textContent = t('night_mode_activate');
-            nightModeBtn.style.backgroundColor = '#3498db';
-            nightModeBtn.style.color = 'white';
+            nightModeBtn.classList.remove('active');
             nightModeBtn.disabled = false;
         }
     }
