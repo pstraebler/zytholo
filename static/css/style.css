@@ -19,6 +19,12 @@
     --card-bg: #ffffff;
     --card-border-color: rgba(44, 62, 80, 0.12);
     --card-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 10px 24px rgba(15, 23, 42, 0.06);
+    --gold-color: #c99722;
+    --gold-soft-color: #fff6d7;
+    --silver-color: #7f8c99;
+    --silver-soft-color: #eef2f5;
+    --bronze-color: #b36a2e;
+    --bronze-soft-color: #f8eadf;
     --muted-surface: #f8f9fa;
     --input-bg: #ffffff;
     --chart-grid-color: rgba(44, 62, 80, 0.15);
@@ -39,6 +45,12 @@
     --card-bg: #111c2e;
     --card-border-color: rgba(229, 237, 248, 0.1);
     --card-shadow: 0 1px 2px rgba(0, 0, 0, 0.28), 0 14px 30px rgba(0, 0, 0, 0.22);
+    --gold-color: #e0b84c;
+    --gold-soft-color: #2c2618;
+    --silver-color: #b3bfca;
+    --silver-soft-color: #242f3c;
+    --bronze-color: #d18a4d;
+    --bronze-soft-color: #2d2119;
     --muted-surface: #17263c;
     --input-bg: #0f1a2b;
     --chart-grid-color: rgba(229, 237, 248, 0.18);
@@ -1003,22 +1015,36 @@ body.exporting-dashboard .export-section {
 /* RANKING TABLE */
 .ranking-table {
     width: 100%;
-    border-collapse: collapse;
+    border-collapse: separate;
+    border-spacing: 0;
     margin-top: 1rem;
+    overflow: hidden;
+    border: 1px solid var(--card-border-color);
+    border-radius: 8px;
 }
 
 
 .ranking-table thead {
-    background-color: var(--primary-color);
-    color: white;
+    background-color: var(--muted-surface);
+    color: var(--text-color);
 }
 
 
 .ranking-table th,
 .ranking-table td {
-    padding: 1rem;
+    padding: 0.85rem 1rem;
     text-align: left;
     border-bottom: 1px solid var(--border-color);
+}
+
+.ranking-table th {
+    font-size: 0.85rem;
+    font-weight: 700;
+    opacity: 0.72;
+}
+
+.ranking-table tr:last-child td {
+    border-bottom: 0;
 }
 
 
@@ -1036,55 +1062,76 @@ body.exporting-dashboard .export-section {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
     gap: 1rem;
-    margin-top: 1rem;
+    margin-top: 1.25rem;
 }
 
 .trophy-card {
-    border-radius: 10px;
+    --medal-color: var(--secondary-color);
+    --medal-soft-color: var(--muted-surface);
+    border-radius: 8px;
     padding: 1.25rem;
     text-align: center;
-    border: 2px solid var(--border-color);
+    border: 1px solid var(--card-border-color);
+    border-top: 4px solid var(--medal-color);
     background: var(--muted-surface);
+    box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
 }
 
 .trophy-card.trophy-1 {
-    border-color: #d4af37;
-    background: linear-gradient(145deg, #fff7d1, #f4e39a);
+    --medal-color: var(--gold-color);
+    --medal-soft-color: var(--gold-soft-color);
 }
 
 .trophy-card.trophy-2 {
-    border-color: #b7c2cc;
-    background: linear-gradient(145deg, #f6f8fa, #e3e8ec);
+    --medal-color: var(--silver-color);
+    --medal-soft-color: var(--silver-soft-color);
 }
 
 .trophy-card.trophy-3 {
-    border-color: #cd7f32;
-    background: linear-gradient(145deg, #f8e0c9, #e6be95);
+    --medal-color: var(--bronze-color);
+    --medal-soft-color: var(--bronze-soft-color);
 }
 
 .trophy-icon {
-    font-size: 2rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 3.25rem;
+    height: 3.25rem;
+    margin-bottom: 0.75rem;
+    border-radius: 50%;
+    background: var(--medal-soft-color);
+    color: var(--medal-color);
+    font-size: 1.8rem;
     line-height: 1;
-    margin-bottom: 0.5rem;
 }
 
 .trophy-rank {
     font-weight: 700;
-    font-size: 1rem;
-    margin-bottom: 0.25rem;
-    color: var(--text-color);
+    font-size: 0.82rem;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.45rem;
+    color: var(--medal-color);
+    text-transform: uppercase;
 }
 
 .trophy-user {
     font-weight: 700;
     color: var(--text-color);
-    margin-bottom: 0.4rem;
+    margin-bottom: 0.35rem;
 }
 
 .trophy-liters {
-    font-size: 1.1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.45rem;
+    padding: 0.3rem 0.65rem;
+    border-radius: 999px;
+    background: var(--medal-soft-color);
+    color: var(--medal-color);
+    font-size: 1rem;
     font-weight: 700;
-    color: var(--text-color);
 }
 
 .ranking-empty-message {
@@ -1202,18 +1249,6 @@ body.exporting-dashboard .export-section {
 
 :root[data-theme="dark"] p[style*="color: #e67e22"] {
     color: #f0c27c !important;
-}
-
-:root[data-theme="dark"] .trophy-card.trophy-1 {
-    background: linear-gradient(145deg, #5f5325, #3f3717);
-}
-
-:root[data-theme="dark"] .trophy-card.trophy-2 {
-    background: linear-gradient(145deg, #44505c, #2e3845);
-}
-
-:root[data-theme="dark"] .trophy-card.trophy-3 {
-    background: linear-gradient(145deg, #6f4b2a, #493019);
 }
 
 /* RESPONSIVE */
