@@ -48,6 +48,28 @@ function getChartThemeColors() {
     };
 }
 
+function getCssColor(name, fallback) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback;
+}
+
+function colorWithAlpha(color, alpha) {
+    if (color.startsWith('#')) {
+        const hex = color.slice(1);
+        const fullHex = hex.length === 3
+            ? hex.split('').map(char => char + char).join('')
+            : hex;
+        const value = parseInt(fullHex, 16);
+        if (Number.isFinite(value)) {
+            const red = (value >> 16) & 255;
+            const green = (value >> 8) & 255;
+            const blue = value & 255;
+            return `rgba(${red}, ${green}, ${blue}, ${alpha})`;
+        }
+    }
+
+    return color;
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     passwordChangeRequired = document.body?.dataset.forcePasswordChange === 'true';
     const today = new Date().toISOString().split('T')[0];
@@ -1169,6 +1191,9 @@ function updateCharts(data) {
 
 function updateMonthlyChart(monthlyStats) {
     const chartTheme = getChartThemeColors();
+    const pintColor = getCssColor('--success-color', '#27ae60');
+    const halfColor = getCssColor('--warning-color', '#f39c12');
+    const thirtyThreeColor = getCssColor('--stat-purple-color', '#8e44ad');
     const ctx = document.getElementById('monthlyChart');
     if (!ctx) {
         console.warn('Element monthlyChart non trouvé');
@@ -1195,53 +1220,87 @@ function updateMonthlyChart(monthlyStats) {
                 {
                     label: t('pints'),
                     data: pintData,
-                    backgroundColor: '#3498db',
-                    borderColor: '#2980b9',
-                    borderWidth: 1
+                    backgroundColor: colorWithAlpha(pintColor, 0.74),
+                    borderColor: pintColor,
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    maxBarThickness: 34
                 },
                 {
                     label: t('halves'),
                     data: halfData,
-                    backgroundColor: '#e74c3c',
-                    borderColor: '#c0392b',
-                    borderWidth: 1
+                    backgroundColor: colorWithAlpha(halfColor, 0.74),
+                    borderColor: halfColor,
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    maxBarThickness: 34
                 },
                 {
                     label: '33cl',
                     data: thirtyThreeData,
-                    backgroundColor: '#f39c12',
-                    borderColor: '#e67e22',
-                    borderWidth: 1
+                    backgroundColor: colorWithAlpha(thirtyThreeColor, 0.74),
+                    borderColor: thirtyThreeColor,
+                    borderWidth: 1,
+                    borderRadius: 6,
+                    borderSkipped: false,
+                    maxBarThickness: 34
                 }
             ]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             plugins: {
                 legend: {
                     position: 'top',
                     labels: {
-                        color: chartTheme.textColor
+                        color: chartTheme.textColor,
+                        usePointStyle: true,
+                        pointStyle: 'rectRounded',
+                        boxWidth: 10,
+                        boxHeight: 10,
+                        padding: 16
+                    }
+                },
+                tooltip: {
+                    backgroundColor: colorWithAlpha(chartTheme.textColor, 0.92),
+                    titleColor: getCssColor('--card-bg', '#ffffff'),
+                    bodyColor: getCssColor('--card-bg', '#ffffff'),
+                    displayColors: true,
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.dataset.label}: ${context.parsed.y}`;
+                        }
                     }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
+                    border: {
+                        display: false
+                    },
                     grid: {
                         color: chartTheme.gridColor
                     },
                     ticks: {
                         stepSize: 1,
-                        color: chartTheme.textColor
+                        color: chartTheme.textColor,
+                        padding: 8
                     }
                 },
                 x: {
                     grid: {
-                        color: chartTheme.gridColor
+                        display: false
                     },
                     ticks: {
-                        color: chartTheme.textColor
+                        color: chartTheme.textColor,
+                        maxRotation: 0,
+                        padding: 8
                     }
                 }
             }
@@ -1251,6 +1310,7 @@ function updateMonthlyChart(monthlyStats) {
 
 function updateTotalChart(records) {
     const chartTheme = getChartThemeColors();
+    const totalColor = getCssColor('--success-color', '#27ae60');
     const ctx = document.getElementById('totalChart');
     if (!ctx) {
         console.warn('Element totalChart not found');
@@ -1308,40 +1368,77 @@ function updateTotalChart(records) {
                 {
                     label: t('chart_cumulative_label'),
                     data: data,
-                    borderColor: '#27ae60',
-                    backgroundColor: 'rgba(39, 174, 96, 0.1)',
-                    borderWidth: 2,
+                    borderColor: totalColor,
+                    backgroundColor: colorWithAlpha(totalColor, 0.12),
+                    borderWidth: 2.5,
                     fill: true,
-                    tension: 0
+                    tension: 0,
+                    pointRadius: 0,
+                    pointHoverRadius: 5,
+                    pointHitRadius: 12,
+                    pointBackgroundColor: getCssColor('--card-bg', '#ffffff'),
+                    pointBorderColor: totalColor,
+                    pointBorderWidth: 2
                 }
             ]
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
             plugins: {
                 legend: {
                     position: 'top',
                     labels: {
-                        color: chartTheme.textColor
+                        color: chartTheme.textColor,
+                        usePointStyle: true,
+                        pointStyle: 'line',
+                        padding: 16
+                    }
+                },
+                tooltip: {
+                    backgroundColor: colorWithAlpha(chartTheme.textColor, 0.92),
+                    titleColor: getCssColor('--card-bg', '#ffffff'),
+                    bodyColor: getCssColor('--card-bg', '#ffffff'),
+                    padding: 12,
+                    cornerRadius: 8,
+                    callbacks: {
+                        label: function(context) {
+                            return `${context.parsed.y} ${t('chart_unit_liters')}`;
+                        }
                     }
                 }
             },
             scales: {
                 y: {
                     beginAtZero: true,
+                    border: {
+                        display: false
+                    },
                     grid: {
                         color: chartTheme.gridColor
                     },
                     ticks: {
-                        color: chartTheme.textColor
+                        color: chartTheme.textColor,
+                        padding: 8,
+                        callback: function(value) {
+                            return value + ' ' + t('chart_unit_liters');
+                        }
                     }
                 },
                 x: {
                     grid: {
-                        color: chartTheme.gridColor
+                        display: false
                     },
                     ticks: {
-                        color: chartTheme.textColor
+                        color: chartTheme.textColor,
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 8,
+                        padding: 8
                     }
                 }
             }
@@ -1351,6 +1448,7 @@ function updateTotalChart(records) {
 
 function updateWeeklyChart(weeklyStats) {
     const chartTheme = getChartThemeColors();
+    const weeklyColor = getCssColor('--secondary-color', '#3498db');
     const ctx = document.getElementById('weeklyChart');
     if (!ctx) {
         console.warn('Element weeklyChart not found');
@@ -1376,10 +1474,12 @@ function updateWeeklyChart(weeklyStats) {
             datasets: [{
                 label: t('chart_weekly_dataset'),
                 data: litersData,
-                backgroundColor: '#3498db',
-                borderColor: '#2980b9',
-                borderWidth: 2,
-                borderRadius: 5
+                backgroundColor: colorWithAlpha(weeklyColor, 0.74),
+                borderColor: weeklyColor,
+                borderWidth: 1,
+                borderRadius: 8,
+                borderSkipped: false,
+                maxBarThickness: 46
             }]
         },
         options: {
@@ -1390,14 +1490,14 @@ function updateWeeklyChart(weeklyStats) {
                     display: false
                 },
                 title: {
-                    display: true,
-                    text: t('chart_weekly_title'),
-                    font: {
-                        size: 16
-                    },
-                    color: chartTheme.textColor
+                    display: false
                 },
                 tooltip: {
+                    backgroundColor: colorWithAlpha(chartTheme.textColor, 0.92),
+                    titleColor: getCssColor('--card-bg', '#ffffff'),
+                    bodyColor: getCssColor('--card-bg', '#ffffff'),
+                    padding: 12,
+                    cornerRadius: 8,
                     callbacks: {
                         label: function(context) {
                             return context.parsed.y + ' ' + t('chart_unit_liters');
@@ -1408,11 +1508,15 @@ function updateWeeklyChart(weeklyStats) {
             scales: {
                 y: {
                     beginAtZero: true,
+                    border: {
+                        display: false
+                    },
                     grid: {
                         color: chartTheme.gridColor
                     },
                     ticks: {
                         color: chartTheme.textColor,
+                        padding: 8,
                         callback: function(value) {
                             return value + ' ' + t('chart_unit_liters');
                         }
@@ -1420,10 +1524,11 @@ function updateWeeklyChart(weeklyStats) {
                 },
                 x: {
                     grid: {
-                        color: chartTheme.gridColor
+                        display: false
                     },
                     ticks: {
-                        color: chartTheme.textColor
+                        color: chartTheme.textColor,
+                        padding: 8
                     }
                 }
             }
