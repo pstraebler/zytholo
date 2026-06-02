@@ -677,9 +677,11 @@ body.modal-open {
 .beer-type label {
     display: block;
     margin-bottom: 0.9rem;
-    font-weight: 700;
+    font-size: 1.05rem;
+    font-weight: 800;
     color: var(--text-color);
-    opacity: 0.78;
+    opacity: 0.9;
+    text-align: center;
 }
 
 
