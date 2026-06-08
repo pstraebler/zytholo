@@ -293,6 +293,7 @@ def api_consumption():
         'total_half_pints': stats['total_half_pints'],
         'total_33cl': stats['total_33cl'],
         'total_liters': stats['total_liters'],
+        'best_evening': stats['best_evening'],
         'warnings': stats['warnings'], 
         'settings': user_settings,
         'monthly_stats': stats['monthly_stats'],

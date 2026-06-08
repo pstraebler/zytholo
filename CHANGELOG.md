@@ -17,6 +17,7 @@
 	- add : new setting : average price of a beer 
 	- add : new setting : alert threshold
 	- add : new setting: consumption days alert threshold
+	- add : record-breaking evening
 	- change : the dashboard theme has been updated
 	- change : migrate from SQLite to MySQL
 	- change : change password is now a pop up

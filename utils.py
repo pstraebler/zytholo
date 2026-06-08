@@ -5,6 +5,76 @@ import csv
 import io
 import secrets
 
+EVENING_ROLLOVER_HOUR = 6
+
+
+def get_evening_reference(record, rollover_hour=EVENING_ROLLOVER_HOUR):
+    """Rattacher un enregistrement à une soirée pouvant déborder après minuit."""
+    record_date = datetime.strptime(record['date'], '%Y-%m-%d').date()
+    record_time = datetime.strptime(record['time'], '%H:%M:%S').time()
+
+    evening_date = record_date
+    if record_time.hour < rollover_hour:
+        evening_date -= timedelta(days=1)
+
+    chronological_datetime = datetime.combine(record_date, record_time)
+    return evening_date, chronological_datetime
+
+
+def calculate_record_evening(records):
+    """Calculer la soirée la plus consommée sur les enregistrements fournis."""
+    if not records:
+        return None
+
+    evenings = {}
+
+    for record in records:
+        evening_date, chronological_datetime = get_evening_reference(record)
+        evening_key = evening_date.isoformat()
+        pints = record['pints'] or 0
+        half_pints = record['half_pints'] or 0
+        liters_33 = record['liters_33'] or 0
+        liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
+
+        if evening_key not in evenings:
+            evenings[evening_key] = {
+                'date': evening_key,
+                'total_pints': 0,
+                'total_half_pints': 0,
+                'total_33cl': 0,
+                'total_liters': 0,
+                'entry_count': 0,
+                'first_time': record['time'],
+                'last_time': record['time'],
+                'first_datetime': chronological_datetime,
+                'last_datetime': chronological_datetime
+            }
+
+        evening = evenings[evening_key]
+        evening['total_pints'] += pints
+        evening['total_half_pints'] += half_pints
+        evening['total_33cl'] += liters_33
+        evening['total_liters'] += liters
+        evening['entry_count'] += 1
+
+        if chronological_datetime < evening['first_datetime']:
+            evening['first_datetime'] = chronological_datetime
+            evening['first_time'] = record['time']
+
+        if chronological_datetime > evening['last_datetime']:
+            evening['last_datetime'] = chronological_datetime
+            evening['last_time'] = record['time']
+
+    best_evening = max(
+        evenings.values(),
+        key=lambda evening: (evening['total_liters'], evening['date'])
+    )
+
+    best_evening.pop('first_datetime', None)
+    best_evening.pop('last_datetime', None)
+    best_evening['total_liters'] = round(best_evening['total_liters'], 2)
+    return best_evening
+
 def calculate_stats(
     user_id,
     start_date=None,
@@ -146,7 +216,8 @@ def calculate_stats(
         'total_liters': round(total_liters, 2),
         'warnings': three_hour_warnings,
         'monthly_stats': monthly_stats,
-        'all_records': records
+        'all_records': records,
+        'best_evening': calculate_record_evening(records)
     }
 
 def export_csv(user_id=None, all_users=False):

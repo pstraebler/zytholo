@@ -1049,6 +1049,12 @@ function formatSelectedDate(dateValue) {
     return date.toLocaleDateString(currentLocale());
 }
 
+function formatRecordTimeRange(startTime, endTime) {
+    if (!startTime || !endTime) return '';
+    if (startTime === endTime) return formatTime(startTime);
+    return `${formatTime(startTime)} → ${formatTime(endTime)}`;
+}
+
 function parseLocalDate(dateValue) {
     if (!dateValue) return null;
     const parts = dateValue.split('-').map(Number);
@@ -1099,6 +1105,7 @@ function updateStatsDisplay(data) {
     if (totalLitersEl) totalLitersEl.innerText = data.total_liters;
     
     updateEstimatedCost(data.total_liters);
+    updateBestEveningDisplay(data.best_evening);
     
     const warningsContainer = document.getElementById('warnings-container');
     const warningsList = document.getElementById('warnings-list');
@@ -1168,6 +1175,40 @@ function updateStatsDisplay(data) {
             warningsContainer.style.display = 'none';
         }
     }
+}
+
+function updateBestEveningDisplay(bestEvening) {
+    const valueEl = document.getElementById('best-evening-value');
+    const dateEl = document.getElementById('best-evening-date');
+    const detailsEl = document.getElementById('best-evening-details');
+
+    if (!valueEl || !dateEl || !detailsEl) return;
+
+    if (!bestEvening) {
+        valueEl.innerText = '-';
+        dateEl.innerText = t('stats_best_evening_empty');
+        detailsEl.innerHTML = '';
+        return;
+    }
+
+    valueEl.innerText = `${bestEvening.total_liters}L`;
+    dateEl.innerText = t('stats_best_evening_on_date', {
+        date: formatSelectedDate(bestEvening.date)
+    });
+
+    const details = [
+        `<span class="stat-record-chip">🍺 ${bestEvening.total_pints} ${t('pints')}</span>`,
+        `<span class="stat-record-chip">🍻 ${bestEvening.total_half_pints} ${t('halves')}</span>`,
+        `<span class="stat-record-chip">🥤 ${bestEvening.total_33cl} × 33cl</span>`
+    ];
+
+    if (bestEvening.first_time && bestEvening.last_time) {
+        details.push(
+            `<span class="stat-record-chip">🕒 ${formatRecordTimeRange(bestEvening.first_time, bestEvening.last_time)}</span>`
+        );
+    }
+
+    detailsEl.innerHTML = details.join('');
 }
 
 function updateEstimatedCost(totalLiters) {

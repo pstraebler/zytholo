@@ -844,6 +844,12 @@ body.modal-open {
     border-left-color: var(--danger-color);
 }
 
+.stat-box-record {
+    grid-column: 1 / -1;
+    border-left-color: var(--gold-color);
+    background: linear-gradient(135deg, var(--gold-soft-color), var(--muted-surface));
+}
+
 
 .stat-label {
     font-size: 0.9rem;
@@ -875,6 +881,33 @@ body.modal-open {
 
 .stat-box-cost .stat-value {
     color: var(--danger-color);
+}
+
+.stat-box-record .stat-value {
+    color: var(--gold-color);
+    font-size: 1.7rem;
+}
+
+.stat-record-date {
+    margin-top: 0.35rem;
+    font-weight: 700;
+    color: var(--text-color);
+}
+
+.stat-record-details {
+    margin-top: 0.55rem;
+    color: var(--text-color);
+    opacity: 0.82;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.9rem;
+}
+
+.stat-record-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-weight: 600;
 }
 
 
