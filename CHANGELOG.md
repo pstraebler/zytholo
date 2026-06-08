@@ -28,6 +28,7 @@
 	- fix : total timeline cannot display dates later than the current date
 	- fix : total timeline cannot display dates before the first consumption
 	- fix : fix bug in 3 days consumption when removing a beer
+	- fic : login page on safari
 
 ## 2.3.1 - 2026-05-25
 	- fix : Hide other users ranking when no one drank in period
