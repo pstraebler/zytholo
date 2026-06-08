@@ -133,7 +133,7 @@
             </div>
         </div>
 
-        <div class="top-section">
+        <section class="dashboard-section">
             <div class="card">
                 <h3 data-i18n="add_consumption">Ajouter une consommation</h3>
                      <div class="date-section">
@@ -175,9 +175,9 @@
                     </div>
                 </div>
             </div>
-        </div>
+        </section>
         
-        <div class="stats-section">
+        <section class="dashboard-section">
             <div class="card">
                 <h3 data-i18n="stats_title">Statistiques</h3>
                 <div class="date-range">
@@ -221,31 +221,33 @@
                     </div>
                 </div>
             </div>
-        </div>
-
-        <div class="card">
-            <h3 id="total-timeline-title" data-i18n="total_timeline">Timeline totale</h3>
-            <div style="position: relative; height: 300px;">
-                <canvas id="totalChart"></canvas>
+            <div class="card">
+                <h3 id="total-timeline-title" data-i18n="total_timeline">Timeline totale</h3>
+                <div style="position: relative; height: 300px;">
+                    <canvas id="totalChart"></canvas>
+                </div>
             </div>
-        </div>
+        </section>
         
-        <div class="charts-section">
-            <div class="card">
-                <h3 data-i18n="monthly_consumption">Consommation par mois</h3>
-                <div style="position: relative; height: 300px;">
-                    <canvas id="monthlyChart"></canvas>
+        <section class="dashboard-section">
+            <div class="charts-section">
+                <div class="card">
+                    <h3 data-i18n="monthly_consumption">Consommation par mois</h3>
+                    <div style="position: relative; height: 300px;">
+                        <canvas id="monthlyChart"></canvas>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3 data-i18n="last_four_weeks_consumption">📊 Consommation sur les 4 dernières semaines</h3>
+                    <div style="position: relative; height: 300px;">
+                        <canvas id="weeklyChart"></canvas>
+                    </div>
                 </div>
             </div>
-            
-            <div class="card">
-                <h3 data-i18n="last_four_weeks_consumption">📊 Consommation sur les 4 dernières semaines</h3>
-                <div style="position: relative; height: 300px;">
-                    <canvas id="weeklyChart"></canvas>
-                </div>
-            </div>
-        </div>
+        </section>
 
+<section class="dashboard-section">
 <div class="card" id="weekly-ranking-card" {% if not show_weekly_ranking %}style="display:none;"{% endif %}>
     <h3 data-i18n-with-week-range="ranking_week_title" data-week-start="{{ ranking_week_start }}" data-week-end="{{ ranking_week_end }}">Classement des plus gros buveurs de la semaine</h3>
     <div class="trophy-podium" id="weekly-ranking-podium">
@@ -410,14 +412,15 @@
         {% endif %}
     </div>
 </div>
+        </section>
         
-        <div class="export-section">
+        <section class="dashboard-section export-section">
             <div class="card">
                 <h3 data-i18n="export_data_title">Exporter vos données</h3>
                 <button class="btn-secondary" onclick="exportData()" data-i18n="export_csv">Télécharger en CSV</button>
                 <button class="btn-secondary" onclick="exportDashboardPng()" data-i18n="export_png">Exporter le dashboard en PNG</button>
             </div>
-        </div>
+        </section>
     </div>
     
     <script src="{{ url_for('static', filename='js/theme.js') }}"></script>

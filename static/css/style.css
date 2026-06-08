@@ -204,6 +204,34 @@ body {
     padding: 0 1rem;
 }
 
+.dashboard-section {
+    margin-bottom: 2.5rem;
+    position: relative;
+}
+
+.dashboard-section + .dashboard-section {
+    padding-top: 2.25rem;
+}
+
+.dashboard-section + .dashboard-section::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: min(180px, 40%);
+    height: 1px;
+    background: linear-gradient(
+        90deg,
+        transparent 0%,
+        var(--border-color) 20%,
+        var(--secondary-color) 50%,
+        var(--border-color) 80%,
+        transparent 100%
+    );
+    opacity: 0.9;
+}
+
 
 .card {
     background: var(--card-bg);
