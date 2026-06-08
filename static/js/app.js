@@ -1076,9 +1076,15 @@ function updateTotalTimelineTitle(startDate, endDate) {
     if (!title) return;
 
     if (startDate && endDate) {
+        const parsedEndDate = parseLocalDate(endDate);
+        const today = parseLocalDate(formatLocalDate(new Date()));
+        const boundedEndDate = parsedEndDate && today && parsedEndDate > today
+            ? formatLocalDate(today)
+            : endDate;
+
         title.textContent = t('total_timeline_with_period', {
             start: formatSelectedDate(startDate),
-            end: formatSelectedDate(endDate)
+            end: formatSelectedDate(boundedEndDate)
         });
         return;
     }
