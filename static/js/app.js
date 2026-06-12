@@ -1045,8 +1045,7 @@ document.head.appendChild(style);
 function loadStats() {
     if (passwordChangeRequired) return;
 
-    const startDate = document.getElementById('start-date')?.value || '';
-    const endDate = document.getElementById('end-date')?.value || '';
+    const { startDate, endDate } = clampStatsDateInputs();
     updateTotalTimelineTitle(startDate, endDate);
     
     const url = `/api/consumption?start_date=${startDate}&end_date=${endDate}`;
@@ -1089,6 +1088,32 @@ function formatLocalDate(dateValue) {
     const month = String(dateValue.getMonth() + 1).padStart(2, '0');
     const day = String(dateValue.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
+}
+
+function getTodayLocalDateString() {
+    return formatLocalDate(new Date());
+}
+
+function clampStatsDateInputs() {
+    const startDateInput = document.getElementById('start-date');
+    const endDateInput = document.getElementById('end-date');
+    if (!startDateInput || !endDateInput) return { startDate: '', endDate: '' };
+
+    const today = getTodayLocalDateString();
+    let startDate = startDateInput.value || '';
+    let endDate = endDateInput.value || '';
+
+    if (endDate && endDate > today) {
+        endDate = today;
+        endDateInput.value = endDate;
+    }
+
+    if (startDate && endDate && startDate > endDate) {
+        startDate = endDate;
+        startDateInput.value = startDate;
+    }
+
+    return { startDate, endDate };
 }
 
 function updateTotalTimelineTitle(startDate, endDate) {
@@ -1690,15 +1715,16 @@ function setStatsPeriod(period) {
     if (!startDateInput || !endDateInput) return;
 
     const today = new Date();
+    const todayDate = parseLocalDate(getTodayLocalDateString());
     let startDate = null;
     let endDate = null;
 
     if (period === 'current-month') {
         startDate = new Date(today.getFullYear(), today.getMonth(), 1);
-        endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        endDate = todayDate;
     } else if (period === 'current-year') {
         startDate = new Date(today.getFullYear(), 0, 1);
-        endDate = new Date(today.getFullYear(), 11, 31);
+        endDate = todayDate;
     }
 
     if (!startDate || !endDate) return;
