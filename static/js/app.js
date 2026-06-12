@@ -15,6 +15,65 @@ function currentLocale() {
     return 'en-US';
 }
 
+function parseDateInputValue(value) {
+    const [year, month, day] = (value || '').split('-').map(Number);
+    if (!year || !month || !day) {
+        return null;
+    }
+    return new Date(year, month - 1, day);
+}
+
+function formatDateInputValue(dateValue) {
+    const year = dateValue.getFullYear();
+    const month = String(dateValue.getMonth() + 1).padStart(2, '0');
+    const day = String(dateValue.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
+
+function getLogicalCurrentDate() {
+    const now = new Date();
+    const logicalDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    if (now.getHours() < 7) {
+        logicalDate.setDate(logicalDate.getDate() - 1);
+    }
+    return logicalDate;
+}
+
+function getStorageDateForSelectedDay(selectedDateValue, timeValue) {
+    const selectedDate = parseDateInputValue(selectedDateValue);
+    if (!selectedDate) {
+        return selectedDateValue;
+    }
+
+    if ((timeValue || '00:00:00') < '07:00:00') {
+        selectedDate.setDate(selectedDate.getDate() + 1);
+    }
+
+    return formatDateInputValue(selectedDate);
+}
+
+function formatDayHistoryDate(dateValue) {
+    const parsedDate = parseDateInputValue(dateValue);
+    if (!parsedDate) {
+        return '';
+    }
+    return new Intl.DateTimeFormat(currentLocale(), {
+        day: '2-digit',
+        month: '2-digit'
+    }).format(parsedDate);
+}
+
+function formatDayHistoryTime(timeValue) {
+    return (timeValue || '').slice(0, 5);
+}
+
+function formatDayHistoryLiters(value) {
+    return new Intl.NumberFormat(currentLocale(), {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2
+    }).format(value || 0);
+}
+
 let currentBeer = {
     pints: 0,
     half_pints: 0,
@@ -73,14 +132,15 @@ function colorWithAlpha(color, alpha) {
 
 document.addEventListener('DOMContentLoaded', function() {
     passwordChangeRequired = document.body?.dataset.forcePasswordChange === 'true';
-    const today = new Date().toISOString().split('T')[0];
+    const today = formatDateInputValue(new Date());
+    const logicalToday = formatDateInputValue(getLogicalCurrentDate());
     
     const todayInput = document.getElementById('today-date');
     const startDateInput = document.getElementById('start-date');
     const endDateInput = document.getElementById('end-date');
     
     if (todayInput) {
-        todayInput.value = today;
+        todayInput.value = logicalToday;
         todayInput.addEventListener('change', function() {
             loadTodayConsumption();
         });
@@ -773,32 +833,70 @@ function loadTodayConsumption() {
     
     console.log('Chargement de la consommation pour:', selectedDate);
     
-    fetch(`/api/consumption?start_date=${selectedDate}&end_date=${selectedDate}`)
+    fetch(`/api/day-history?date=${selectedDate}`)
         .then(response => response.json())
         .then(data => {
             currentBeer = {
-                pints: 0,
-                half_pints: 0,
-                liters_33: 0
+                pints: data.total_pints || 0,
+                half_pints: data.total_half_pints || 0,
+                liters_33: data.total_33cl || 0
             };
-            
-            // Agréger TOUS les enregistrements du jour (tous les créneaux)
-            if (data.records && data.records.length > 0) {
-                data.records.forEach(record => {
-                    currentBeer.pints += record.pints || 0;
-                    currentBeer.half_pints += record.half_pints || 0;
-                    currentBeer.liters_33 += record.liters_33 || 0;
-                });
-                console.log('Consommation totale du jour:', currentBeer);
-            }
+
+            console.log('Consommation totale du jour logique:', currentBeer);
             
             document.getElementById('pints-count').innerText = currentBeer.pints;
             document.getElementById('half_pints-count').innerText = currentBeer.half_pints;
             document.getElementById('liters_33-count').innerText = currentBeer.liters_33;
+            renderDayHistory(data);
         })
         .catch(error => {
             console.error('Error while loading:', error);
         });
+}
+
+function renderDayHistory(data) {
+    const listElement = document.getElementById('day-history-list');
+    const totalElement = document.getElementById('day-history-total');
+
+    if (!listElement || !totalElement) {
+        return;
+    }
+
+    totalElement.textContent = `${formatDayHistoryLiters(data.total_liters)} L`;
+
+    if (!data.records || data.records.length === 0) {
+        listElement.innerHTML = `<p class="day-history-empty">${t('day_history_empty')}</p>`;
+        return;
+    }
+
+    listElement.innerHTML = data.records.map(record => {
+        const quantityBadges = [];
+
+        if (record.pints) {
+            quantityBadges.push(`<span class="day-history-badge">🍺 ${record.pints}</span>`);
+        }
+        if (record.half_pints) {
+            quantityBadges.push(`<span class="day-history-badge">🍻 ${record.half_pints}</span>`);
+        }
+        if (record.liters_33) {
+            quantityBadges.push(`<span class="day-history-badge">🥤 ${record.liters_33}</span>`);
+        }
+
+        const nextDayLabel = record.logical_day_offset === 1
+            ? `<span class="day-history-offset">${t('day_history_next_day')}</span>`
+            : '';
+
+        return `
+            <div class="day-history-item">
+                <div class="day-history-item-main">
+                    <span class="day-history-time">${formatDayHistoryTime(record.time)}</span>
+                    ${nextDayLabel}
+                    <div class="day-history-badges">${quantityBadges.join('')}</div>
+                </div>
+                <span class="day-history-liters">${formatDayHistoryLiters(record.total_liters)} L</span>
+            </div>
+        `;
+    }).join('');
 }
 
 // Enregistrer automatiquement avec heure actuelle
@@ -810,9 +908,10 @@ function saveBeerAutomatic(type, value) {
     const date = document.getElementById('today-date').value;
     const now = new Date();
     const time = now.toTimeString().slice(0, 8); // HH:MM:SS
+    const storageDate = getStorageDateForSelectedDay(date, time);
     
     const payload = {
-        date: date,
+        date: storageDate,
         time: time,
         pints: type === 'pints' ? value : 0,
         half_pints: type === 'half_pints' ? value : 0,
@@ -830,6 +929,7 @@ function saveBeerAutomatic(type, value) {
     .then(response => response.json())
     .then(data => {
         showSaveNotification(type, value);
+        loadTodayConsumption();
         loadStats();
         refreshRankings();
         savingInProgress = false;

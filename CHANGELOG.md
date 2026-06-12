@@ -21,6 +21,7 @@
 	- add : new setting: consumption days alert threshold
 	- add : record-breaking evening
 	- add : timeline can show all users consumption
+	- add : consumption of the day
 	- change : the dashboard theme has been updated
 	- change : migrate from SQLite to MySQL
 	- change : change password is now a pop up

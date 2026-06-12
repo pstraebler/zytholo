@@ -92,6 +92,59 @@ def current_week_range():
     return week_start, week_end
 
 
+def get_day_window_records(user_id, selected_date):
+    """Retourne les consommations de la journée logique 07:00 -> 06:59."""
+    next_date = selected_date + timedelta(days=1)
+    records = Database.get_consumption(
+        user_id,
+        selected_date.isoformat(),
+        next_date.isoformat()
+    )
+
+    filtered_records = []
+    total_pints = 0
+    total_half_pints = 0
+    total_33cl = 0
+
+    for record in records:
+        record_date = record['date']
+        record_time = record['time'] or '00:00:00'
+
+        belongs_to_day_window = (
+            (record_date == selected_date.isoformat() and record_time >= '07:00:00')
+            or (record_date == next_date.isoformat() and record_time < '07:00:00')
+        )
+        if not belongs_to_day_window:
+            continue
+
+        pints = record['pints'] or 0
+        half_pints = record['half_pints'] or 0
+        liters_33 = record['liters_33'] or 0
+        total_liters = round((pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33), 2)
+
+        total_pints += pints
+        total_half_pints += half_pints
+        total_33cl += liters_33
+
+        filtered_records.append({
+            **dict(record),
+            'logical_day_offset': 0 if record_date == selected_date.isoformat() else 1,
+            'total_liters': total_liters
+        })
+
+    filtered_records.sort(key=lambda record: (record['date'], record['time']))
+
+    return {
+        'records': filtered_records,
+        'total_pints': total_pints,
+        'total_half_pints': total_half_pints,
+        'total_33cl': total_33cl,
+        'total_liters': round((total_pints * 0.5) + (total_half_pints * 0.25) + (total_33cl * 0.33), 2),
+        'window_start': f'{selected_date.isoformat()} 07:00:00',
+        'window_end': f'{next_date.isoformat()} 06:59:59'
+    }
+
+
 @app.context_processor
 def inject_language():
     return {"lang": get_request_language()}
@@ -309,6 +362,26 @@ def api_consumption():
         'all_user_records': [dict(record) for record in all_user_records],
         'records': [dict(record) for record in stats['all_records']],
         'weekly_stats': weekly_stats  # AJOUTER CETTE LIGNE
+    })
+
+
+@app.route('/api/day-history', methods=['GET'])
+@login_required
+def api_day_history():
+    user_id = session['user_id']
+    selected_date_raw = request.args.get('date', date.today().isoformat())
+
+    try:
+        selected_date = datetime.strptime(selected_date_raw, '%Y-%m-%d').date()
+    except ValueError:
+        return jsonify({'success': False, 'message': 'Invalid date'}), 400
+
+    day_window = get_day_window_records(user_id, selected_date)
+
+    return jsonify({
+        'success': True,
+        'selected_date': selected_date.isoformat(),
+        **day_window
     })
 
 @app.route('/api/settings', methods=['GET', 'POST'])
