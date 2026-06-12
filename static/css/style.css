@@ -978,6 +978,64 @@ body.modal-open {
     margin-bottom: 2rem;
 }
 
+.timeline-mode-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    color: var(--text-color);
+    font-size: 0.95rem;
+    flex-wrap: wrap;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 50px;
+    height: 28px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    inset: 0;
+    cursor: pointer;
+    background-color: rgba(148, 163, 184, 0.55);
+    transition: 0.2s ease;
+    border-radius: 999px;
+}
+
+.slider:before {
+    content: "";
+    position: absolute;
+    height: 20px;
+    width: 20px;
+    left: 4px;
+    top: 4px;
+    background-color: white;
+    transition: 0.2s ease;
+    border-radius: 50%;
+    box-shadow: 0 1px 4px rgba(15, 23, 42, 0.25);
+}
+
+.switch input:checked + .slider {
+    background-color: var(--success-color);
+}
+
+.switch input:focus + .slider {
+    box-shadow: 0 0 0 3px rgba(39, 174, 96, 0.18);
+}
+
+.switch input:checked + .slider:before {
+    transform: translateX(22px);
+}
+
 
 .card canvas {
     display: block;
@@ -1360,6 +1418,10 @@ body.exporting-dashboard .export-section {
     
     .charts-section {
         grid-template-columns: 1fr;
+    }
+
+    .timeline-mode-toggle {
+        justify-content: center;
     }
     
     .navbar-content {

@@ -223,6 +223,14 @@
             </div>
             <div class="card">
                 <h3 id="total-timeline-title" data-i18n="total_timeline">Timeline totale</h3>
+                <div class="timeline-mode-toggle">
+                    <span id="timeline-mode-personal-label" data-i18n="timeline_mode_personal">Ma consommation</span>
+                    <label class="switch" for="timeline-mode-toggle">
+                        <input type="checkbox" id="timeline-mode-toggle" aria-labelledby="timeline-mode-personal-label timeline-mode-all-label">
+                        <span class="slider"></span>
+                    </label>
+                    <span id="timeline-mode-all-label" data-i18n="timeline_mode_all_users">Tous les utilisateurs</span>
+                </div>
                 <div style="position: relative; height: 300px;">
                     <canvas id="totalChart"></canvas>
                 </div>

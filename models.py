@@ -287,6 +287,44 @@ class Database:
         return records
 
     @staticmethod
+    def get_consumption_for_all_users(start_date=None, end_date=None):
+        """Obtenir la consommation de tous les utilisateurs non-admin."""
+        conn = Database.get_connection()
+        cursor = conn.cursor()
+
+        query = '''
+            SELECT
+                consumption.id,
+                consumption.user_id,
+                users.username,
+                DATE_FORMAT(consumption.date, '%%Y-%%m-%%d') AS date,
+                TIME_FORMAT(consumption.time, '%%H:%%i:%%s') AS time,
+                consumption.pints,
+                consumption.half_pints,
+                consumption.liters_33
+            FROM consumption
+            INNER JOIN users ON users.id = consumption.user_id
+            WHERE users.is_admin = 0
+        '''
+        params = []
+
+        if start_date:
+            query += ' AND consumption.date >= %s'
+            params.append(start_date)
+
+        if end_date:
+            query += ' AND consumption.date <= %s'
+            params.append(end_date)
+
+        query += ' ORDER BY users.username ASC, consumption.date DESC, consumption.time DESC'
+
+        cursor.execute(query, params)
+        records = cursor.fetchall()
+        conn.close()
+
+        return records
+
+    @staticmethod
     def delete_user(user_id):
         """Supprimer un utilisateur et ses donnees"""
         conn = Database.get_connection()

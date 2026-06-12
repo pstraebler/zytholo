@@ -8,6 +8,8 @@
 
 ⚙️ The app now has a menu that lets you adjust settings !
 
+📈Compare your beer consumption with that of other drinkers !
+
 	- add : navigation menu
 	- add : dark mode
 	- add : settings menu
@@ -18,6 +20,7 @@
 	- add : new setting : alert threshold
 	- add : new setting: consumption days alert threshold
 	- add : record-breaking evening
+	- add : timeline can show all users consumption
 	- change : the dashboard theme has been updated
 	- change : migrate from SQLite to MySQL
 	- change : change password is now a pop up

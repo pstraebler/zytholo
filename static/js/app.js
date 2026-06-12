@@ -31,6 +31,7 @@ let userMenuOpen = false;
 let passwordModalCloseTimer = null;
 let passwordChangeRequired = false;
 let lastStatsData = null;
+let showAllUsersTimeline = false;
 
 const averageBeerPriceStorageKey = 'beertracker_average_beer_price';
 const defaultAverageBeerPrice = 6;
@@ -99,6 +100,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initUserMenu();
     initPasswordModal();
     initSettingsModal();
+    initTimelineModeToggle();
 
     document.addEventListener('languageChanged', function() {
         updateSettingsLanguageSelection();
@@ -270,6 +272,24 @@ function initSettingsModal() {
     updateSettingsThemeSelection();
     updateAverageBeerPriceInput();
     loadSettings();
+}
+
+function initTimelineModeToggle() {
+    const toggle = document.getElementById('timeline-mode-toggle');
+    if (!toggle) return;
+
+    toggle.checked = showAllUsersTimeline;
+    toggle.addEventListener('change', function() {
+        showAllUsersTimeline = toggle.checked;
+        if (lastStatsData) {
+            updateTotalChart(
+                lastStatsData.records || [],
+                lastStatsData.all_user_records || [],
+                lastStatsData.all_users || [],
+                lastStatsData.current_username || ''
+            );
+        }
+    });
 }
 
 function openSettingsModal() {
@@ -1232,7 +1252,12 @@ function updateCharts(data) {
         return;
     }
     updateMonthlyChart(data.monthly_chart_stats || data.monthly_stats);
-    updateTotalChart(data.records);
+    updateTotalChart(
+        data.records,
+        data.all_user_records || [],
+        data.all_users || [],
+        data.current_username || ''
+    );
     updateWeeklyChart(data.weekly_stats); 
 }
 
@@ -1355,27 +1380,37 @@ function updateMonthlyChart(monthlyStats) {
     });
 }
 
-function updateTotalChart(records) {
-    const chartTheme = getChartThemeColors();
-    const totalColor = getCssColor('--success-color', '#27ae60');
-    const ctx = document.getElementById('totalChart');
-    if (!ctx) {
-        console.warn('Element totalChart not found');
-        return;
-    }
+function getTimelinePalette() {
+    return [
+        getCssColor('--success-color', '#27ae60'),
+        getCssColor('--warning-color', '#f39c12'),
+        getCssColor('--stat-purple-color', '#8e44ad'),
+        '#3498db',
+        '#e74c3c',
+        '#16a085',
+        '#d35400',
+        '#2ecc71'
+    ];
+}
 
-    // Agréger les litres par jour (un point = un jour)
+function buildCumulativeSeries(records, dates) {
     const dailyLitersMap = {};
-    records.forEach(r => {
-        const key = r.date;
-        const liters = (r.pints * 0.5) + (r.half_pints * 0.25) + (r.liters_33 * 0.33);
-        if (!dailyLitersMap[key]) {
-            dailyLitersMap[key] = 0;
-        }
-        dailyLitersMap[key] += liters;
+    records.forEach(record => {
+        const key = record.date;
+        const liters = ((record.pints || 0) * 0.5) + ((record.half_pints || 0) * 0.25) + ((record.liters_33 || 0) * 0.33);
+        dailyLitersMap[key] = (dailyLitersMap[key] || 0) + liters;
     });
 
-    const recordDates = Object.keys(dailyLitersMap).sort((a, b) => new Date(a) - new Date(b));
+    let cumulativeLiters = 0;
+    return dates.map(dateValue => {
+        cumulativeLiters += dailyLitersMap[dateValue] || 0;
+        return parseFloat(cumulativeLiters.toFixed(2));
+    });
+}
+
+function getTimelineDates(personalRecords, allUserRecords) {
+    const referenceRecords = showAllUsersTimeline ? allUserRecords : personalRecords;
+    const recordDates = [...new Set(referenceRecords.map(record => record.date))].sort((a, b) => new Date(a) - new Date(b));
     const startDateInput = document.getElementById('start-date')?.value;
     const endDateInput = document.getElementById('end-date')?.value;
     const requestedStartDate = parseLocalDate(startDateInput || recordDates[0]);
@@ -1396,25 +1431,28 @@ function updateTotalChart(records) {
         }
     }
 
-    let cumulativeLiters = 0;
-    const labels = dates.map(d => parseLocalDate(d).toLocaleDateString(currentLocale()));
-    const data = dates.map(d => {
-        cumulativeLiters += dailyLitersMap[d] || 0;
-        return parseFloat(cumulativeLiters.toFixed(2));
-    });
-    
-    if (totalChart) {
-        totalChart.destroy();
+    return dates;
+}
+
+function buildTimelineDatasets(records, allUserRecords, allUsers, currentUsername) {
+    const dates = getTimelineDates(records, allUserRecords);
+    if (!dates.length) {
+        return {
+            labels: [],
+            datasets: []
+        };
     }
-    
-    totalChart = new Chart(ctx, {
-        type: 'line',
-        data: {
-            labels: labels,
+
+    const labels = dates.map(dateValue => parseLocalDate(dateValue).toLocaleDateString(currentLocale()));
+
+    if (!showAllUsersTimeline) {
+        const totalColor = getCssColor('--success-color', '#27ae60');
+        return {
+            labels,
             datasets: [
                 {
                     label: t('chart_cumulative_label'),
-                    data: data,
+                    data: buildCumulativeSeries(records, dates),
                     borderColor: totalColor,
                     backgroundColor: colorWithAlpha(totalColor, 0.12),
                     borderWidth: 2.5,
@@ -1428,6 +1466,65 @@ function updateTotalChart(records) {
                     pointBorderWidth: 2
                 }
             ]
+        };
+    }
+
+    const palette = getTimelinePalette();
+    const recordsByUser = new Map();
+    (allUsers || []).forEach(user => {
+        recordsByUser.set(user.username, []);
+    });
+    allUserRecords.forEach(record => {
+        if (!recordsByUser.has(record.username)) {
+            recordsByUser.set(record.username, []);
+        }
+        recordsByUser.get(record.username).push(record);
+    });
+
+    const sortedUsers = Array.from(recordsByUser.keys()).sort((left, right) => {
+        if (left === currentUsername) return -1;
+        if (right === currentUsername) return 1;
+        return left.localeCompare(right, currentLocale());
+    });
+
+    const datasets = sortedUsers.map((username, index) => {
+        const color = palette[index % palette.length];
+        const isCurrentUser = username === currentUsername;
+        return {
+            label: username,
+            data: buildCumulativeSeries(recordsByUser.get(username) || [], dates),
+            borderColor: color,
+            backgroundColor: colorWithAlpha(color, isCurrentUser ? 0.14 : 0.08),
+            borderWidth: isCurrentUser ? 3 : 2,
+            fill: false,
+            tension: 0,
+            pointRadius: 0,
+            pointHoverRadius: 4,
+            pointHitRadius: 12
+        };
+    });
+
+    return { labels, datasets };
+}
+
+function updateTotalChart(records, allUserRecords = [], allUsers = [], currentUsername = '') {
+    const chartTheme = getChartThemeColors();
+    const ctx = document.getElementById('totalChart');
+    if (!ctx) {
+        console.warn('Element totalChart not found');
+        return;
+    }
+    const timelineData = buildTimelineDatasets(records, allUserRecords, allUsers, currentUsername);
+    
+    if (totalChart) {
+        totalChart.destroy();
+    }
+    
+    totalChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: timelineData.labels,
+            datasets: timelineData.datasets
         },
         options: {
             responsive: true,
@@ -1454,7 +1551,7 @@ function updateTotalChart(records) {
                     cornerRadius: 8,
                     callbacks: {
                         label: function(context) {
-                            return `${context.parsed.y} ${t('chart_unit_liters')}`;
+                            return `${context.dataset.label}: ${context.parsed.y} ${t('chart_unit_liters')}`;
                         }
                     }
                 }

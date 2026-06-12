@@ -243,6 +243,7 @@ def dashboard():
 @login_required
 def api_consumption():
     user_id = session['user_id']
+    username = session['username']
     
     if request.method == 'POST':
         data = request.get_json()
@@ -287,6 +288,8 @@ def api_consumption():
             {'pints': 0, 'half_pints': 0, '33cl': 0}
         )
     weekly_stats = calculate_weekly_stats(user_id)  # AJOUTER CETTE LIGNE
+    all_users = Database.get_all_users()
+    all_user_records = Database.get_consumption_for_all_users(start_date, end_date)
     
     return jsonify({
         'total_pints': stats['total_pints'],
@@ -298,6 +301,12 @@ def api_consumption():
         'settings': user_settings,
         'monthly_stats': stats['monthly_stats'],
         'monthly_chart_stats': monthly_chart_stats,
+        'current_username': username,
+        'all_users': [
+            {'id': user['id'], 'username': user['username']}
+            for user in all_users
+        ],
+        'all_user_records': [dict(record) for record in all_user_records],
         'records': [dict(record) for record in stats['all_records']],
         'weekly_stats': weekly_stats  # AJOUTER CETTE LIGNE
     })
