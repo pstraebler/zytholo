@@ -1303,20 +1303,11 @@ function updateStatsDisplay(data) {
                         : (warning.message || '');
                     warningDiv.innerHTML = `<strong style="font-size: 1.1rem;">${weeklyMessage}</strong>`;
                 } else {
-                    // Avertissement 3h (existant)
-                    const items = warning.items.map(item => 
-                        `<li style="margin-left: 2rem">${item.time}: ${item.liters}L</li>`
-                    ).join('');
-                    
                     warningDiv.innerHTML = `
                         <strong>${t('alert_three_hour_title', {
-                            time: formatTime(warning.start_time),
                             threshold: Number(warning.threshold_liters || threeHourThresholdLiters).toFixed(2)
                         })}</strong><br>
-                        ${t('alert_total')}: <strong>${warning.total_liters}L</strong><br>
-                        <ul style="margin-top: 0.5rem; margin-bottom: 0;">
-                            ${items}
-                        </ul>
+                        ${t('alert_total')}: <strong>${warning.total_liters}L</strong>
                     `;
                 }
                 
