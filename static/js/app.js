@@ -1284,11 +1284,13 @@ function updateStatsDisplay(data) {
             allWarnings.forEach(warning => {
                 const warningDiv = document.createElement('div');
                 warningDiv.style.cssText = `
-                    background-color: white;
+                    background-color: var(--card-bg);
+                    color: var(--text-color);
                     padding: 1rem;
                     margin-bottom: 1rem;
                     border-left: 4px solid #f39c12;
                     border-radius: 4px;
+                    border: 1px solid var(--card-border-color);
                 `;
                 
                 if (warning.type === 'weekly') {
