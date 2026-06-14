@@ -172,6 +172,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initUserMenu();
     initPasswordModal();
     initSettingsModal();
+    initNightModeModal();
     initTimelineModeToggle();
 
     document.addEventListener('languageChanged', function() {
@@ -381,6 +382,37 @@ function initSettingsModal() {
     updateSettingsThemeSelection();
     updateAverageBeerPriceInput();
     loadSettings();
+}
+
+function initNightModeModal() {
+    const modal = document.getElementById('night-mode-modal');
+    const closeBtn = document.getElementById('night-mode-modal-close');
+    const cancelBtn = document.getElementById('night-mode-modal-cancel');
+    const activateBtn = document.getElementById('night-mode-modal-activate');
+
+    if (!modal) return;
+
+    [closeBtn, cancelBtn].forEach(function(button) {
+        if (button) {
+            button.addEventListener('click', closeNightModeConfirmModal);
+        }
+    });
+
+    if (activateBtn) {
+        activateBtn.addEventListener('click', activateNightMode);
+    }
+
+    modal.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            closeNightModeConfirmModal();
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && modal.classList.contains('open')) {
+            closeNightModeConfirmModal();
+        }
+    });
 }
 
 function initTimelineModeToggle() {
@@ -709,48 +741,28 @@ function loadNightModeStatus() {
         .catch(error => console.error('Error:', error));
 }
 
+function closeNightModeConfirmModal() {
+    const modal = document.getElementById('night-mode-modal');
+    if (!modal) return;
+
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('modal-open');
+}
+
+function openNightModeConfirmModal() {
+    const modal = document.getElementById('night-mode-modal');
+    if (!modal) return;
+
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('modal-open');
+    document.getElementById('night-mode-modal-activate')?.focus();
+}
+
 function toggleNightMode() {
     if (!nightModeEnabled) {
-        // Demander confirmation pour activer
-        const confirmDiv = document.createElement('div');
-        confirmDiv.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 10000;
-        `;
-        
-        confirmDiv.innerHTML = `
-            <div style="background: white; padding: 2rem; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.3); max-width: 400px;">
-                <h2 style="margin-bottom: 1rem; color: #2c3e50;">${t('night_mode_modal_title')}</h2>
-                <p style="margin-bottom: 1rem; color: #475569;">
-                    ${t('night_mode_modal_intro')}
-                </p>
-                <ul style="margin-bottom: 1.5rem; margin-left: 1.5rem; color: #475569;">
-                    <li>${t('night_mode_modal_item_1')}</li>
-                    <li>${t('night_mode_modal_item_2')}</li>
-                </ul>
-                <p style="margin-bottom: 1.5rem; color: #f39c12; font-weight: bold;">
-                    ${t('night_mode_modal_warning')}
-                </p>
-                <div style="display: flex; gap: 1rem;">
-                    <button onclick="this.parentElement.parentElement.parentElement.remove()" style="flex: 1; padding: 0.75rem; background-color: #bdc3c7; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
-                        ${t('cancel')}
-                    </button>
-                    <button onclick="activateNightMode()" style="flex: 1; padding: 0.75rem; background-color: #e74c3c; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: 600;">
-                        ${t('activate')}
-                    </button>
-                </div>
-            </div>
-        `;
-        
-        document.body.appendChild(confirmDiv);
+        openNightModeConfirmModal();
     }
 }
 
@@ -767,7 +779,7 @@ function activateNightMode() {
     .then(data => {
         nightModeEnabled = true;
         updateNightModeUI();
-        document.querySelector('div[style*="rgba(0, 0, 0, 0.7)"]')?.remove();
+        closeNightModeConfirmModal();
         showNightModeNotification();
     })
     .catch(error => {

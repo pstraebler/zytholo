@@ -128,6 +128,31 @@
         </div>
     </div>
 
+    <div class="password-modal-backdrop" id="night-mode-modal" aria-hidden="true">
+        <div class="password-modal-dialog settings-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="night-mode-modal-title">
+            <div class="password-modal-header">
+                <h2 id="night-mode-modal-title" data-i18n="night_mode_modal_title">🌙 Activer le Mode Soirée ?</h2>
+                <button type="button" class="password-modal-close" id="night-mode-modal-close" aria-label="Fermer">×</button>
+            </div>
+
+            <p style="margin-bottom: 1rem; color: #475569;" data-i18n="night_mode_modal_intro">
+                Le mode soirée vous empêchera de :
+            </p>
+            <ul style="margin-bottom: 1.5rem; margin-left: 1.5rem; color: #475569;">
+                <li data-i18n="night_mode_modal_item_1">Décrémenter le nombre de bières</li>
+                <li data-i18n="night_mode_modal_item_2">Modifier la date</li>
+            </ul>
+            <p style="margin-bottom: 1.5rem; color: #f39c12; font-weight: bold;" data-i18n="night_mode_modal_warning">
+                ⏰ Le mode se désactivera automatiquement demain à 7h.
+            </p>
+
+            <div class="password-modal-actions">
+                <button type="button" class="btn-secondary" id="night-mode-modal-cancel" data-i18n="cancel">Annuler</button>
+                <button type="button" class="btn-primary" id="night-mode-modal-activate" data-i18n="activate">Activer</button>
+            </div>
+        </div>
+    </div>
+
     <div class="container" id="dashboard-content">
         <div class="warnings-section" id="warnings-container" style="display:none;">
             <div class="card warning">
