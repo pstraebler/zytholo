@@ -17,5 +17,5 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_PASSWORD }}
-          repository: pierrestraebler/beertracker
-          short-description: "BeerTracker - https://github.com/pstraebler/beertracker"
+          repository: pierrestraebler/zytholo
+          short-description: "Zytholo - https://github.com/pstraebler/zytholo"
