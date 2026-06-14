@@ -142,7 +142,25 @@
                      <div class="date-section">
                         <div class="date-select">
                             <label for="today-date" data-i18n="date">Date</label>
-                            <input type="date" id="today-date">
+                            <div class="date-picker-nav">
+                                <button
+                                    type="button"
+                                    class="btn-secondary date-nav-button"
+                                    id="previous-day-btn"
+                                    aria-label="Jour précédent"
+                                >
+                                    ←
+                                </button>
+                                <input type="date" id="today-date">
+                                <button
+                                    type="button"
+                                    class="btn-secondary date-nav-button"
+                                    id="next-day-btn"
+                                    aria-label="Jour suivant"
+                                >
+                                    →
+                                </button>
+                            </div>
                         </div>
                         <button id="night-mode-btn" class="btn-primary night-mode-button" onclick="toggleNightMode()">
                             🌙 Activer Mode Soirée

@@ -905,6 +905,29 @@ body.modal-open {
     max-width: 300px;
 }
 
+.date-picker-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.date-picker-nav input {
+    flex: 1;
+    min-width: 0;
+}
+
+.date-nav-button {
+    margin-top: 0;
+    min-width: 44px;
+    height: 44px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    line-height: 1;
+}
+
 
 .date-range {
     display: flex;
@@ -1575,6 +1598,10 @@ body.exporting-dashboard .export-section {
     .date-section .btn-primary {
         width: 100% !important;
         margin-top: 0;
+    }
+
+    .date-picker-nav {
+        gap: 0.5rem;
     }
     
     .user-item {

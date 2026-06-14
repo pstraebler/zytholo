@@ -30,6 +30,16 @@ function formatDateInputValue(dateValue) {
     return `${year}-${month}-${day}`;
 }
 
+function shiftDateInputValue(value, dayOffset) {
+    const parsedDate = parseDateInputValue(value);
+    if (!parsedDate) {
+        return null;
+    }
+
+    parsedDate.setDate(parsedDate.getDate() + dayOffset);
+    return formatDateInputValue(parsedDate);
+}
+
 function getLogicalCurrentDate() {
     const now = new Date();
     const logicalDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
@@ -145,6 +155,8 @@ document.addEventListener('DOMContentLoaded', function() {
             loadTodayConsumption();
         });
     }
+
+    initDayNavigation();
     
     if (startDateInput && endDateInput) {
         const startDate = new Date();
@@ -190,6 +202,43 @@ function refreshDashboardData() {
         setTimeout(loadStats, 1000);
     }
     refreshRankings();
+}
+
+function initDayNavigation() {
+    const todayInput = document.getElementById('today-date');
+    const previousDayButton = document.getElementById('previous-day-btn');
+    const nextDayButton = document.getElementById('next-day-btn');
+
+    if (!todayInput) {
+        return;
+    }
+
+    if (previousDayButton) {
+        previousDayButton.addEventListener('click', function() {
+            navigateSelectedDay(-1);
+        });
+    }
+
+    if (nextDayButton) {
+        nextDayButton.addEventListener('click', function() {
+            navigateSelectedDay(1);
+        });
+    }
+}
+
+function navigateSelectedDay(dayOffset) {
+    const todayInput = document.getElementById('today-date');
+    if (!todayInput) {
+        return;
+    }
+
+    const nextValue = shiftDateInputValue(todayInput.value, dayOffset);
+    if (!nextValue) {
+        return;
+    }
+
+    todayInput.value = nextValue;
+    loadTodayConsumption();
 }
 
 function initUserMenu() {

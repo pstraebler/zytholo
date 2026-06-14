@@ -1,7 +1,7 @@
 services:
   mariadb:
     image: mariadb:11
-    name: zytholo-db
+    container_name: zytholo-db
     restart: unless-stopped
     environment:
       MARIADB_DATABASE: ${DB_NAME}
@@ -18,7 +18,7 @@ services:
 
   zytholo:
     build: .
-    name: zytholo-app
+    container_name: zytholo-app
     restart: unless-stopped
     ports:
       - "${HOST_PORT}:${APP_PORT}"

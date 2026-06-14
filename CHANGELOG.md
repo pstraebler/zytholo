@@ -26,6 +26,7 @@
 	- add : record-breaking evening
 	- add : timeline can show all users consumption
 	- add : consumption of the day
+	- add : arrows to change current date
 	- change : the dashboard theme has been updated
 	- change : migrate from SQLite to MySQL
 	- change : change password is now a pop up
