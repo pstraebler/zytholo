@@ -2,7 +2,7 @@
 
 ## 3.0 - 2026-
 
-🚀 BeerTracker becomes Zytholo, bringing a fresh identity and new features !
+🚀 BeerTracker becomes Zytholo, bringing a fresh identity, modernized interface and new features !
 
 🌙 (Auto) dark mode is now available !
 
