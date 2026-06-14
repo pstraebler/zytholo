@@ -213,9 +213,13 @@
                 <h3 data-i18n="stats_title">Statistiques</h3>
                 <div class="date-range">
                     <label data-i18n="stats_from">Depuis le</label>
-                    <input type="date" id="start-date">
+                    <div class="date-range-input-wrap">
+                        <input type="date" id="start-date">
+                    </div>
                     <label data-i18n="stats_to">jusqu'au</label>
-                    <input type="date" id="end-date">
+                    <div class="date-range-input-wrap">
+                        <input type="date" id="end-date">
+                    </div>
                     <button class="btn-secondary" onclick="updateStats()" data-i18n="update">Mettre à jour</button>
                     <div class="date-range-shortcuts">
                         <button class="btn-secondary" id="current-month-shortcut" onclick="setStatsPeriod('current-month')">Mois courant</button>

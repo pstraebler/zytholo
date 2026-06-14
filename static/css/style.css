@@ -942,6 +942,18 @@ body.modal-open {
     padding: 0.75rem;
     border: 1px solid var(--border-color);
     border-radius: 4px;
+    line-height: 1.2;
+}
+
+.date-range-input-wrap {
+    min-width: 0;
+}
+
+.date-range-input-wrap input {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    display: block;
 }
 
 
@@ -1635,8 +1647,72 @@ body.exporting-dashboard .export-section {
     }
     
     .date-range {
-        flex-direction: column;
-        align-items: flex-start;
+        display: grid;
+        grid-template-columns: 7.5rem minmax(0, 1fr);
+        align-items: center;
+        gap: 0.75rem;
+        justify-content: start;
+    }
+
+    .date-range label {
+        text-align: left;
+        justify-self: start;
+    }
+
+    .date-range-input-wrap {
+        min-width: 0;
+        justify-self: start;
+        width: 100%;
+        max-width: 11rem;
+        overflow: hidden;
+    }
+
+    .date-range-input-wrap input[type="date"] {
+        height: 3.5rem;
+        padding: 0 0.75rem;
+        line-height: 3.5rem;
+        font-size: 1rem;
+        text-align: center;
+        -webkit-appearance: none;
+        appearance: none;
+    }
+
+    .date-range-input-wrap input[type="date"]::-webkit-date-and-time-value {
+        min-height: 3.5rem;
+        text-align: center;
+    }
+
+    .date-range-input-wrap input[type="date"]::-webkit-datetime-edit {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 3.5rem;
+        padding: 0;
+    }
+
+    .date-range-input-wrap input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+    }
+
+    .date-range > .btn-secondary,
+    .date-range-shortcuts {
+        grid-column: 1 / -1;
+    }
+
+    .date-range > .btn-secondary {
+        width: 100%;
+    }
+
+    .date-range-shortcuts {
+        margin-left: 0;
+        justify-content: stretch;
+    }
+
+    .date-range-shortcuts .btn-secondary {
+        flex: 1;
     }
     
     .login-box {
@@ -1649,5 +1725,35 @@ body.exporting-dashboard .export-section {
 
     .password-modal-actions {
         grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .date-range {
+        grid-template-columns: 6.5rem minmax(0, 1fr);
+        gap: 0.5rem 0.75rem;
+    }
+
+    .date-range label {
+        align-self: center;
+    }
+
+    .date-range-input-wrap {
+        max-width: 10.25rem;
+    }
+
+    .date-range-input-wrap input {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .date-range-input-wrap input[type="date"] {
+        height: 3.25rem;
+        line-height: 3.25rem;
+    }
+
+    .date-range-input-wrap input[type="date"]::-webkit-date-and-time-value,
+    .date-range-input-wrap input[type="date"]::-webkit-datetime-edit {
+        min-height: 3.25rem;
     }
 }
