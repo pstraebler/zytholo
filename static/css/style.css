@@ -1546,22 +1546,41 @@ body.exporting-dashboard .export-section {
     }
     
     .navbar-content {
-        flex-direction: column;
-        gap: 1rem;
-        align-items: flex-start;
+        flex-direction: row;
+        gap: 0.75rem;
+        align-items: center;
     }
 
     .navbar h2 {
-        width: 100%;
+        width: auto;
         font-size: 1.35rem;
-        text-align: center;
+        text-align: left;
+    }
+
+    .brand-title {
+        flex: 1;
+        min-width: 0;
+        gap: 0.5rem;
+    }
+
+    .brand-title span {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    .brand-logo {
+        width: 42px;
+        height: 42px;
     }
 
     .navbar-actions {
-        width: 100%;
+        width: auto;
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-end;
         align-items: center;
+        flex-shrink: 0;
     }
 
     .language-toggle-btn {
