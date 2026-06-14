@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Administration - BeerTracker</title>
+    <title>Administration - Zytholo</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.png') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 <body data-i18n-title="page_admin_title">
@@ -200,7 +200,7 @@
         })
         .catch(error => {
             console.error('Erreur:', error);
-            const i18n = window.BeerTrackerI18n;
+            const i18n = window.ZytholoI18n;
             alert(i18n ? i18n.t('error_generic_update') : 'Erreur lors de la modification');
         });
     }

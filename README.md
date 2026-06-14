@@ -1,45 +1,57 @@
-# 🍺 BeerTracker
+# 🍺 Zytholo
+*Formerly known as BeerTracker*
 
-[French version](./README.fr.md)
-
-A web app to track beer consumption with multi-user management and a statistical dashboard.
+A web app to track beer consumption with multi-user management, configurable alerts, and a rich statistics dashboard.
 
 <img width="2560" height="1664" alt="beertracker" src="https://github.com/user-attachments/assets/fbefe3bd-58ac-49df-90dc-58cdf3db4856" />
 
 ## Features
 
 ### For users
-- **Consumption tracking**: Log pints (50cl), half-pints (25cl), and 33cl beers with timestamps.
-- **Night mode**: A special mode that stays active until 7:00 AM the next day to prevent removing beers from the counter while intoxicated.
-- **Personal stats**:
+- **Consumption logging**: Track pints (50cl), half-pints (25cl), and 33cl beers with date and time.
+- **Logical “day” view**: Browse a day history from 07:00 to 06:59, which fits late-night sessions better than calendar days.
+- **Night mode**: Activate a dedicated evening mode directly from the dashboard.
+- **Personal analytics**:
   - Total liters consumed
-  - Cost estimate (~€6 for a 50cl beer)
-  - Monthly and weekly charts (last 4 weeks)
+  - Breakdown by format (pints, half-pints, 33cl)
+  - Estimated cost based on a configurable average beer price
+  - Best evening over the selected period
+  - Monthly chart and rolling 4-week chart
   - Full consumption timeline
-- **Smart alerts**:
-  - Warning if more than 1.5L is consumed within a rolling 3-hour window
-  - Alert starting from 3 drinking days within the same week
-- **Other users' consumption**: The top 3 users who have consumed the most beer this year are displayed as medals
-- **Data export**: Download personal history as CSV.
+- **Configurable alerts**:
+  - Warning when consumption exceeds a personal threshold over a rolling 3-hour window
+  - Warning when the number of drinking days in a week reaches a configurable threshold
+- **Rankings**:
+  - Weekly podium
+  - Monthly podium
+  - Yearly podium
+  - Additional ranking tables for the other users
+- **Customization**:
+  - French and English interface
+  - Light, dark, or automatic theme
+  - Personal settings saved in the app
+- **Exports**:
+  - Export personal history as CSV
+  - Export the dashboard as PNG
+- **Security**:
+  - Password change from the user menu
+  - Forced password change support for temporary passwords
 
 ### For administrators
 - **User management**:
-  - Create, update, and delete accounts
-  - Change passwords
-  - Enable/disable night mode for each user
-- **Ranking**: Table containing all users and their consumption (pints, half-pints, 33cl) for the current year.
-- **Global import/export**: Manage all users' data via CSV.
-- **Automatic user creation**: During CSV import, missing users are created with a temporary password.
+  - Create and delete accounts
+  - Reset user passwords
+  - Force password change on next login
+  - Enable or disable night mode for each user
+- **Global ranking**: View the yearly ranking table for all non-admin users with totals by format and liters.
+- **CSV import/export**: Export all data or import bulk history from CSV files.
+- **Automatic user provisioning**: Missing users are created automatically during import with a temporary password.
 
-## Requirements
-
-- Docker / Docker Compose (recommended) or Python (3.11+)
-
-## Deployment
+## Deployment (via Docker)
 
 ```bash
-git clone https://github.com/pstraebler/beertracker.git
-cd beertracker
+git clone https://github.com/pstraebler/zytholo.git
+cd zytholo
 cp .env.example .env
 ```
 
@@ -65,23 +77,10 @@ cp .env.example .env
 - `DB_PASSWORD`: Application DB password
 - `DB_ROOT_PASSWORD`: MariaDB root password (used by Docker service)
 
-### With Docker (recommended)
+Then :
 
 ```bash
 docker-compose up -d --build
-```
-
-With `docker-compose`, BeerTracker starts both the web app and a MariaDB service.
-
-### With Python
-
-*Required packages: python3, python3-pip, python3-venv*
-
-```bash
-python3 -m venv ./beertracker-venv
-source ./beertracker-venv/bin/activate
-pip install -r requirements.txt
-python app.py
 ```
 
 ### First startup

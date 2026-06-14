@@ -3,16 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tableau de Bord - BeerTracker</title>
+    <title>Tableau de Bord - Zytholo</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-    <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.png') }}">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='img/favicon.png') }}">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 <body data-i18n-title="page_dashboard_title" data-force-password-change="{{ 'true' if force_password_change else 'false' }}">
     <div class="navbar">
     <div class="navbar-content">
-        <h2>🍺 BeerTracker - {{ username }}</h2>
+        <h2 class="brand-title">
+            <img src="{{ url_for('static', filename='img/favicon.png') }}" alt="Zytholo" class="brand-logo">
+            <span>Zytholo - {{ username }}</span>
+        </h2>
         <div class="navbar-actions">
             <div class="user-menu">
                 <button type="button" class="btn-secondary user-menu-toggle" id="user-menu-toggle" aria-expanded="false" aria-controls="user-menu-dropdown" aria-label="Menu utilisateur">

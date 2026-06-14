@@ -7,8 +7,8 @@ from pymysql.cursors import DictCursor
 
 DB_HOST = os.environ.get('DB_HOST', 'mariadb')
 DB_PORT = int(os.environ.get('DB_PORT', '3306'))
-DB_NAME = os.environ.get('DB_NAME', 'beertracker')
-DB_USER = os.environ.get('DB_USER', 'beertracker')
+DB_NAME = os.environ.get('DB_NAME', 'zytholo')
+DB_USER = os.environ.get('DB_USER', 'zytholo')
 DB_PASSWORD = os.environ.get('DB_PASSWORD', '')
 
 

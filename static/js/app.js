@@ -1,5 +1,5 @@
 const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
-const i18n = window.BeerTrackerI18n;
+const i18n = window.ZytholoI18n;
 
 function t(key, vars = null) {
     if (i18n && typeof i18n.t === 'function') {
@@ -92,7 +92,7 @@ let passwordChangeRequired = false;
 let lastStatsData = null;
 let showAllUsersTimeline = false;
 
-const averageBeerPriceStorageKey = 'beertracker_average_beer_price';
+const averageBeerPriceStorageKey = 'zytholo_average_beer_price';
 const defaultAverageBeerPrice = 6;
 const averageBeerVolumeLiters = 0.5;
 const defaultThreeHourThresholdLiters = 1.5;
@@ -292,8 +292,8 @@ function initSettingsModal() {
 
     document.querySelectorAll('[data-settings-theme]').forEach(function(button) {
         button.addEventListener('click', function() {
-            if (window.BeerTrackerTheme && typeof window.BeerTrackerTheme.setTheme === 'function') {
-                window.BeerTrackerTheme.setTheme(button.dataset.settingsTheme);
+            if (window.ZytholoTheme && typeof window.ZytholoTheme.setTheme === 'function') {
+                window.ZytholoTheme.setTheme(button.dataset.settingsTheme);
             }
         });
     });
@@ -387,9 +387,9 @@ function updateSettingsLanguageSelection() {
 }
 
 function updateSettingsThemeSelection() {
-    if (!window.BeerTrackerTheme || typeof window.BeerTrackerTheme.getSelectedTheme !== 'function') return;
+    if (!window.ZytholoTheme || typeof window.ZytholoTheme.getSelectedTheme !== 'function') return;
 
-    const selectedTheme = window.BeerTrackerTheme.getSelectedTheme();
+    const selectedTheme = window.ZytholoTheme.getSelectedTheme();
     document.querySelectorAll('[data-settings-theme]').forEach(function(button) {
         const active = button.dataset.settingsTheme === selectedTheme;
         button.classList.toggle('active', active);
@@ -1857,7 +1857,7 @@ function exportDashboardPng() {
 
     const startDate = document.getElementById('start-date')?.value || 'start';
     const endDate = document.getElementById('end-date')?.value || 'end';
-    const filename = `beertracker-dashboard-${startDate}-${endDate}.png`;
+    const filename = `zytholo-dashboard-${startDate}-${endDate}.png`;
     const bgColor = getComputedStyle(document.documentElement)
         .getPropertyValue('--bg-color')
         .trim() || '#ecf0f1';

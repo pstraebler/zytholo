@@ -1,5 +1,5 @@
 (function () {
-    const themeStorageKey = "beertracker_theme";
+    const themeStorageKey = "zytholo_theme";
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
     let selectedTheme = "auto";
 
@@ -28,8 +28,8 @@
     }
 
     function getI18nLabel(key, fallbackText) {
-        if (window.BeerTrackerI18n && typeof window.BeerTrackerI18n.t === "function") {
-            return window.BeerTrackerI18n.t(key);
+        if (window.ZytholoI18n && typeof window.ZytholoI18n.t === "function") {
+            return window.ZytholoI18n.t(key);
         }
         return fallbackText;
     }
@@ -90,7 +90,7 @@
     document.addEventListener("languageChanged", updateThemeButtons);
     document.addEventListener("DOMContentLoaded", initTheme);
 
-    window.BeerTrackerTheme = {
+    window.ZytholoTheme = {
         initTheme,
         setTheme,
         toggleTheme,

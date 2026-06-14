@@ -1,10 +1,10 @@
 (function () {
     const dictionaries = {
         fr: {
-            page_dashboard_title: "Tableau de Bord - BeerTracker",
-            page_admin_title: "Administration - BeerTracker",
-            page_login_title: "BeerTracker - Connexion",
-            page_password_title: "Changer le mot de passe - BeerTracker",
+            page_dashboard_title: "Tableau de Bord - Zytholo",
+            page_admin_title: "Administration - Zytholo",
+            page_login_title: "Zytholo - Connexion",
+            page_password_title: "Changer le mot de passe - Zytholo",
             navbar_settings: "⚙️ Réglages",
             navbar_change_password: "🔒 Changer mot de passe",
             navbar_logout: "👋 Déconnexion",
@@ -154,10 +154,10 @@
             error_settings_update: "Erreur lors de l'enregistrement des réglages"
         },
         en: {
-            page_dashboard_title: "Dashboard - BeerTracker",
-            page_admin_title: "Administration - BeerTracker",
-            page_login_title: "BeerTracker - Login",
-            page_password_title: "Change Password - BeerTracker",
+            page_dashboard_title: "Dashboard - Zytholo",
+            page_admin_title: "Administration - Zytholo",
+            page_login_title: "Zytholo - Login",
+            page_password_title: "Change Password - Zytholo",
             navbar_settings: "⚙️ Settings",
             navbar_change_password: "🔒 Change password",
             navbar_logout: "👋 Log out",
@@ -308,7 +308,7 @@
         }
     };
 
-    const languageStorageKey = "beertracker_lang";
+    const languageStorageKey = "zytholo_lang";
     let currentLanguage = "en";
 
     function isSupported(lang) {
@@ -483,7 +483,7 @@
         });
     }
 
-    window.BeerTrackerI18n = {
+    window.ZytholoI18n = {
         t,
         initLanguage,
         setLanguage,
