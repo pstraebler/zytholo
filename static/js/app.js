@@ -1235,6 +1235,64 @@ function formatRecordTimeRange(startTime, endTime) {
     return `${formatTime(startTime)} → ${formatTime(endTime)}`;
 }
 
+function formatBestEveningEntryItems(entry) {
+    const items = [];
+
+    if (entry.pints) {
+        items.push(`${entry.pints} ${t('pints')}`);
+    }
+    if (entry.half_pints) {
+        items.push(`${entry.half_pints} ${t('halves')}`);
+    }
+    if (entry.liters_33) {
+        items.push(`${entry.liters_33} × 33cl`);
+    }
+
+    return items;
+}
+
+function renderBestEveningTooltip(bestEvening) {
+    const cardEl = document.getElementById('best-evening-card');
+    const tooltipEl = document.getElementById('best-evening-tooltip');
+
+    if (!cardEl || !tooltipEl) return;
+
+    const entries = Array.isArray(bestEvening?.entries) ? bestEvening.entries : [];
+    const hasEntries = entries.length > 0;
+
+    cardEl.classList.toggle('tooltip-visible', false);
+    cardEl.classList.toggle('has-tooltip', hasEntries);
+    tooltipEl.setAttribute('aria-hidden', hasEntries ? 'false' : 'true');
+
+    if (!hasEntries) {
+        cardEl.removeAttribute('tabindex');
+        cardEl.removeAttribute('aria-describedby');
+        tooltipEl.innerHTML = '';
+        return;
+    }
+
+    cardEl.setAttribute('tabindex', '0');
+    cardEl.setAttribute('aria-describedby', 'best-evening-tooltip');
+
+    const rows = entries.map(entry => {
+        const itemLabels = formatBestEveningEntryItems(entry)
+            .map(item => `<span>${item}</span>`)
+            .join('');
+
+        return `
+            <div class="stat-record-tooltip-row">
+                <span class="stat-record-tooltip-time">${formatTime(entry.time)}</span>
+                <div class="stat-record-tooltip-items">${itemLabels}</div>
+            </div>
+        `;
+    }).join('');
+
+    tooltipEl.innerHTML = `
+        <div class="stat-record-tooltip-title">${t('stats_best_evening_tooltip_title')}</div>
+        <div class="stat-record-tooltip-list">${rows}</div>
+    `;
+}
+
 function parseLocalDate(dateValue) {
     if (!dateValue) return null;
     const parts = dateValue.split('-').map(Number);
@@ -1383,6 +1441,8 @@ function updateStatsDisplay(data) {
 }
 
 function updateBestEveningDisplay(bestEvening) {
+    renderBestEveningTooltip(bestEvening);
+
     const valueEl = document.getElementById('best-evening-value');
     const dateEl = document.getElementById('best-evening-date');
     const detailsEl = document.getElementById('best-evening-details');

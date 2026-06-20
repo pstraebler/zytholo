@@ -1009,8 +1009,8 @@ body.modal-open {
     grid-column: 1 / -1;
     border-left-color: var(--gold-color);
     background: linear-gradient(135deg, var(--gold-soft-color), var(--muted-surface));
+    position: relative;
 }
-
 
 .stat-label {
     font-size: 0.9rem;
@@ -1069,6 +1069,84 @@ body.modal-open {
     align-items: center;
     gap: 0.25rem;
     font-weight: 600;
+}
+
+.stat-record-tooltip {
+    position: absolute;
+    right: 1rem;
+    bottom: calc(100% + 0.65rem);
+    min-width: 220px;
+    max-width: min(320px, calc(100vw - 3rem));
+    padding: 12px;
+    border-radius: 8px;
+    background: var(--chart-text-color);
+    color: var(--card-bg);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, 0.18);
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(4px);
+    transition: opacity 0.16s ease, transform 0.16s ease, visibility 0.16s ease;
+    z-index: 20;
+    pointer-events: none;
+}
+
+.stat-record-tooltip::before {
+    content: "";
+    position: absolute;
+    bottom: -6px;
+    right: 1.5rem;
+    width: 12px;
+    height: 12px;
+    background: inherit;
+    transform: rotate(45deg);
+}
+
+.stat-box-record.has-tooltip.tooltip-visible .stat-record-tooltip,
+.stat-box-record.has-tooltip:hover .stat-record-tooltip,
+.stat-box-record.has-tooltip:focus-within .stat-record-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.stat-record-tooltip-title {
+    font-size: 12px;
+    font-weight: 700;
+    margin-bottom: 6px;
+}
+
+.stat-record-tooltip-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.stat-record-tooltip-row {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 8px;
+    align-items: baseline;
+    font-size: 12px;
+}
+
+.stat-record-tooltip-time {
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.stat-record-tooltip-items {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 8px;
+    line-height: 1.4;
+}
+
+@media (max-width: 640px) {
+    .stat-record-tooltip {
+        left: 1rem;
+        right: 1rem;
+        max-width: none;
+    }
 }
 
 

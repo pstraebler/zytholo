@@ -47,7 +47,8 @@ def calculate_record_evening(records):
                 'first_time': record['time'],
                 'last_time': record['time'],
                 'first_datetime': chronological_datetime,
-                'last_datetime': chronological_datetime
+                'last_datetime': chronological_datetime,
+                'entries': []
             }
 
         evening = evenings[evening_key]
@@ -56,6 +57,14 @@ def calculate_record_evening(records):
         evening['total_33cl'] += liters_33
         evening['total_liters'] += liters
         evening['entry_count'] += 1
+        evening['entries'].append({
+            'time': record['time'],
+            'pints': pints,
+            'half_pints': half_pints,
+            'liters_33': liters_33,
+            'liters': round(liters, 2),
+            'chronological_datetime': chronological_datetime.isoformat()
+        })
 
         if chronological_datetime < evening['first_datetime']:
             evening['first_datetime'] = chronological_datetime
@@ -69,6 +78,10 @@ def calculate_record_evening(records):
         evenings.values(),
         key=lambda evening: (evening['total_liters'], evening['date'])
     )
+
+    best_evening['entries'].sort(key=lambda entry: entry['chronological_datetime'])
+    for entry in best_evening['entries']:
+        entry.pop('chronological_datetime', None)
 
     best_evening.pop('first_datetime', None)
     best_evening.pop('last_datetime', None)
