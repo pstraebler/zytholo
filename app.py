@@ -92,6 +92,79 @@ def current_week_range():
     return week_start, week_end
 
 
+def reconcile_day_history_records(records):
+    """Annuler les retraits avec les ajouts précédents avant affichage."""
+    reconciled_records = []
+    positive_record_indexes = {
+        'pints': [],
+        'half_pints': [],
+        'liters_33': []
+    }
+
+    for record in sorted(records, key=lambda item: (item['date'], item['time'])):
+        normalized_record = {
+            **dict(record),
+            'pints': record['pints'] or 0,
+            'half_pints': record['half_pints'] or 0,
+            'liters_33': record['liters_33'] or 0,
+        }
+
+        for field in ('pints', 'half_pints', 'liters_33'):
+            quantity = normalized_record[field]
+
+            if quantity > 0:
+                normalized_record[field] = quantity
+                continue
+
+            remaining_to_remove = abs(quantity)
+            normalized_record[field] = 0
+
+            while remaining_to_remove > 0 and positive_record_indexes[field]:
+                previous_index = positive_record_indexes[field][-1]
+                previous_record = reconciled_records[previous_index]
+                available_quantity = previous_record[field]
+
+                if available_quantity <= 0:
+                    positive_record_indexes[field].pop()
+                    continue
+
+                consumed_quantity = min(available_quantity, remaining_to_remove)
+                previous_record[field] -= consumed_quantity
+                remaining_to_remove -= consumed_quantity
+
+                if previous_record[field] == 0:
+                    positive_record_indexes[field].pop()
+
+            if remaining_to_remove > 0:
+                normalized_record[field] = -remaining_to_remove
+
+        has_remaining_quantity = any(
+            normalized_record[field] != 0
+            for field in ('pints', 'half_pints', 'liters_33')
+        )
+        if not has_remaining_quantity:
+            continue
+
+        normalized_record['total_liters'] = round(
+            (normalized_record['pints'] * 0.5)
+            + (normalized_record['half_pints'] * 0.25)
+            + (normalized_record['liters_33'] * 0.33),
+            2
+        )
+        reconciled_records.append(normalized_record)
+
+        appended_index = len(reconciled_records) - 1
+        for field in ('pints', 'half_pints', 'liters_33'):
+            if normalized_record[field] > 0:
+                positive_record_indexes[field].append(appended_index)
+
+    return [
+        record
+        for record in reconciled_records
+        if any(record[field] != 0 for field in ('pints', 'half_pints', 'liters_33'))
+    ]
+
+
 def get_day_window_records(user_id, selected_date):
     """Retourne les consommations de la journée logique 07:00 -> 06:59."""
     next_date = selected_date + timedelta(days=1)
@@ -120,7 +193,6 @@ def get_day_window_records(user_id, selected_date):
         pints = record['pints'] or 0
         half_pints = record['half_pints'] or 0
         liters_33 = record['liters_33'] or 0
-        total_liters = round((pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33), 2)
 
         total_pints += pints
         total_half_pints += half_pints
@@ -128,11 +200,10 @@ def get_day_window_records(user_id, selected_date):
 
         filtered_records.append({
             **dict(record),
-            'logical_day_offset': 0 if record_date == selected_date.isoformat() else 1,
-            'total_liters': total_liters
+            'logical_day_offset': 0 if record_date == selected_date.isoformat() else 1
         })
 
-    filtered_records.sort(key=lambda record: (record['date'], record['time']))
+    filtered_records = reconcile_day_history_records(filtered_records)
 
     return {
         'records': filtered_records,
