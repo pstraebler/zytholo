@@ -3,7 +3,7 @@
 
 A web app to track beer consumption with multi-user management, configurable alerts, and a rich statistics dashboard.
 
-<img width="2560" height="1664" alt="beertracker" src="https://github.com/user-attachments/assets/fbefe3bd-58ac-49df-90dc-58cdf3db4856" />
+<img width="1536" height="1024" alt="readme" src="https://github.com/user-attachments/assets/813bb644-86c2-4f2b-8df4-5274ecb5710c" />
 
 ## Features
 
