@@ -558,6 +558,25 @@ body {
     margin-top: 1.5rem;
 }
 
+.night-mode-modal-intro {
+    margin-bottom: 1rem;
+    color: var(--text-color);
+    opacity: 0.85;
+}
+
+.night-mode-modal-list {
+    margin-bottom: 1.5rem;
+    margin-left: 1.5rem;
+    color: var(--text-color);
+    opacity: 0.85;
+}
+
+.night-mode-modal-warning {
+    margin-bottom: 1.5rem;
+    color: var(--warning-color);
+    font-weight: 700;
+}
+
 .settings-language-options,
 .settings-theme-options {
     display: flex;
