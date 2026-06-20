@@ -6,6 +6,8 @@
 
 
 :root {
+    --content-max-width: 1200px;
+    --content-padding-x: 1rem;
     --primary-color: #2c3e50;
     --secondary-color: #3498db;
     --accent-color: #e74c3c;
@@ -75,9 +77,9 @@ body {
 
 
 .navbar-content {
-    max-width: 1200px;
+    max-width: var(--content-max-width);
     margin: 0 auto;
-    padding: 0 1rem;
+    padding: 0 var(--content-padding-x);
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -211,14 +213,19 @@ body {
 
 
 .container {
-    max-width: 1200px;
+    max-width: var(--content-max-width);
     margin: 2rem auto;
-    padding: 0 1rem;
+    padding: 0 var(--content-padding-x);
 }
 
 .dashboard-section {
     margin-bottom: 2.5rem;
     position: relative;
+}
+
+.dashboard-card-grid {
+    display: grid;
+    gap: 1.5rem;
 }
 
 .dashboard-section + .dashboard-section {
@@ -1557,6 +1564,49 @@ body.exporting-dashboard .export-section {
 @supports (-webkit-touch-callout: none) {
     .login-page {
         min-height: -webkit-fill-available;
+    }
+}
+
+@media (min-width: 1280px) {
+    :root {
+        --content-max-width: min(1560px, calc(100vw - 3rem));
+        --content-padding-x: 1.25rem;
+    }
+
+    .dashboard-card-grid-rankings {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        align-items: start;
+    }
+
+    .stats-grid {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+    }
+
+    .stat-box-record {
+        grid-column: span 2;
+    }
+
+    .beer-selector {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .trophy-podium {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+}
+
+@media (min-width: 1600px) {
+    :root {
+        --content-max-width: min(1800px, calc(100vw - 4rem));
+        --content-padding-x: 1.5rem;
+    }
+
+    .dashboard-card-grid-rankings {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .charts-section {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 }
 

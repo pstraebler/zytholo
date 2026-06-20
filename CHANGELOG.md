@@ -33,6 +33,7 @@
 	- change : temporary password for imported user
 	- change : change password is now mandatory when an user has been imported
 	- change : total timeline is now displayong all days of the selected period
+	- change : optimize desktop version
 	- fix : monthly consumption chart did not show all the beers
 	- fix : total timeline cannot display dates later than the current date
 	- fix : total timeline cannot display dates before the first consumption

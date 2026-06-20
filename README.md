@@ -9,7 +9,7 @@ A web app to track beer consumption with multi-user management, configurable ale
 
 ### For users
 - **Consumption logging**: Track pints (50cl), half-pints (25cl), and 33cl beers with date and time.
-- **Logical “day” view**: Browse a day history from 07:00 to 06:59, which fits late-night sessions better than calendar days.
+- **Logical “day” view**: Browse a day history (from 07:00 to 06:59), which fits late-night sessions better than calendar days.
 - **Night mode**: Activate a dedicated evening mode directly from the dashboard.
 - **Personal analytics**:
   - Total liters consumed
@@ -22,10 +22,10 @@ A web app to track beer consumption with multi-user management, configurable ale
   - Warning when consumption exceeds a personal threshold over a rolling 3-hour window
   - Warning when the number of drinking days in a week reaches a configurable threshold
 - **Rankings**:
-  - Weekly podium
-  - Monthly podium
-  - Yearly podium
-  - Additional ranking tables for the other users
+  - Weekly podium to compare your consumption with other users
+  - Monthly podium to see where you stand against the rest of the app
+  - Yearly podium for long-term comparison with other users
+  - Additional ranking tables showing the other users and their totals
 - **Customization**:
   - French and English interface
   - Light, dark, or automatic theme
@@ -43,7 +43,7 @@ A web app to track beer consumption with multi-user management, configurable ale
   - Reset user passwords
   - Force password change on next login
   - Enable or disable night mode for each user
-- **Global ranking**: View the yearly ranking table for all non-admin users with totals by format and liters.
+- **Global ranking**: View the yearly comparison table for all non-admin users with totals by format and liters.
 - **CSV import/export**: Export all data or import bulk history from CSV files.
 - **Automatic user provisioning**: Missing users are created automatically during import with a temporary password.
 

@@ -163,7 +163,8 @@
 
         <section class="dashboard-section">
             <div class="card">
-                <h3 data-i18n="add_consumption">Ajouter une consommation</h3>
+                <div class="consumption-card-content">
+                    <h3 data-i18n="add_consumption">Ajouter une consommation</h3>
                      <div class="date-section">
                         <div class="date-select">
                             <label for="today-date" data-i18n="date">Date</label>
@@ -229,6 +230,7 @@
                     <div class="day-history-list" id="day-history-list">
                         <p class="day-history-empty" data-i18n="day_history_empty">Aucune consommation enregistrée sur cette journée.</p>
                     </div>
+                </div>
                 </div>
             </div>
         </section>
@@ -316,7 +318,7 @@
             </div>
         </section>
 
-<section class="dashboard-section">
+<section class="dashboard-section dashboard-card-grid dashboard-card-grid-rankings">
 <div class="card" id="weekly-ranking-card" {% if not show_weekly_ranking %}style="display:none;"{% endif %}>
     <h3 data-i18n-with-week-range="ranking_week_title" data-week-start="{{ ranking_week_start }}" data-week-end="{{ ranking_week_end }}">Classement des plus gros buveurs de la semaine</h3>
     <div class="trophy-podium" id="weekly-ranking-podium">
