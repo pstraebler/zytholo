@@ -1,14 +1,14 @@
 # Changelog
 
-## 3.0 - 2026-
+## 3.0 - 2026-06-20
 
 🚀 BeerTracker becomes Zytholo, bringing a fresh identity, modernized interface and new features !
 
 🌙 (Auto) dark mode is now available !
 
-⚙️ The app now has a menu that lets you adjust settings !
+⚙️  The app now has a menu that lets you adjust settings !
 
-📈Compare your beer consumption with that of other drinkers !
+📈 Compare your beer consumption with that of other drinkers !
 
 ---
 ⚠️ **Breaking change** :  We are migrating from SQLite to MySQL. You must export the data to CSV before updating, and reimport it after updating; otherwise, **all consumptions data will be lost**.
