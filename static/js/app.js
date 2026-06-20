@@ -1004,18 +1004,6 @@ function saveBeerAutomatic(type, value) {
     });
 }
 
-function medalLabel(medalIndex) {
-    if (medalIndex === 1) return t('medal_gold');
-    if (medalIndex === 2) return t('medal_silver');
-    return t('medal_bronze');
-}
-
-function medalIcon(medalIndex) {
-    if (medalIndex === 1) return '🥇';
-    if (medalIndex === 2) return '🥈';
-    return '🥉';
-}
-
 function renderPodium(container, podium, hasDrinks = true, emptyMessageKey = null) {
     if (!container) return;
 
@@ -1038,8 +1026,7 @@ function renderPodium(container, podium, hasDrinks = true, emptyMessageKey = nul
             .join('');
 
         trophyCard.innerHTML = `
-            <div class="trophy-icon">${medalIcon(group.medal_index)}</div>
-            <div class="trophy-rank">${medalLabel(group.medal_index)}</div>
+            <div class="trophy-badge">${group.medal_index}</div>
             ${usersHtml}
             <div class="trophy-liters">${group.total_liters || 0} L</div>
         `;

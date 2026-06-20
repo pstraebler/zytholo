@@ -325,18 +325,7 @@
         {% if weekly_has_drinks %}
         {% for group in top_week_podium %}
         <div class="trophy-card trophy-{{ group.medal_index }}">
-            <div class="trophy-icon">
-                {% if group.medal_index == 1 %}🥇{% elif group.medal_index == 2 %}🥈{% else %}🥉{% endif %}
-            </div>
-            <div class="trophy-rank">
-                {% if group.medal_index == 1 %}
-                    <span data-i18n="medal_gold">Or</span>
-                {% elif group.medal_index == 2 %}
-                    <span data-i18n="medal_silver">Argent</span>
-                {% else %}
-                    <span data-i18n="medal_bronze">Bronze</span>
-                {% endif %}
-            </div>
+            <div class="trophy-badge">{{ group.medal_index }}</div>
             {% for drinker in group.users %}
             <div class="trophy-user">{{ drinker.username }}</div>
             {% endfor %}
@@ -380,18 +369,7 @@
         {% if monthly_has_drinks %}
         {% for group in top_month_podium %}
         <div class="trophy-card trophy-{{ group.medal_index }}">
-            <div class="trophy-icon">
-                {% if group.medal_index == 1 %}🥇{% elif group.medal_index == 2 %}🥈{% else %}🥉{% endif %}
-            </div>
-            <div class="trophy-rank">
-                {% if group.medal_index == 1 %}
-                    <span data-i18n="medal_gold">Or</span>
-                {% elif group.medal_index == 2 %}
-                    <span data-i18n="medal_silver">Argent</span>
-                {% else %}
-                    <span data-i18n="medal_bronze">Bronze</span>
-                {% endif %}
-            </div>
+            <div class="trophy-badge">{{ group.medal_index }}</div>
             {% for drinker in group.users %}
             <div class="trophy-user">{{ drinker.username }}</div>
             {% endfor %}
@@ -435,18 +413,7 @@
         {% if yearly_has_drinks %}
         {% for group in top_year_podium %}
         <div class="trophy-card trophy-{{ group.medal_index }}">
-            <div class="trophy-icon">
-                {% if group.medal_index == 1 %}🥇{% elif group.medal_index == 2 %}🥈{% else %}🥉{% endif %}
-            </div>
-            <div class="trophy-rank">
-                {% if group.medal_index == 1 %}
-                    <span data-i18n="medal_gold">Or</span>
-                {% elif group.medal_index == 2 %}
-                    <span data-i18n="medal_silver">Argent</span>
-                {% else %}
-                    <span data-i18n="medal_bronze">Bronze</span>
-                {% endif %}
-            </div>
+            <div class="trophy-badge">{{ group.medal_index }}</div>
             {% for drinker in group.users %}
             <div class="trophy-user">{{ drinker.username }}</div>
             {% endfor %}
