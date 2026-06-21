@@ -1,5 +1,9 @@
 # Changelog
 
+## 3.0.1 - 2026-06-
+
+	- fix : css weekly ranking
+
 ## 3.0 - 2026-06-20
 
 🚀 BeerTracker becomes Zytholo, bringing a fresh identity, modernized interface and new features !

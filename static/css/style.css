@@ -228,6 +228,13 @@ body {
     gap: 1.5rem;
 }
 
+.dashboard-card-grid-rankings > .card {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    margin-bottom: 0;
+}
+
 .dashboard-section + .dashboard-section {
     padding-top: 2.25rem;
 }
@@ -1512,6 +1519,11 @@ body.exporting-dashboard .export-section {
 
 .other-ranking-section {
     margin-top: 1.25rem;
+}
+
+.dashboard-card-grid-rankings .other-ranking-section {
+    margin-top: auto;
+    padding-top: 1.25rem;
 }
 
 .other-ranking-section h4 {
