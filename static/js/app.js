@@ -1232,7 +1232,7 @@ function formatBestEveningEntryItems(entry) {
         items.push(`${entry.half_pints} ${t('halves')}`);
     }
     if (entry.liters_33) {
-        items.push(`${entry.liters_33} × 33cl`);
+        items.push(`${entry.liters_33} 33 cL`);
     }
 
     return items;
@@ -1451,7 +1451,7 @@ function updateBestEveningDisplay(bestEvening) {
     const details = [
         `<span class="stat-record-chip">🍺 ${bestEvening.total_pints} ${t('pints')}</span>`,
         `<span class="stat-record-chip">🍻 ${bestEvening.total_half_pints} ${t('halves')}</span>`,
-        `<span class="stat-record-chip">🥤 ${bestEvening.total_33cl} × 33cl</span>`
+        `<span class="stat-record-chip">🥤 ${bestEvening.total_33cl} 33 cL</span>`
     ];
 
     if (bestEvening.first_time && bestEvening.last_time) {
