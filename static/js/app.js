@@ -940,7 +940,7 @@ function renderDayHistory(data) {
             quantityBadges.push(`<span class="day-history-badge">🍻 ${record.half_pints}</span>`);
         }
         if (record.liters_33) {
-            quantityBadges.push(`<span class="day-history-badge">🥤 ${record.liters_33}</span>`);
+            quantityBadges.push(`<span class="day-history-badge">🥃 ${record.liters_33}</span>`);
         }
 
         const nextDayLabel = record.logical_day_offset === 1
@@ -1451,7 +1451,7 @@ function updateBestEveningDisplay(bestEvening) {
     const details = [
         `<span class="stat-record-chip">🍺 ${bestEvening.total_pints} ${t('pints')}</span>`,
         `<span class="stat-record-chip">🍻 ${bestEvening.total_half_pints} ${t('halves')}</span>`,
-        `<span class="stat-record-chip">🥤 ${bestEvening.total_33cl} 33 cL</span>`
+        `<span class="stat-record-chip">🥃 ${bestEvening.total_33cl} 33 cL</span>`
     ];
 
     if (bestEvening.first_time && bestEvening.last_time) {

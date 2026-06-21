@@ -2,9 +2,11 @@
 
 ## 3.0.1 - 2026-06-
 
+	- change : 33 cL label
 	- fix : css weekly ranking
 	- fix : ranking card alignment and table header weight
 	- fix : remove year on dates timeline
+	- fix : 33cl display in top evening
 
 ## 3.0 - 2026-06-20
 
