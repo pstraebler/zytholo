@@ -3,6 +3,7 @@
 ## 3.0.1 - 2026-06-
 
 	- fix : css weekly ranking
+	- fix : ranking card alignment and table header weight
 
 ## 3.0 - 2026-06-20
 
