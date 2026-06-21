@@ -4,6 +4,7 @@
 
 	- fix : css weekly ranking
 	- fix : ranking card alignment and table header weight
+	- fix : remove year on dates timeline
 
 ## 3.0 - 2026-06-20
 

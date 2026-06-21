@@ -1665,16 +1665,22 @@ function buildTimelineDatasets(records, allUserRecords, allUsers, currentUsernam
     if (!dates.length) {
         return {
             labels: [],
+            shortLabels: [],
             datasets: []
         };
     }
 
     const labels = dates.map(dateValue => parseLocalDate(dateValue).toLocaleDateString(currentLocale()));
+    const shortLabels = dates.map(dateValue => parseLocalDate(dateValue).toLocaleDateString(currentLocale(), {
+        day: '2-digit',
+        month: '2-digit'
+    }));
 
     if (!showAllUsersTimeline) {
         const totalColor = getCssColor('--success-color', '#27ae60');
         return {
             labels,
+            shortLabels,
             datasets: [
                 {
                     label: t('chart_cumulative_label'),
@@ -1730,7 +1736,7 @@ function buildTimelineDatasets(records, allUserRecords, allUsers, currentUsernam
         };
     });
 
-    return { labels, datasets };
+    return { labels, shortLabels, datasets };
 }
 
 function updateTotalChart(records, allUserRecords = [], allUsers = [], currentUsername = '') {
@@ -1745,7 +1751,7 @@ function updateTotalChart(records, allUserRecords = [], allUsers = [], currentUs
     if (totalChart) {
         totalChart.destroy();
     }
-    
+
     totalChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -1776,6 +1782,9 @@ function updateTotalChart(records, allUserRecords = [], allUsers = [], currentUs
                     padding: 12,
                     cornerRadius: 8,
                     callbacks: {
+                        title: function(tooltipItems) {
+                            return tooltipItems[0]?.label || '';
+                        },
                         label: function(context) {
                             return `${context.dataset.label}: ${context.parsed.y} ${t('chart_unit_liters')}`;
                         }
@@ -1808,6 +1817,9 @@ function updateTotalChart(records, allUserRecords = [], allUsers = [], currentUs
                         maxRotation: 0,
                         autoSkip: true,
                         maxTicksLimit: 8,
+                        callback: function(value, index) {
+                            return timelineData.shortLabels[index] || this.getLabelForValue(value);
+                        },
                         padding: 8
                     }
                 }
