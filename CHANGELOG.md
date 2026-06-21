@@ -1,6 +1,6 @@
 # Changelog
 
-## 3.0.1 - 2026-06-
+## 3.0.1 - 2026-06-21
 
 	- change : 33 cL label
 	- fix : css weekly ranking
