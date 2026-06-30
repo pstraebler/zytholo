@@ -256,6 +256,19 @@ else:
 conn.commit()
 conn.close()
 
+@app.route('/healthz')
+def healthz():
+    try:
+        conn = Database.get_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT 1 AS ok')
+        cursor.fetchone()
+        conn.close()
+        return jsonify({'status': 'ok'}), 200
+    except Exception as exc:
+        logger.exception('Health check failed: %s', exc)
+        return jsonify({'status': 'error'}), 503
+
 @app.route('/')
 def index():
     if 'user_id' in session:
