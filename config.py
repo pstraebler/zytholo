@@ -9,10 +9,7 @@ class Config:
     if not SECRET_KEY:
         raise RuntimeError("SECRET_KEY must be set")
 
-    APP_PORT = os.environ.get('APP_PORT')
-    if not APP_PORT:
-        raise RuntimeError("APP_PORT must be set")
-    APP_PORT = int(APP_PORT)
+    APP_PORT = int(os.environ.get('APP_PORT', '8080'))
     
     SESSION_COOKIE_HTTPONLY = True
     SESSION_COOKIE_SECURE = os.environ.get("USE_HTTPS", "0") == "1"

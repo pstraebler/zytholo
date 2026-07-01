@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.0.3 - 2026-07-01
+	- change : simplify port configuration with APP_PORT default
+
 ## 3.0.2 - 2026-06-30
 	- add : healthcheck for container zytholo-app
 

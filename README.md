@@ -65,8 +65,7 @@ cp .env.example .env
     openssl rand -hex 32
     ```
 
-- `APP_PORT`: Port the app will listen on
-- `HOST_PORT`: Port exposed by Docker (Docker only)
+- `APP_PORT`: Port the app will listen on and expose locally (default: `8080`)
 - `ADMIN_USERNAME`: Optional. Admin username (default: `admin`)
 - `ADMIN_PASSWORD`: Admin password
 - `USE_HTTPS`: Do not enable in local environments (default: `0`)
@@ -85,7 +84,7 @@ docker-compose up -d --build
 
 ### First startup
 
-The app is available at **http://localhost:8080**
+The app is available at **http://localhost:8080** by default, or at **http://localhost:$APP_PORT** if you changed the port.
 
 1. Log in with the configured admin credentials.
 2. Create users from the admin panel.
