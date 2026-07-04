@@ -88,6 +88,53 @@ def calculate_record_evening(records):
     best_evening['total_liters'] = round(best_evening['total_liters'], 2)
     return best_evening
 
+
+def check_record_evening_beaten(user_id, reference_datetime=None, rollover_hour=EVENING_ROLLOVER_HOUR):
+    """Détecte si la soirée en cours a battu le précédent record de consommation.
+
+    Retourne un dict décrivant le nouveau record, ou None si aucun record battu.
+    """
+    records = Database.get_consumption(user_id)
+    if not records:
+        return None
+
+    # Total de litres agrégé par soirée
+    evening_totals = {}
+    for record in records:
+        evening_date, _ = get_evening_reference(record, rollover_hour)
+        pints = record['pints'] or 0
+        half_pints = record['half_pints'] or 0
+        liters_33 = record['liters_33'] or 0
+        liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
+        key = evening_date.isoformat()
+        evening_totals[key] = evening_totals.get(key, 0) + liters
+
+    # Soirée en cours (peut avoir démarré la veille avant le rollover)
+    now = reference_datetime or datetime.now()
+    current_evening_date = now.date()
+    if now.hour < rollover_hour:
+        current_evening_date -= timedelta(days=1)
+    current_key = current_evening_date.isoformat()
+
+    current_total = evening_totals.get(current_key, 0)
+    if current_total <= 0:
+        return None
+
+    previous_evenings = [(key, total) for key, total in evening_totals.items() if key != current_key]
+    if not previous_evenings:
+        return None  # Aucun record antérieur à battre
+
+    previous_key, previous_record = max(previous_evenings, key=lambda item: (item[1], item[0]))
+    if current_total <= previous_record:
+        return None
+
+    return {
+        'evening_date': current_key,
+        'total_liters': round(current_total, 2),
+        'previous_record_liters': round(previous_record, 2),
+        'previous_record_date': previous_key,
+    }
+
 def calculate_stats(
     user_id,
     start_date=None,
@@ -222,6 +269,21 @@ def calculate_stats(
             'day_indexes': day_indexes
         })
     
+    # Vérifier si la soirée en cours a battu le record de consommation
+    record_evening_alert = check_record_evening_beaten(user_id)
+    if record_evening_alert:
+        three_hour_warnings.append({
+            'type': 'record',
+            'start_time': '00:00:00',
+            'end_time': '23:59:59',
+            'total_liters': record_evening_alert['total_liters'],
+            'previous_record_liters': record_evening_alert['previous_record_liters'],
+            'previous_record_date': record_evening_alert['previous_record_date'],
+            'start_date': record_evening_alert['evening_date'],
+            'end_date': record_evening_alert['evening_date'],
+            'items': [],
+        })
+
     return {
         'total_pints': total_pints,
         'total_half_pints': total_half_pints,

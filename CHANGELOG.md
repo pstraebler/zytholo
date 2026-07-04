@@ -1,6 +1,7 @@
 # Changelog
 
 ## 3.1 - 2026-07
+	- add : alert when evening consumption record is beaten
 	- change : security improvements 
 
 ## 3.0.3 - 2026-07-01

@@ -1370,18 +1370,19 @@ function updateStatsDisplay(data) {
     if (warningsContainer && warningsList) {
         const now = new Date();
         
-        // Séparer les avertissements hebdomadaires et les 3h
+        // Séparer les avertissements hebdomadaires, record et 3h
         const weeklyWarnings = data.warnings.filter(w => w.type === 'weekly');
-        const threeHourWarnings = data.warnings.filter(w => w.type !== 'weekly');
-        
+        const recordWarnings = data.warnings.filter(w => w.type === 'record');
+        const threeHourWarnings = data.warnings.filter(w => w.type !== 'weekly' && w.type !== 'record');
+
         // Filtrer les avertissements 3h expirés
         const activeThreeHourWarnings = threeHourWarnings.filter(warning => {
             const endDateTime = new Date(warning.end_date + 'T' + warning.end_time);
             return now <= endDateTime;
         });
-        
+
         // Combiner tous les avertissements actifs
-        const allWarnings = [...weeklyWarnings, ...activeThreeHourWarnings];
+        const allWarnings = [...recordWarnings, ...weeklyWarnings, ...activeThreeHourWarnings];
         
         if (allWarnings.length > 0) {
             warningsContainer.style.display = 'block';
@@ -1399,7 +1400,18 @@ function updateStatsDisplay(data) {
                     border: 1px solid var(--card-border-color);
                 `;
                 
-                if (warning.type === 'weekly') {
+                if (warning.type === 'record') {
+                    // Nouveau record de soirée battu
+                    warningDiv.style.borderLeftColor = '#f1c40f';
+                    warningDiv.innerHTML = `
+                        <strong style="font-size: 1.1rem;">${t('alert_record_evening_title')}</strong><br>
+                        ${t('alert_total')}: <strong>${warning.total_liters}L</strong>
+                        (${t('alert_record_evening_previous', {
+                            previous: Number(warning.previous_record_liters).toFixed(2),
+                            date: formatSelectedDate(warning.previous_record_date)
+                        })})
+                    `;
+                } else if (warning.type === 'weekly') {
                     // Avertissement 3ème jour
                     const dayIndexes = warning.day_indexes || [];
                     const localizedDays = dayIndexes.map(dayIndex => t(`day_${dayIndex}`));
