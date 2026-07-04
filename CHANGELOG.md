@@ -1,5 +1,8 @@
 # Changelog
 
+## 3.1 - 2026-07
+	- change : security improvements 
+
 ## 3.0.3 - 2026-07-01
 	- change : simplify port configuration with APP_PORT default
 

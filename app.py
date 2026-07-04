@@ -6,12 +6,16 @@ from utils import calculate_stats, export_csv, import_csv, get_top_drinkers, get
 from config import Config
 from flask_wtf.csrf import CSRFProtect
 from i18n import get_request_language, t
+from werkzeug.middleware.proxy_fix import ProxyFix
 import os
 import uuid
 import logging
 import io
 
 app = Flask(__name__)
+# Derrière Cloudflare Tunnel (cloudflared) : un seul proxy de confiance.
+# Corrige request.remote_addr / scheme / host à partir des en-têtes X-Forwarded-*.
+app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1)
 app.config.from_object(Config)
 bcrypt.init_app(app)
 csrf = CSRFProtect(app)
@@ -23,6 +27,20 @@ logging.basicConfig(
     datefmt='%d/%b/%Y %H:%M:%S'
 )
 logger = logging.getLogger(__name__)
+
+def get_client_ip():
+    """Retourne la vraie IP du client derrière Cloudflare Tunnel.
+
+    Priorité à l'en-tête Cloudflare CF-Connecting-IP, puis au premier
+    maillon de X-Forwarded-For, sinon l'IP du pair TCP (remote_addr).
+    """
+    cf_ip = request.headers.get('CF-Connecting-IP')
+    if cf_ip:
+        return cf_ip
+    xff = request.headers.get('X-Forwarded-For')
+    if xff:
+        return xff.split(',')[0].strip()
+    return request.remote_addr
 
 def build_tied_podium(drinkers, max_medals=3):
     """Construit un podium (or/argent/bronze) en regroupant les ex-aequo."""
@@ -288,7 +306,7 @@ def login():
     if request.method == 'POST':
         username = request.form.get('username', '').strip()
         password = request.form.get('password', '').strip()
-        client_ip = request.remote_addr
+        client_ip = get_client_ip()
         
         # Vérifier si l'utilisateur classique existe
         if Database.user_exists(username):
