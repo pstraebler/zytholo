@@ -21,6 +21,8 @@ A web app to track beer consumption with multi-user management, configurable ale
 - **Configurable alerts**:
   - Warning when consumption exceeds a personal threshold over a rolling 3-hour window
   - Warning when the number of drinking days in a week reaches a configurable threshold
+  - Water reminder inviting you to drink a glass of water once the evening's consumption passes a threshold (default 1 L); dismiss it with the check button and it reappears after another full threshold is consumed
+  - Any alert threshold can be set to `0` to disable that alert
 - **Rankings**:
   - Weekly podium to compare your consumption with other users
   - Monthly podium to see where you stand against the rest of the app
@@ -81,6 +83,31 @@ Then :
 ```bash
 docker-compose up -d --build
 ```
+
+### Production web server
+
+The container runs on **[Gunicorn](https://gunicorn.org/)**, a production-grade WSGI server — **not** Flask's built-in development server, which is single-process and unsuitable for production.
+
+- The startup command is defined in the image (`Dockerfile`): `gunicorn -c gunicorn.conf.py app:app`.
+- Tuning lives in [`gunicorn.conf.py`](gunicorn.conf.py) and every value can be overridden with an environment variable (no image rebuild needed — just set it in `.env`).
+- Gunicorn binds to `0.0.0.0:$APP_PORT` inside the container. The app is meant to sit **behind a reverse proxy / tunnel** (e.g. a Cloudflare tunnel) that terminates TLS; `ProxyFix` is already configured so the real client IP and scheme are honored.
+
+Optional tuning variables:
+
+| Variable | Default | Description |
+| --- | --- | --- |
+| `GUNICORN_WORKERS` | `3` | Number of worker processes. Rule of thumb: `(2 × CPU cores) + 1`. |
+| `GUNICORN_THREADS` | `2` | Threads per worker. |
+| `GUNICORN_TIMEOUT` | `60` | Seconds before a stalled request is killed. |
+| `GUNICORN_GRACEFUL_TIMEOUT` | `30` | Seconds allowed for workers to finish on restart. |
+| `GUNICORN_MAX_REQUESTS` | `1000` | Recycle a worker after this many requests (mitigates memory leaks). |
+| `GUNICORN_MAX_REQUESTS_JITTER` | `100` | Random spread added to `MAX_REQUESTS` so workers don't all recycle at once. |
+| `GUNICORN_LOGLEVEL` | `info` | Log verbosity. |
+| `GUNICORN_FORWARDED_ALLOW_IPS` | `*` | Proxy IPs trusted for `X-Forwarded-*` headers. |
+
+Access and error logs are written to stdout/stderr, so they are available through `docker logs zytholo-app`.
+
+> For local development only, you can still run Flask's built-in server with `python app.py` — do not use it in production.
 
 ### First startup
 
