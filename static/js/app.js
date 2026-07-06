@@ -109,6 +109,33 @@ const defaultThreeHourThresholdLiters = 1.5;
 let threeHourThresholdLiters = defaultThreeHourThresholdLiters;
 const defaultWeeklyDrinkingDaysThreshold = 3;
 let weeklyDrinkingDaysThreshold = defaultWeeklyDrinkingDaysThreshold;
+const defaultWaterReminderThresholdLiters = 1;
+let waterReminderThresholdLiters = defaultWaterReminderThresholdLiters;
+const waterReminderDismissStorageKey = 'zytholo_water_reminder_dismissed';
+
+// Total de la soirée (en litres) au moment où l'utilisateur a validé le rappel.
+// L'alerte ne réapparaît qu'après avoir bu un seuil complet de plus.
+function getWaterReminderAck() {
+    try {
+        const raw = localStorage.getItem(waterReminderDismissStorageKey);
+        if (!raw) return { key: '', total: 0 };
+        const parsed = JSON.parse(raw);
+        return { key: parsed.key || '', total: Number(parsed.total) || 0 };
+    } catch (error) {
+        return { key: '', total: 0 };
+    }
+}
+
+function acknowledgeWaterReminder(eveningKey, total) {
+    try {
+        localStorage.setItem(
+            waterReminderDismissStorageKey,
+            JSON.stringify({ key: eveningKey || '', total: Number(total) || 0 })
+        );
+    } catch (error) {
+        // Stockage indisponible : l'alerte réapparaîtra au prochain rafraîchissement.
+    }
+}
 
 function getChartThemeColors() {
     const styles = getComputedStyle(document.documentElement);
@@ -378,6 +405,13 @@ function initSettingsModal() {
         weeklyDaysThresholdInput.addEventListener('blur', saveSettings);
     }
 
+    const waterReminderThresholdInput = document.getElementById('water-reminder-threshold');
+    if (waterReminderThresholdInput) {
+        updateWaterReminderThresholdInput();
+        waterReminderThresholdInput.addEventListener('change', saveSettings);
+        waterReminderThresholdInput.addEventListener('blur', saveSettings);
+    }
+
     updateSettingsLanguageSelection();
     updateSettingsThemeSelection();
     updateAverageBeerPriceInput();
@@ -515,6 +549,13 @@ function updateWeeklyDaysThresholdInput() {
     }
 }
 
+function updateWaterReminderThresholdInput() {
+    const input = document.getElementById('water-reminder-threshold');
+    if (input && document.activeElement !== input) {
+        input.value = Number(waterReminderThresholdLiters).toFixed(2);
+    }
+}
+
 function applySettings(settings) {
     // Une valeur de 0 désactive l'alerte correspondante.
     const threshold = parseFloat(settings?.three_hour_threshold_liters);
@@ -527,8 +568,14 @@ function applySettings(settings) {
         weeklyDrinkingDaysThreshold = weeklyThreshold;
     }
 
+    const waterThreshold = parseFloat(settings?.water_reminder_threshold_liters);
+    if (Number.isFinite(waterThreshold) && (waterThreshold === 0 || (waterThreshold >= 0.1 && waterThreshold <= 10))) {
+        waterReminderThresholdLiters = waterThreshold;
+    }
+
     updateThreeHourThresholdInput();
     updateWeeklyDaysThresholdInput();
+    updateWaterReminderThresholdInput();
 }
 
 function loadSettings() {
@@ -543,10 +590,12 @@ function loadSettings() {
 function saveSettings() {
     const threeHourInput = document.getElementById('three-hour-threshold');
     const weeklyDaysInput = document.getElementById('weekly-days-threshold');
-    if (!threeHourInput || !weeklyDaysInput) return;
+    const waterReminderInput = document.getElementById('water-reminder-threshold');
+    if (!threeHourInput || !weeklyDaysInput || !waterReminderInput) return;
 
     const threeHourThreshold = parseFloat(threeHourInput.value.replace(',', '.'));
     let weeklyDaysThreshold = parseInt(weeklyDaysInput.value, 10);
+    const waterReminderThreshold = parseFloat(waterReminderInput.value.replace(',', '.'));
     // Les valeurs valides sont 0 (désactivé) ou 2 à 7 : on comble le « trou »
     // du 1 pour que les flèches passent directement de 2 à 0 et de 0 à 2.
     if (weeklyDaysThreshold === 1) {
@@ -559,18 +608,23 @@ function saveSettings() {
         || !(threeHourThreshold === 0 || (threeHourThreshold >= 0.1 && threeHourThreshold <= 10))
         || !Number.isInteger(weeklyDaysThreshold)
         || !(weeklyDaysThreshold === 0 || (weeklyDaysThreshold >= 2 && weeklyDaysThreshold <= 7))
+        || !Number.isFinite(waterReminderThreshold)
+        || !(waterReminderThreshold === 0 || (waterReminderThreshold >= 0.1 && waterReminderThreshold <= 10))
     ) {
         updateThreeHourThresholdInput();
         updateWeeklyDaysThresholdInput();
+        updateWaterReminderThresholdInput();
         return;
     }
 
     if (
         Math.abs(threeHourThreshold - threeHourThresholdLiters) < 0.001
         && weeklyDaysThreshold === weeklyDrinkingDaysThreshold
+        && Math.abs(waterReminderThreshold - waterReminderThresholdLiters) < 0.001
     ) {
         updateThreeHourThresholdInput();
         updateWeeklyDaysThresholdInput();
+        updateWaterReminderThresholdInput();
         return;
     }
 
@@ -582,7 +636,8 @@ function saveSettings() {
         },
         body: JSON.stringify({
             three_hour_threshold_liters: threeHourThreshold,
-            weekly_drinking_days_threshold: weeklyDaysThreshold
+            weekly_drinking_days_threshold: weeklyDaysThreshold,
+            water_reminder_threshold_liters: waterReminderThreshold
         })
     })
     .then(response => {
@@ -599,6 +654,7 @@ function saveSettings() {
         console.error('Settings error:', error);
         updateThreeHourThresholdInput();
         updateWeeklyDaysThresholdInput();
+        updateWaterReminderThresholdInput();
         alert(t('error_settings_update'));
     });
 }
@@ -1376,10 +1432,21 @@ function updateStatsDisplay(data) {
     if (warningsContainer && warningsList) {
         const now = new Date();
         
-        // Séparer les avertissements hebdomadaires, record et 3h
+        // Séparer les avertissements hebdomadaires, record, eau et 3h
         const weeklyWarnings = data.warnings.filter(w => w.type === 'weekly');
         const recordWarnings = data.warnings.filter(w => w.type === 'record');
-        const threeHourWarnings = data.warnings.filter(w => w.type !== 'weekly' && w.type !== 'record');
+        const waterAck = getWaterReminderAck();
+        const waterWarnings = data.warnings.filter(w => {
+            if (w.type !== 'water') return false;
+            // Nouvelle soirée (ou jamais validé) : le serveur garantit déjà total >= seuil.
+            if (waterAck.key !== w.start_date) return true;
+            // Sinon, réafficher seulement après un seuil complet bu depuis la validation.
+            const threshold = Number(w.threshold_liters) || waterReminderThresholdLiters;
+            return (Number(w.total_liters) - waterAck.total) >= threshold - 1e-9;
+        });
+        const threeHourWarnings = data.warnings.filter(
+            w => w.type !== 'weekly' && w.type !== 'record' && w.type !== 'water'
+        );
 
         // Filtrer les avertissements 3h expirés
         const activeThreeHourWarnings = threeHourWarnings.filter(warning => {
@@ -1388,7 +1455,7 @@ function updateStatsDisplay(data) {
         });
 
         // Combiner tous les avertissements actifs
-        const allWarnings = [...recordWarnings, ...weeklyWarnings, ...activeThreeHourWarnings];
+        const allWarnings = [...recordWarnings, ...weeklyWarnings, ...waterWarnings, ...activeThreeHourWarnings];
         
         if (allWarnings.length > 0) {
             warningsContainer.style.display = 'block';
@@ -1417,6 +1484,30 @@ function updateStatsDisplay(data) {
                             date: formatSelectedDate(warning.previous_record_date)
                         })})
                     `;
+                } else if (warning.type === 'water') {
+                    // Rappel de boire un verre d'eau
+                    warningDiv.style.borderLeftColor = '#3498db';
+                    warningDiv.style.position = 'relative';
+                    warningDiv.style.paddingRight = '2.5rem';
+                    warningDiv.innerHTML = `
+                        <strong style="font-size: 1.1rem;">${t('alert_water_reminder_title', {
+                            threshold: Number(warning.threshold_liters || waterReminderThresholdLiters).toFixed(2)
+                        })}</strong>
+                    `;
+                    const dismissBtn = document.createElement('button');
+                    dismissBtn.type = 'button';
+                    dismissBtn.className = 'warning-dismiss warning-confirm';
+                    dismissBtn.setAttribute('aria-label', t('alert_water_done'));
+                    dismissBtn.setAttribute('title', t('alert_water_done'));
+                    dismissBtn.innerText = '✓';
+                    dismissBtn.addEventListener('click', function() {
+                        acknowledgeWaterReminder(warning.start_date, warning.total_liters);
+                        warningDiv.remove();
+                        if (!warningsList.children.length) {
+                            warningsContainer.style.display = 'none';
+                        }
+                    });
+                    warningDiv.appendChild(dismissBtn);
                 } else if (warning.type === 'weekly') {
                     // Avertissement 3ème jour
                     const dayIndexes = warning.day_indexes || [];

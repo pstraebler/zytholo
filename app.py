@@ -419,12 +419,14 @@ def api_consumption():
     user_settings = Database.get_user_settings(user_id)
     three_hour_threshold_liters = user_settings['three_hour_threshold_liters']
     weekly_drinking_days_threshold = user_settings['weekly_drinking_days_threshold']
+    water_reminder_threshold_liters = user_settings['water_reminder_threshold_liters']
     stats = calculate_stats(
         user_id,
         start_date,
         end_date,
         three_hour_threshold_liters,
-        weekly_drinking_days_threshold
+        weekly_drinking_days_threshold,
+        water_reminder_threshold_liters
     )
     today = date.today()
     current_month_start = today.replace(day=1)
@@ -435,7 +437,8 @@ def api_consumption():
         previous_month_start.isoformat(),
         today.isoformat(),
         three_hour_threshold_liters,
-        weekly_drinking_days_threshold
+        weekly_drinking_days_threshold,
+        0  # alerte « verre d'eau » inutile ici : seules les stats mensuelles sont lues
     )['monthly_stats']
     for month in (previous_month_start, current_month_start):
         monthly_chart_stats.setdefault(
@@ -506,6 +509,10 @@ def api_settings():
             'weekly_drinking_days_threshold',
             current_settings['weekly_drinking_days_threshold']
         ))
+        water_reminder_threshold_liters = float(data.get(
+            'water_reminder_threshold_liters',
+            current_settings['water_reminder_threshold_liters']
+        ))
     except (TypeError, ValueError):
         return jsonify({'success': False, 'message': t('invalid_settings')}), 400
 
@@ -513,19 +520,22 @@ def api_settings():
     if (
         not (three_hour_threshold_liters == 0 or 0.1 <= three_hour_threshold_liters <= 10)
         or not (weekly_drinking_days_threshold == 0 or 2 <= weekly_drinking_days_threshold <= 7)
+        or not (water_reminder_threshold_liters == 0 or 0.1 <= water_reminder_threshold_liters <= 10)
     ):
         return jsonify({'success': False, 'message': t('invalid_settings')}), 400
 
     Database.update_user_settings(
         user_id,
         round(three_hour_threshold_liters, 2),
-        weekly_drinking_days_threshold
+        weekly_drinking_days_threshold,
+        round(water_reminder_threshold_liters, 2)
     )
 
     return jsonify({
         'success': True,
         'three_hour_threshold_liters': round(three_hour_threshold_liters, 2),
-        'weekly_drinking_days_threshold': weekly_drinking_days_threshold
+        'weekly_drinking_days_threshold': weekly_drinking_days_threshold,
+        'water_reminder_threshold_liters': round(water_reminder_threshold_liters, 2)
     })
 
 @app.route('/api/rankings', methods=['GET'])

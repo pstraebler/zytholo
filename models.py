@@ -30,7 +30,8 @@ class Database:
                 night_mode_until DATETIME DEFAULT NULL,
                 force_password_change TINYINT(1) DEFAULT 0,
                 three_hour_threshold_liters DECIMAL(4,2) DEFAULT 1.50,
-                weekly_drinking_days_threshold INT DEFAULT 3
+                weekly_drinking_days_threshold INT DEFAULT 3,
+                water_reminder_threshold_liters DECIMAL(4,2) DEFAULT 1.00
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             '''
         )
@@ -83,6 +84,23 @@ class Database:
                 '''
                 ALTER TABLE users
                 ADD COLUMN weekly_drinking_days_threshold INT DEFAULT 3
+                '''
+            )
+
+        cursor.execute(
+            '''
+            SELECT COUNT(*) AS column_exists
+            FROM information_schema.COLUMNS
+            WHERE TABLE_SCHEMA = DATABASE()
+              AND TABLE_NAME = 'users'
+              AND COLUMN_NAME = 'water_reminder_threshold_liters'
+            '''
+        )
+        if not cursor.fetchone()['column_exists']:
+            cursor.execute(
+                '''
+                ALTER TABLE users
+                ADD COLUMN water_reminder_threshold_liters DECIMAL(4,2) DEFAULT 1.00
                 '''
             )
 
@@ -381,7 +399,9 @@ class Database:
         cursor = conn.cursor()
         cursor.execute(
             '''
-            SELECT three_hour_threshold_liters, weekly_drinking_days_threshold
+            SELECT three_hour_threshold_liters,
+                   weekly_drinking_days_threshold,
+                   water_reminder_threshold_liters
             FROM users
             WHERE id = %s
             ''',
@@ -392,19 +412,28 @@ class Database:
 
         three_hour_threshold = result['three_hour_threshold_liters'] if result else None
         weekly_days_threshold = result['weekly_drinking_days_threshold'] if result else None
+        water_reminder_threshold = result['water_reminder_threshold_liters'] if result else None
         # Ne retomber sur la valeur par defaut que si la colonne est NULL :
         # une valeur de 0 est valide et desactive l'alerte correspondante.
         if three_hour_threshold is None:
             three_hour_threshold = 1.5
         if weekly_days_threshold is None:
             weekly_days_threshold = 3
+        if water_reminder_threshold is None:
+            water_reminder_threshold = 1.0
         return {
             'three_hour_threshold_liters': float(three_hour_threshold),
-            'weekly_drinking_days_threshold': int(weekly_days_threshold)
+            'weekly_drinking_days_threshold': int(weekly_days_threshold),
+            'water_reminder_threshold_liters': float(water_reminder_threshold)
         }
 
     @staticmethod
-    def update_user_settings(user_id, three_hour_threshold_liters, weekly_drinking_days_threshold):
+    def update_user_settings(
+        user_id,
+        three_hour_threshold_liters,
+        weekly_drinking_days_threshold,
+        water_reminder_threshold_liters
+    ):
         """Met a jour les reglages utilisateur."""
         conn = Database.get_connection()
         cursor = conn.cursor()
@@ -412,10 +441,16 @@ class Database:
             '''
             UPDATE users
             SET three_hour_threshold_liters = %s,
-                weekly_drinking_days_threshold = %s
+                weekly_drinking_days_threshold = %s,
+                water_reminder_threshold_liters = %s
             WHERE id = %s
             ''',
-            (three_hour_threshold_liters, weekly_drinking_days_threshold, user_id),
+            (
+                three_hour_threshold_liters,
+                weekly_drinking_days_threshold,
+                water_reminder_threshold_liters,
+                user_id,
+            ),
         )
         conn.commit()
         conn.close()

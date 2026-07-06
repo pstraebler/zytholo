@@ -89,6 +89,31 @@ def calculate_record_evening(records):
     return best_evening
 
 
+def get_current_evening_total(user_id, reference_datetime=None, rollover_hour=EVENING_ROLLOVER_HOUR):
+    """Total de litres consommés pendant la soirée en cours (déborde après minuit)."""
+    records = Database.get_consumption(user_id)
+    if not records:
+        return 0.0
+
+    now = reference_datetime or datetime.now()
+    current_evening_date = now.date()
+    if now.hour < rollover_hour:
+        current_evening_date -= timedelta(days=1)
+    current_key = current_evening_date.isoformat()
+
+    total = 0.0
+    for record in records:
+        evening_date, _ = get_evening_reference(record, rollover_hour)
+        if evening_date.isoformat() != current_key:
+            continue
+        pints = record['pints'] or 0
+        half_pints = record['half_pints'] or 0
+        liters_33 = record['liters_33'] or 0
+        total += (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
+
+    return round(total, 2)
+
+
 def check_record_evening_beaten(user_id, reference_datetime=None, rollover_hour=EVENING_ROLLOVER_HOUR):
     """Détecte si la soirée en cours a battu le précédent record de consommation.
 
@@ -140,7 +165,8 @@ def calculate_stats(
     start_date=None,
     end_date=None,
     three_hour_threshold_liters=1.5,
-    weekly_drinking_days_threshold=3
+    weekly_drinking_days_threshold=3,
+    water_reminder_threshold_liters=1.0
 ):
     """Calculer les statistiques de consommation avec détection de fenêtres de 3h"""
     records = Database.get_consumption(user_id, start_date, end_date)
@@ -288,6 +314,22 @@ def calculate_stats(
             'end_date': record_evening_alert['evening_date'],
             'items': [],
         })
+
+    # Rappel de boire un verre d'eau au-delà d'un certain volume sur la soirée
+    # (un seuil de 0 désactive l'alerte)
+    if water_reminder_threshold_liters > 0:
+        current_evening_total = get_current_evening_total(user_id)
+        if current_evening_total >= water_reminder_threshold_liters:
+            three_hour_warnings.append({
+                'type': 'water',
+                'start_time': '00:00:00',
+                'end_time': '23:59:59',
+                'total_liters': current_evening_total,
+                'threshold_liters': round(water_reminder_threshold_liters, 2),
+                'start_date': today_str,
+                'end_date': today_str,
+                'items': [],
+            })
 
     return {
         'total_pints': total_pints,

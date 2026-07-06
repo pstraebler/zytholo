@@ -3,6 +3,7 @@
 ## 4.0 - 2026-07
 	- add : alert when evening consumption record is beaten
 	- add : alerts can now be disabled
+	- add : new alert - drink water
 	- change : security improvements 
 
 ## 3.0.3 - 2026-07-01
