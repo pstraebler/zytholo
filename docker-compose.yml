@@ -27,7 +27,6 @@ services:
         condition: service_healthy
     env_file:
       - .env
-    command: python app.py
     healthcheck:
       test:
         [

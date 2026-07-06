@@ -4,6 +4,7 @@
 	- add : alert when evening consumption record is beaten
 	- add : alerts can now be disabled
 	- add : new alert - drink water
+	- change : gunicorn is now used as web server
 	- change : security improvements 
 
 ## 3.0.3 - 2026-07-01

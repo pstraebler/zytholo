@@ -14,4 +14,4 @@ USER 1001
 
 EXPOSE 8080
 
-CMD ["python", "app.py"]
+CMD ["gunicorn", "-c", "gunicorn.conf.py", "app:app"]
