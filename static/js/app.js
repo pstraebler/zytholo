@@ -516,13 +516,14 @@ function updateWeeklyDaysThresholdInput() {
 }
 
 function applySettings(settings) {
+    // Une valeur de 0 désactive l'alerte correspondante.
     const threshold = parseFloat(settings?.three_hour_threshold_liters);
-    if (Number.isFinite(threshold) && threshold > 0) {
+    if (Number.isFinite(threshold) && (threshold === 0 || (threshold >= 0.1 && threshold <= 10))) {
         threeHourThresholdLiters = threshold;
     }
 
     const weeklyThreshold = parseInt(settings?.weekly_drinking_days_threshold, 10);
-    if (Number.isInteger(weeklyThreshold) && weeklyThreshold >= 2 && weeklyThreshold <= 7) {
+    if (Number.isInteger(weeklyThreshold) && (weeklyThreshold === 0 || (weeklyThreshold >= 2 && weeklyThreshold <= 7))) {
         weeklyDrinkingDaysThreshold = weeklyThreshold;
     }
 
@@ -545,14 +546,19 @@ function saveSettings() {
     if (!threeHourInput || !weeklyDaysInput) return;
 
     const threeHourThreshold = parseFloat(threeHourInput.value.replace(',', '.'));
-    const weeklyDaysThreshold = parseInt(weeklyDaysInput.value, 10);
+    let weeklyDaysThreshold = parseInt(weeklyDaysInput.value, 10);
+    // Les valeurs valides sont 0 (désactivé) ou 2 à 7 : on comble le « trou »
+    // du 1 pour que les flèches passent directement de 2 à 0 et de 0 à 2.
+    if (weeklyDaysThreshold === 1) {
+        weeklyDaysThreshold = weeklyDrinkingDaysThreshold === 0 ? 2 : 0;
+        weeklyDaysInput.value = weeklyDaysThreshold;
+    }
+    // Une valeur de 0 désactive l'alerte correspondante.
     if (
         !Number.isFinite(threeHourThreshold)
-        || threeHourThreshold < 0.1
-        || threeHourThreshold > 10
+        || !(threeHourThreshold === 0 || (threeHourThreshold >= 0.1 && threeHourThreshold <= 10))
         || !Number.isInteger(weeklyDaysThreshold)
-        || weeklyDaysThreshold < 2
-        || weeklyDaysThreshold > 7
+        || !(weeklyDaysThreshold === 0 || (weeklyDaysThreshold >= 2 && weeklyDaysThreshold <= 7))
     ) {
         updateThreeHourThresholdInput();
         updateWeeklyDaysThresholdInput();

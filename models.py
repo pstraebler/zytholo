@@ -390,11 +390,17 @@ class Database:
         result = cursor.fetchone()
         conn.close()
 
-        three_hour_threshold = result['three_hour_threshold_liters'] if result else 1.5
-        weekly_days_threshold = result['weekly_drinking_days_threshold'] if result else 3
+        three_hour_threshold = result['three_hour_threshold_liters'] if result else None
+        weekly_days_threshold = result['weekly_drinking_days_threshold'] if result else None
+        # Ne retomber sur la valeur par defaut que si la colonne est NULL :
+        # une valeur de 0 est valide et desactive l'alerte correspondante.
+        if three_hour_threshold is None:
+            three_hour_threshold = 1.5
+        if weekly_days_threshold is None:
+            weekly_days_threshold = 3
         return {
-            'three_hour_threshold_liters': float(three_hour_threshold or 1.5),
-            'weekly_drinking_days_threshold': int(weekly_days_threshold or 3)
+            'three_hour_threshold_liters': float(three_hour_threshold),
+            'weekly_drinking_days_threshold': int(weekly_days_threshold)
         }
 
     @staticmethod

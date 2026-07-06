@@ -222,7 +222,8 @@ def calculate_stats(
                         window_times.append(other_time_str)
                 
                 # Créer l'avertissement seulement si dépassement ET première fois
-                if window_liters >= three_hour_threshold_liters:
+                # (un seuil de 0 désactive l'alerte sur 3 heures)
+                if three_hour_threshold_liters > 0 and window_liters >= three_hour_threshold_liters:
                     three_hour_warnings.append({
                         'start_time': record_time_str,
                         'end_time': window_end.strftime('%H:%M:%S'),
@@ -238,12 +239,16 @@ def calculate_stats(
                         processed_times.add(time_str)
     
     # Vérifier si c'est le 3ème jour de la semaine
-    is_weekly_threshold_reached, drinking_days = check_weekly_drinking_days(
-        user_id,
-        today_str,
-        weekly_drinking_days_threshold
-    )
-    
+    # (un seuil de 0 désactive l'alerte sur les jours de consommation)
+    is_weekly_threshold_reached = False
+    drinking_days = []
+    if weekly_drinking_days_threshold > 0:
+        is_weekly_threshold_reached, drinking_days = check_weekly_drinking_days(
+            user_id,
+            today_str,
+            weekly_drinking_days_threshold
+        )
+
     if is_weekly_threshold_reached:
         day_indexes = []
         for day_str in sorted(drinking_days):

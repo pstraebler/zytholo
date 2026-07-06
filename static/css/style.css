@@ -565,6 +565,14 @@ body {
     margin-top: 1.5rem;
 }
 
+.settings-hint {
+    display: block;
+    margin-top: 0.4rem;
+    font-size: 0.8rem;
+    color: var(--text-color);
+    opacity: 0.65;
+}
+
 .night-mode-modal-intro {
     margin-bottom: 1rem;
     color: var(--text-color);

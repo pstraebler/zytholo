@@ -509,11 +509,10 @@ def api_settings():
     except (TypeError, ValueError):
         return jsonify({'success': False, 'message': t('invalid_settings')}), 400
 
+    # Une valeur de 0 désactive l'alerte correspondante.
     if (
-        three_hour_threshold_liters < 0.1
-        or three_hour_threshold_liters > 10
-        or weekly_drinking_days_threshold < 2
-        or weekly_drinking_days_threshold > 7
+        not (three_hour_threshold_liters == 0 or 0.1 <= three_hour_threshold_liters <= 10)
+        or not (weekly_drinking_days_threshold == 0 or 2 <= weekly_drinking_days_threshold <= 7)
     ):
         return jsonify({'success': False, 'message': t('invalid_settings')}), 400
 
