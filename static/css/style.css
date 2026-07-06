@@ -1700,9 +1700,14 @@ body.exporting-dashboard .export-section {
     }
 
     .login-box {
-        max-width: 420px;
+        max-width: 340px;
         border-radius: 24px;
-        padding: 2.5rem 1.5rem;
+        padding: 1.5rem 1.25rem;
+    }
+
+    .login-logo {
+        max-width: 170px;
+        margin-bottom: 1.25rem;
     }
 
     .bottom-message {
