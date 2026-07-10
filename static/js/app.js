@@ -1633,19 +1633,31 @@ function updateBacDisplay() {
 
     valueEl.textContent = bac.toFixed(2);
 
-    gaugeEl.classList.remove('bac-level-ok', 'bac-level-warn', 'bac-level-danger');
+    // Niveau : rouge au-dessus du seuil, jaune dans les 40 % sous le seuil, vert sinon.
+    let level;
     if (bac >= limit) {
         // Au-dessus du seuil (ou tout taux positif si le seuil vaut 0).
-        gaugeEl.classList.add('bac-level-danger');
+        level = 'danger';
     } else if (limit > 0 && bac >= limit * 0.6) {
-        gaugeEl.classList.add('bac-level-warn');
+        level = 'warn';
     } else {
-        gaugeEl.classList.add('bac-level-ok');
+        level = 'ok';
     }
 
-    verdictEl.textContent = canDrive ? t('bac_verdict_ok', { limit: limitText }) : t('bac_verdict_no');
-    verdictEl.classList.toggle('bac-verdict-ok', canDrive);
-    verdictEl.classList.toggle('bac-verdict-no', !canDrive);
+    gaugeEl.classList.remove('bac-level-ok', 'bac-level-warn', 'bac-level-danger');
+    gaugeEl.classList.add('bac-level-' + level);
+
+    verdictEl.classList.remove('bac-verdict-ok', 'bac-verdict-warn', 'bac-verdict-no');
+    if (level === 'danger') {
+        verdictEl.textContent = t('bac_verdict_no');
+        verdictEl.classList.add('bac-verdict-no');
+    } else if (level === 'warn') {
+        verdictEl.textContent = t('bac_verdict_warn', { limit: limitText });
+        verdictEl.classList.add('bac-verdict-warn');
+    } else {
+        verdictEl.textContent = t('bac_verdict_ok', { limit: limitText });
+        verdictEl.classList.add('bac-verdict-ok');
+    }
 
     if (!canDrive && bacAnchor.soberLegalAt) {
         legalEl.textContent = t('bac_legal_until', { limit: limitText, time: formatClockTime(bacAnchor.soberLegalAt) });

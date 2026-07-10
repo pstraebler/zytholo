@@ -802,6 +802,10 @@ body {
     color: var(--success-color);
 }
 
+.bac-verdict-warn {
+    color: var(--warning-color);
+}
+
 .bac-verdict-no {
     color: var(--danger-color);
 }
