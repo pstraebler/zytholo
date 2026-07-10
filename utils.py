@@ -228,6 +228,55 @@ def estimate_current_bac(
     }
 
 
+def peak_bac_for_evening(user_id, evening_key, weight_kg, sex, beer_abv=5.0, rollover_hour=EVENING_ROLLOVER_HOUR):
+    """Estimer le pic d'alcoolemie atteint durant une soiree donnee (formule de Widmark).
+
+    Le maximum est atteint juste apres une prise (absorption supposee instantanee,
+    elimination lineaire entre les verres). Retourne un taux g/L, ou None si le profil
+    (poids/sexe) manque ou si la soiree n'a aucune consommation.
+    """
+    if not weight_kg or weight_kg <= 0 or sex not in ('m', 'f') or not evening_key:
+        return None
+
+    try:
+        beer_abv = float(beer_abv)
+    except (TypeError, ValueError):
+        beer_abv = 5.0
+    if beer_abv <= 0:
+        beer_abv = 5.0
+
+    records = Database.get_consumption(user_id)
+    drinks = []
+    for record in records:
+        evening_date, chronological_datetime = get_evening_reference(record, rollover_hour)
+        if evening_date.isoformat() != evening_key:
+            continue
+        pints = record['pints'] or 0
+        half_pints = record['half_pints'] or 0
+        liters_33 = record['liters_33'] or 0
+        liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
+        if liters <= 0:
+            continue
+        drinks.append((chronological_datetime, liters))
+
+    if not drinks:
+        return None
+
+    drinks.sort(key=lambda item: item[0])
+    r = WIDMARK_R_MALE if sex == 'm' else WIDMARK_R_FEMALE
+    first_datetime = drinks[0][0]
+    cumulative_grams = 0.0
+    peak = 0.0
+    for chronological_datetime, liters in drinks:
+        cumulative_grams += liters * beer_abv * ETHANOL_G_PER_LITER_PER_DEGREE
+        hours_elapsed = max(0.0, (chronological_datetime - first_datetime).total_seconds() / 3600.0)
+        bac_at = cumulative_grams / (weight_kg * r) - ELIMINATION_RATE_PER_HOUR * hours_elapsed
+        if bac_at > peak:
+            peak = bac_at
+
+    return round(max(0.0, peak), 2)
+
+
 def check_record_evening_beaten(user_id, reference_datetime=None, rollover_hour=EVENING_ROLLOVER_HOUR):
     """Détecte si la soirée en cours a battu le précédent record de consommation.
 

@@ -1841,6 +1841,13 @@ function updateBestEveningDisplay(bestEvening) {
         );
     }
 
+    // Pic d'alcoolémie de la soirée (si le profil poids/sexe est renseigné).
+    if (bestEvening.peak_bac != null) {
+        details.push(
+            `<span class="stat-record-chip">🩸 ${t('record_peak_bac', { bac: Number(bestEvening.peak_bac).toFixed(2) })}</span>`
+        );
+    }
+
     detailsEl.innerHTML = details.join('');
 }
 

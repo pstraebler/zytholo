@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, session, redirect, url_for, j
 from datetime import datetime, timedelta, date
 from models import Database
 from auth import hash_password, verify_password, login_required, admin_required, verify_user_exists, bcrypt
-from utils import calculate_stats, export_csv, import_csv, get_top_drinkers, get_top_drinkers_for_month, get_top_drinkers_for_week, calculate_weekly_stats, estimate_current_bac, sync_record_evening, set_record_evening_name
+from utils import calculate_stats, export_csv, import_csv, get_top_drinkers, get_top_drinkers_for_month, get_top_drinkers_for_week, calculate_weekly_stats, estimate_current_bac, sync_record_evening, set_record_evening_name, peak_bac_for_evening
 from config import Config
 from flask_wtf.csrf import CSRFProtect
 from i18n import get_request_language, t
@@ -459,6 +459,15 @@ def api_consumption():
         tz_offset_minutes=tz_offset_minutes
     )
     record_evening = sync_record_evening(user_id)
+    # Pic d'alcoolémie de la soirée record affichée (nécessite le profil poids/sexe).
+    if stats['best_evening']:
+        stats['best_evening']['peak_bac'] = peak_bac_for_evening(
+            user_id,
+            stats['best_evening']['date'],
+            user_settings['weight_kg'],
+            user_settings['sex'],
+            user_settings['beer_abv']
+        )
     all_users = Database.get_all_users()
     all_user_records = Database.get_consumption_for_all_users(start_date, end_date)
     

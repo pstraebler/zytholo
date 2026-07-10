@@ -10,6 +10,7 @@
 	- add : blood alcohol concentration
 	- add : configurable legal blood alcohol limit (per country) for the driving verdict
 	- add : optional name for the all-time record evening 
+	- add : peak blood alcohol level reached during the record evening
 	- add : time zone is detected automatically
 	- change : gunicorn is now used as web server
 	- change : security improvements 
