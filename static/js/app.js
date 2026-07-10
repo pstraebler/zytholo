@@ -113,6 +113,17 @@ const defaultWaterReminderThresholdLiters = 1;
 let waterReminderThresholdLiters = defaultWaterReminderThresholdLiters;
 const waterReminderDismissStorageKey = 'zytholo_water_reminder_dismissed';
 
+// Réglages d'alcoolémie (estimation Widmark). Poids/sexe peuvent rester vides.
+const defaultBeerAbv = 5.0;
+let bacWeightKg = null;
+let bacSex = null;
+let bacBeerAbv = defaultBeerAbv;
+const bacLegalLimit = 0.5;
+const bacEliminationRatePerHour = 0.15;
+// Ancre pour faire décroître l'affichage en continu entre deux appels serveur.
+let bacAnchor = null;  // { bac, atMs, soberLegalAt, soberAt }
+let bacTickTimer = null;
+
 // Total de la soirée (en litres) au moment où l'utilisateur a validé le rappel.
 // L'alerte ne réapparaît qu'après avoir bu un seuil complet de plus.
 function getWaterReminderAck() {
@@ -412,6 +423,27 @@ function initSettingsModal() {
         waterReminderThresholdInput.addEventListener('blur', saveSettings);
     }
 
+    const bacWeightInput = document.getElementById('bac-weight');
+    if (bacWeightInput) {
+        bacWeightInput.addEventListener('change', saveBacProfile);
+        bacWeightInput.addEventListener('blur', saveBacProfile);
+    }
+    const bacSexInput = document.getElementById('bac-sex');
+    if (bacSexInput) {
+        bacSexInput.addEventListener('change', saveBacProfile);
+    }
+    const bacBeerAbvInput = document.getElementById('bac-beer-abv');
+    if (bacBeerAbvInput) {
+        bacBeerAbvInput.addEventListener('change', saveBacProfile);
+        bacBeerAbvInput.addEventListener('blur', saveBacProfile);
+    }
+    updateBacProfileInputs();
+
+    const bacOpenSettingsBtn = document.getElementById('bac-open-settings');
+    if (bacOpenSettingsBtn) {
+        bacOpenSettingsBtn.addEventListener('click', openSettingsModal);
+    }
+
     updateSettingsLanguageSelection();
     updateSettingsThemeSelection();
     updateAverageBeerPriceInput();
@@ -556,6 +588,21 @@ function updateWaterReminderThresholdInput() {
     }
 }
 
+function updateBacProfileInputs() {
+    const weightInput = document.getElementById('bac-weight');
+    if (weightInput && document.activeElement !== weightInput) {
+        weightInput.value = bacWeightKg != null ? String(bacWeightKg) : '';
+    }
+    const sexInput = document.getElementById('bac-sex');
+    if (sexInput && document.activeElement !== sexInput) {
+        sexInput.value = bacSex || '';
+    }
+    const abvInput = document.getElementById('bac-beer-abv');
+    if (abvInput && document.activeElement !== abvInput) {
+        abvInput.value = Number(bacBeerAbv).toFixed(1);
+    }
+}
+
 function applySettings(settings) {
     // Une valeur de 0 désactive l'alerte correspondante.
     const threshold = parseFloat(settings?.three_hour_threshold_liters);
@@ -573,9 +620,18 @@ function applySettings(settings) {
         waterReminderThresholdLiters = waterThreshold;
     }
 
+    const weight = parseFloat(settings?.weight_kg);
+    bacWeightKg = (Number.isFinite(weight) && weight >= 30 && weight <= 250) ? weight : null;
+
+    bacSex = (settings?.sex === 'm' || settings?.sex === 'f') ? settings.sex : null;
+
+    const abv = parseFloat(settings?.beer_abv);
+    bacBeerAbv = (Number.isFinite(abv) && abv >= 1 && abv <= 20) ? abv : defaultBeerAbv;
+
     updateThreeHourThresholdInput();
     updateWeeklyDaysThresholdInput();
     updateWaterReminderThresholdInput();
+    updateBacProfileInputs();
 }
 
 function loadSettings() {
@@ -655,6 +711,71 @@ function saveSettings() {
         updateThreeHourThresholdInput();
         updateWeeklyDaysThresholdInput();
         updateWaterReminderThresholdInput();
+        alert(t('error_settings_update'));
+    });
+}
+
+function saveBacProfile() {
+    const weightInput = document.getElementById('bac-weight');
+    const sexInput = document.getElementById('bac-sex');
+    const abvInput = document.getElementById('bac-beer-abv');
+    if (!weightInput || !sexInput || !abvInput) return;
+
+    const rawWeight = weightInput.value.replace(',', '.').trim();
+    let weightKg = null;
+    if (rawWeight !== '') {
+        weightKg = parseFloat(rawWeight);
+        if (!Number.isFinite(weightKg) || weightKg < 30 || weightKg > 250) {
+            updateBacProfileInputs();
+            return;
+        }
+        weightKg = Math.round(weightKg * 10) / 10;
+    }
+
+    const sex = (sexInput.value === 'm' || sexInput.value === 'f') ? sexInput.value : '';
+
+    const beerAbv = parseFloat(abvInput.value.replace(',', '.'));
+    if (!Number.isFinite(beerAbv) || beerAbv < 1 || beerAbv > 20) {
+        updateBacProfileInputs();
+        return;
+    }
+    const roundedAbv = Math.round(beerAbv * 10) / 10;
+
+    // Rien à envoyer si aucune valeur n'a changé.
+    if (
+        weightKg === bacWeightKg
+        && sex === (bacSex || '')
+        && Math.abs(roundedAbv - bacBeerAbv) < 0.001
+    ) {
+        updateBacProfileInputs();
+        return;
+    }
+
+    fetch('/api/settings', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({
+            weight_kg: weightKg,
+            sex: sex,
+            beer_abv: roundedAbv
+        })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Settings update failed');
+        }
+        return response.json();
+    })
+    .then(data => {
+        applySettings(data);
+        loadStats();
+    })
+    .catch(error => {
+        console.error('Settings error:', error);
+        updateBacProfileInputs();
         alert(t('error_settings_update'));
     });
 }
@@ -1257,8 +1378,11 @@ function loadStats() {
 
     const { startDate, endDate } = clampStatsDateInputs();
     updateTotalTimelineTitle(startDate, endDate);
-    
-    const url = `/api/consumption?start_date=${startDate}&end_date=${endDate}`;
+
+    // Décalage UTC du navigateur (minutes à l'est) : permet au serveur d'estimer
+    // l'alcoolémie à l'heure locale du client, quel que soit son fuseau.
+    const tzOffset = -new Date().getTimezoneOffset();
+    const url = `/api/consumption?start_date=${startDate}&end_date=${endDate}&tz_offset=${tzOffset}`;
     
     fetch(url)
         .then(response => response.json())
@@ -1411,6 +1535,97 @@ function formatTime(timeString) {
     return `${hours}h${minutes}`;
 }
 
+function formatClockTime(isoString) {
+    if (!isoString) return '';
+    const date = new Date(isoString);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleTimeString(currentLocale(), { hour: '2-digit', minute: '2-digit' });
+}
+
+// Rend la carte alcoolémie et arme le rafraîchissement live (l'estimation décroît).
+function renderBac(estimate) {
+    const section = document.getElementById('bac-section');
+    const missing = document.getElementById('bac-profile-missing');
+    const content = document.getElementById('bac-content');
+    if (!section || !missing || !content) return;
+
+    stopBacTick();
+
+    // Aucune donnée, ou soirée sans consommation : on masque la carte.
+    if (!estimate || estimate.has_drinks === false) {
+        bacAnchor = null;
+        section.style.display = 'none';
+        return;
+    }
+
+    // Profil incomplet : on invite à le renseigner (seulement si une soirée est en cours).
+    if (estimate.available === false) {
+        bacAnchor = null;
+        section.style.display = 'block';
+        missing.style.display = 'block';
+        content.style.display = 'none';
+        return;
+    }
+
+    section.style.display = 'block';
+    missing.style.display = 'none';
+    content.style.display = 'block';
+
+    bacAnchor = {
+        bac: Number(estimate.bac) || 0,
+        atMs: Date.now(),
+        soberLegalAt: estimate.sober_legal_at || null,
+        soberAt: estimate.sober_at || null
+    };
+
+    updateBacDisplay();
+    bacTickTimer = setInterval(updateBacDisplay, 30000);
+}
+
+function stopBacTick() {
+    if (bacTickTimer) {
+        clearInterval(bacTickTimer);
+        bacTickTimer = null;
+    }
+}
+
+// Calcule le taux courant à partir de l'ancre serveur (décroissance continue).
+function updateBacDisplay() {
+    if (!bacAnchor) return;
+    const valueEl = document.getElementById('bac-value');
+    const verdictEl = document.getElementById('bac-verdict');
+    const gaugeEl = document.getElementById('bac-gauge');
+    const legalEl = document.getElementById('bac-legal-info');
+    if (!valueEl || !verdictEl || !gaugeEl || !legalEl) return;
+
+    const elapsedHours = (Date.now() - bacAnchor.atMs) / 3600000;
+    const bac = Math.max(0, bacAnchor.bac - bacEliminationRatePerHour * elapsedHours);
+    const canDrive = bac < bacLegalLimit;
+
+    valueEl.textContent = bac.toFixed(2);
+
+    gaugeEl.classList.remove('bac-level-ok', 'bac-level-warn', 'bac-level-danger');
+    if (bac >= bacLegalLimit) {
+        gaugeEl.classList.add('bac-level-danger');
+    } else if (bac >= 0.3) {
+        gaugeEl.classList.add('bac-level-warn');
+    } else {
+        gaugeEl.classList.add('bac-level-ok');
+    }
+
+    verdictEl.textContent = canDrive ? t('bac_verdict_ok') : t('bac_verdict_no');
+    verdictEl.classList.toggle('bac-verdict-ok', canDrive);
+    verdictEl.classList.toggle('bac-verdict-no', !canDrive);
+
+    if (!canDrive && bacAnchor.soberLegalAt) {
+        legalEl.textContent = t('bac_legal_until', { time: formatClockTime(bacAnchor.soberLegalAt) });
+    } else if (canDrive && bac > 0 && bacAnchor.soberAt) {
+        legalEl.textContent = t('bac_sober_at', { time: formatClockTime(bacAnchor.soberAt) });
+    } else {
+        legalEl.textContent = '';
+    }
+}
+
 function updateStatsDisplay(data) {
     lastStatsData = data;
     const totalPintsEl = document.getElementById('total-pints');
@@ -1425,6 +1640,7 @@ function updateStatsDisplay(data) {
     
     updateEstimatedCost(data.total_liters);
     updateBestEveningDisplay(data.best_evening);
+    renderBac(data.bac_estimate);
     
     const warningsContainer = document.getElementById('warnings-container');
     const warningsList = document.getElementById('warnings-list');

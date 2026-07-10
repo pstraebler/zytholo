@@ -23,6 +23,10 @@ A web app to track beer consumption with multi-user management, configurable ale
   - Warning when the number of drinking days in a week reaches a configurable threshold
   - Water reminder inviting you to drink a glass of water once the evening's consumption passes a threshold (default 1 L); dismiss it with the check button and it reappears after another full threshold is consumed
   - Any alert threshold can be set to `0` to disable that alert
+- **Blood alcohol estimation**:
+  - Estimated blood alcohol content (BAC) for the current evening using the Widmark formula, based on your weight, sex, and average beer strength (set in the settings)
+  - Live decreasing estimate with a clear **can I drive?** verdict against the 0.5 g/L legal limit, plus the estimated time you drop back under it
+  - Always indicative only: it does not replace a breathalyser, and a probationary/novice licence allows 0 g/L
 - **Rankings**:
   - Weekly podium to compare your consumption with other users
   - Monthly podium to see where you stand against the rest of the app

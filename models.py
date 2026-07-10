@@ -31,7 +31,10 @@ class Database:
                 force_password_change TINYINT(1) DEFAULT 0,
                 three_hour_threshold_liters DECIMAL(4,2) DEFAULT 1.50,
                 weekly_drinking_days_threshold INT DEFAULT 3,
-                water_reminder_threshold_liters DECIMAL(4,2) DEFAULT 1.00
+                water_reminder_threshold_liters DECIMAL(4,2) DEFAULT 1.00,
+                weight_kg DECIMAL(5,1) DEFAULT NULL,
+                sex CHAR(1) DEFAULT NULL,
+                beer_abv DECIMAL(3,1) DEFAULT 5.0
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             '''
         )
@@ -103,6 +106,26 @@ class Database:
                 ADD COLUMN water_reminder_threshold_liters DECIMAL(4,2) DEFAULT 1.00
                 '''
             )
+
+        for column_name, column_definition in (
+            ('weight_kg', 'DECIMAL(5,1) DEFAULT NULL'),
+            ('sex', 'CHAR(1) DEFAULT NULL'),
+            ('beer_abv', 'DECIMAL(3,1) DEFAULT 5.0'),
+        ):
+            cursor.execute(
+                '''
+                SELECT COUNT(*) AS column_exists
+                FROM information_schema.COLUMNS
+                WHERE TABLE_SCHEMA = DATABASE()
+                  AND TABLE_NAME = 'users'
+                  AND COLUMN_NAME = %s
+                ''',
+                (column_name,),
+            )
+            if not cursor.fetchone()['column_exists']:
+                cursor.execute(
+                    f'ALTER TABLE users ADD COLUMN {column_name} {column_definition}'
+                )
 
         cursor.execute(
             '''
@@ -401,7 +424,10 @@ class Database:
             '''
             SELECT three_hour_threshold_liters,
                    weekly_drinking_days_threshold,
-                   water_reminder_threshold_liters
+                   water_reminder_threshold_liters,
+                   weight_kg,
+                   sex,
+                   beer_abv
             FROM users
             WHERE id = %s
             ''',
@@ -413,6 +439,9 @@ class Database:
         three_hour_threshold = result['three_hour_threshold_liters'] if result else None
         weekly_days_threshold = result['weekly_drinking_days_threshold'] if result else None
         water_reminder_threshold = result['water_reminder_threshold_liters'] if result else None
+        weight_kg = result['weight_kg'] if result else None
+        sex = result['sex'] if result else None
+        beer_abv = result['beer_abv'] if result else None
         # Ne retomber sur la valeur par defaut que si la colonne est NULL :
         # une valeur de 0 est valide et desactive l'alerte correspondante.
         if three_hour_threshold is None:
@@ -421,10 +450,17 @@ class Database:
             weekly_days_threshold = 3
         if water_reminder_threshold is None:
             water_reminder_threshold = 1.0
+        # Le degre est le seul reglage d'alcoolemie avec une valeur par defaut ;
+        # poids et sexe restent NULL tant que l'utilisateur ne les renseigne pas.
+        if beer_abv is None:
+            beer_abv = 5.0
         return {
             'three_hour_threshold_liters': float(three_hour_threshold),
             'weekly_drinking_days_threshold': int(weekly_days_threshold),
-            'water_reminder_threshold_liters': float(water_reminder_threshold)
+            'water_reminder_threshold_liters': float(water_reminder_threshold),
+            'weight_kg': float(weight_kg) if weight_kg is not None else None,
+            'sex': sex if sex in ('m', 'f') else None,
+            'beer_abv': float(beer_abv)
         }
 
     @staticmethod
@@ -432,7 +468,10 @@ class Database:
         user_id,
         three_hour_threshold_liters,
         weekly_drinking_days_threshold,
-        water_reminder_threshold_liters
+        water_reminder_threshold_liters,
+        weight_kg=None,
+        sex=None,
+        beer_abv=None
     ):
         """Met a jour les reglages utilisateur."""
         conn = Database.get_connection()
@@ -442,13 +481,19 @@ class Database:
             UPDATE users
             SET three_hour_threshold_liters = %s,
                 weekly_drinking_days_threshold = %s,
-                water_reminder_threshold_liters = %s
+                water_reminder_threshold_liters = %s,
+                weight_kg = %s,
+                sex = %s,
+                beer_abv = %s
             WHERE id = %s
             ''',
             (
                 three_hour_threshold_liters,
                 weekly_drinking_days_threshold,
                 water_reminder_threshold_liters,
+                weight_kg,
+                sex,
+                beer_abv,
                 user_id,
             ),
         )

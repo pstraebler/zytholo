@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, session, redirect, url_for, j
 from datetime import datetime, timedelta, date
 from models import Database
 from auth import hash_password, verify_password, login_required, admin_required, verify_user_exists, bcrypt
-from utils import calculate_stats, export_csv, import_csv, get_top_drinkers, get_top_drinkers_for_month, get_top_drinkers_for_week, calculate_weekly_stats
+from utils import calculate_stats, export_csv, import_csv, get_top_drinkers, get_top_drinkers_for_month, get_top_drinkers_for_week, calculate_weekly_stats, estimate_current_bac
 from config import Config
 from flask_wtf.csrf import CSRFProtect
 from i18n import get_request_language, t
@@ -446,6 +446,17 @@ def api_consumption():
             {'pints': 0, 'half_pints': 0, '33cl': 0}
         )
     weekly_stats = calculate_weekly_stats(user_id)  # AJOUTER CETTE LIGNE
+    # Décalage UTC du navigateur (minutes à l'est) pour raisonner à l'heure locale du client.
+    tz_offset_minutes = request.args.get('tz_offset', type=int)
+    if tz_offset_minutes is not None and not (-840 <= tz_offset_minutes <= 840):
+        tz_offset_minutes = None
+    bac_estimate = estimate_current_bac(
+        user_id,
+        user_settings['weight_kg'],
+        user_settings['sex'],
+        user_settings['beer_abv'],
+        tz_offset_minutes=tz_offset_minutes
+    )
     all_users = Database.get_all_users()
     all_user_records = Database.get_consumption_for_all_users(start_date, end_date)
     
@@ -466,7 +477,8 @@ def api_consumption():
         ],
         'all_user_records': [dict(record) for record in all_user_records],
         'records': [dict(record) for record in stats['all_records']],
-        'weekly_stats': weekly_stats  # AJOUTER CETTE LIGNE
+        'weekly_stats': weekly_stats,  # AJOUTER CETTE LIGNE
+        'bac_estimate': bac_estimate
     })
 
 
@@ -513,6 +525,19 @@ def api_settings():
             'water_reminder_threshold_liters',
             current_settings['water_reminder_threshold_liters']
         ))
+
+        # Reglages d'alcoolemie. Poids et sexe peuvent rester vides (non renseignes) :
+        # une chaine vide ou null remet le champ a NULL et desactive l'estimation.
+        raw_weight = data.get('weight_kg', current_settings['weight_kg'])
+        if raw_weight in (None, ''):
+            weight_kg = None
+        else:
+            weight_kg = round(float(raw_weight), 1)
+
+        raw_sex = data.get('sex', current_settings['sex'])
+        sex = raw_sex if raw_sex in ('m', 'f') else None
+
+        beer_abv = float(data.get('beer_abv', current_settings['beer_abv']))
     except (TypeError, ValueError):
         return jsonify({'success': False, 'message': t('invalid_settings')}), 400
 
@@ -521,21 +546,31 @@ def api_settings():
         not (three_hour_threshold_liters == 0 or 0.1 <= three_hour_threshold_liters <= 10)
         or not (weekly_drinking_days_threshold == 0 or 2 <= weekly_drinking_days_threshold <= 7)
         or not (water_reminder_threshold_liters == 0 or 0.1 <= water_reminder_threshold_liters <= 10)
+        or (weight_kg is not None and not (30 <= weight_kg <= 250))
+        or not (1 <= beer_abv <= 20)
     ):
         return jsonify({'success': False, 'message': t('invalid_settings')}), 400
+
+    beer_abv = round(beer_abv, 1)
 
     Database.update_user_settings(
         user_id,
         round(three_hour_threshold_liters, 2),
         weekly_drinking_days_threshold,
-        round(water_reminder_threshold_liters, 2)
+        round(water_reminder_threshold_liters, 2),
+        weight_kg,
+        sex,
+        beer_abv
     )
 
     return jsonify({
         'success': True,
         'three_hour_threshold_liters': round(three_hour_threshold_liters, 2),
         'weekly_drinking_days_threshold': weekly_drinking_days_threshold,
-        'water_reminder_threshold_liters': round(water_reminder_threshold_liters, 2)
+        'water_reminder_threshold_liters': round(water_reminder_threshold_liters, 2),
+        'weight_kg': weight_kg,
+        'sex': sex,
+        'beer_abv': beer_abv
     })
 
 @app.route('/api/rankings', methods=['GET'])

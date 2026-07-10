@@ -699,6 +699,139 @@ body {
     font-weight: 700;
 }
 
+.settings-field-label {
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.settings-number-field + .settings-number-field {
+    margin-top: 0.9rem;
+}
+
+.settings-select {
+    width: min(100%, 180px);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    background: var(--input-bg);
+    color: var(--text-color);
+    padding: 0.75rem;
+    font-size: 1rem;
+}
+
+.settings-select:focus {
+    outline: none;
+    border-color: var(--secondary-color);
+}
+
+/* --- Carte alcoolémie --- */
+.bac-card .bac-profile-missing p {
+    margin-bottom: 0.9rem;
+    color: var(--text-color);
+    opacity: 0.85;
+}
+
+.bac-content {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1.5rem;
+    align-items: center;
+}
+
+.bac-gauge {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.25rem 1.5rem;
+    border-radius: 12px;
+    border: 2px solid var(--border-color);
+    background: var(--muted-surface);
+    min-width: 180px;
+}
+
+.bac-gauge.bac-level-ok {
+    border-color: var(--success-color);
+}
+
+.bac-gauge.bac-level-warn {
+    border-color: var(--warning-color);
+}
+
+.bac-gauge.bac-level-danger {
+    border-color: var(--danger-color);
+}
+
+.bac-value-wrap {
+    display: flex;
+    align-items: baseline;
+    gap: 0.35rem;
+}
+
+.bac-value {
+    font-size: 2.75rem;
+    font-weight: 800;
+    line-height: 1;
+    color: var(--text-color);
+}
+
+.bac-level-ok .bac-value {
+    color: var(--success-color);
+}
+
+.bac-level-warn .bac-value {
+    color: var(--warning-color);
+}
+
+.bac-level-danger .bac-value {
+    color: var(--danger-color);
+}
+
+.bac-unit {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
+.bac-verdict {
+    font-weight: 700;
+    text-align: center;
+}
+
+.bac-verdict-ok {
+    color: var(--success-color);
+}
+
+.bac-verdict-no {
+    color: var(--danger-color);
+}
+
+.bac-details {
+    flex: 1 1 260px;
+}
+
+.bac-legal-info {
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.6rem;
+}
+
+.bac-legal-info:empty {
+    display: none;
+}
+
+.bac-probation {
+    color: var(--warning-color);
+    font-weight: 600;
+    margin-bottom: 0.6rem;
+}
+
+.bac-disclaimer {
+    font-size: 0.85rem;
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
 .password-modal-dialog.success-only .password-modal-header,
 .password-modal-dialog.success-only form,
 .password-modal-dialog.success-only .error {

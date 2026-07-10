@@ -114,6 +114,112 @@ def get_current_evening_total(user_id, reference_datetime=None, rollover_hour=EV
     return round(total, 2)
 
 
+# --- Estimation de l'alcoolemie (formule de Widmark) ---
+# Valeurs standard. L'estimation reste indicative : elle ne remplace pas un
+# ethylotest et ne prejuge pas de l'aptitude reelle a conduire.
+ETHANOL_G_PER_LITER_PER_DEGREE = 7.89  # g d'alcool pur par litre de biere et par degre (%)
+WIDMARK_R_MALE = 0.68
+WIDMARK_R_FEMALE = 0.55
+ELIMINATION_RATE_PER_HOUR = 0.15  # g/L eliminee par heure
+LEGAL_BAC_LIMIT = 0.5  # g/L (seuil general France ; 0 en permis probatoire)
+
+
+def estimate_current_bac(
+    user_id,
+    weight_kg,
+    sex,
+    beer_abv=5.0,
+    reference_datetime=None,
+    tz_offset_minutes=None,
+    rollover_hour=EVENING_ROLLOVER_HOUR,
+):
+    """Estimer l'alcoolemie actuelle pour la soiree en cours (formule de Widmark).
+
+    Les consommations sont horodatees a l'heure locale du navigateur. Pour comparer
+    correctement quel que soit le fuseau du serveur, on reconstruit "maintenant" a
+    l'heure du client a partir de son decalage UTC (tz_offset_minutes, minutes a l'est).
+
+    Retourne un dict decrivant l'estimation. 'available' vaut False si le profil
+    (poids/sexe) n'est pas renseigne ; 'has_drinks' indique si une soiree est en cours.
+    """
+    try:
+        beer_abv = float(beer_abv)
+    except (TypeError, ValueError):
+        beer_abv = 5.0
+    if beer_abv <= 0:
+        beer_abv = 5.0
+
+    if reference_datetime is not None:
+        now = reference_datetime
+    elif tz_offset_minutes is not None:
+        now = datetime.utcnow() + timedelta(minutes=tz_offset_minutes)
+    else:
+        now = datetime.now()
+    current_evening_date = now.date()
+    if now.hour < rollover_hour:
+        current_evening_date -= timedelta(days=1)
+    current_key = current_evening_date.isoformat()
+
+    records = Database.get_consumption(user_id)
+
+    # Liste des prises de la soiree en cours (litres + horodatage), independamment du profil.
+    evening_drinks = []
+    for record in records:
+        evening_date, chronological_datetime = get_evening_reference(record, rollover_hour)
+        if evening_date.isoformat() != current_key:
+            continue
+        pints = record['pints'] or 0
+        half_pints = record['half_pints'] or 0
+        liters_33 = record['liters_33'] or 0
+        liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
+        if liters <= 0:
+            continue
+        evening_drinks.append((chronological_datetime, liters))
+
+    has_drinks = len(evening_drinks) > 0
+
+    if not weight_kg or weight_kg <= 0 or sex not in ('m', 'f'):
+        return {'available': False, 'has_drinks': has_drinks}
+
+    if not has_drinks:
+        return {'available': True, 'has_drinks': False, 'bac': 0.0}
+
+    # Somme des "pics" d'alcoolemie apportes par chaque prise de la soiree en cours,
+    # et horodatage de la premiere prise (debut de l'elimination).
+    r = WIDMARK_R_MALE if sex == 'm' else WIDMARK_R_FEMALE
+    peak_sum = 0.0
+    first_datetime = None
+    for chronological_datetime, liters in evening_drinks:
+        grams = liters * beer_abv * ETHANOL_G_PER_LITER_PER_DEGREE
+        peak_sum += grams / (weight_kg * r)
+        if first_datetime is None or chronological_datetime < first_datetime:
+            first_datetime = chronological_datetime
+
+    hours_elapsed = max(0.0, (now - first_datetime).total_seconds() / 3600.0)
+    bac = max(0.0, peak_sum - ELIMINATION_RATE_PER_HOUR * hours_elapsed)
+
+    can_drive = bac < LEGAL_BAC_LIMIT
+    sober_legal_at = None
+    sober_at = None
+    if ELIMINATION_RATE_PER_HOUR > 0:
+        if bac >= LEGAL_BAC_LIMIT:
+            hours_to_legal = (bac - LEGAL_BAC_LIMIT) / ELIMINATION_RATE_PER_HOUR
+            sober_legal_at = (now + timedelta(hours=hours_to_legal)).isoformat(timespec='seconds')
+        if bac > 0:
+            hours_to_zero = bac / ELIMINATION_RATE_PER_HOUR
+            sober_at = (now + timedelta(hours=hours_to_zero)).isoformat(timespec='seconds')
+
+    return {
+        'available': True,
+        'has_drinks': True,
+        'bac': round(bac, 2),
+        'legal_limit': LEGAL_BAC_LIMIT,
+        'can_drive': can_drive,
+        'sober_legal_at': sober_legal_at,
+        'sober_at': sober_at,
+    }
+
+
 def check_record_evening_beaten(user_id, reference_datetime=None, rollover_hour=EVENING_ROLLOVER_HOUR):
     """Détecte si la soirée en cours a battu le précédent record de consommation.
 

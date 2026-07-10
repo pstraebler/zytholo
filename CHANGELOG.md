@@ -1,9 +1,14 @@
 # Changelog
 
 ## 4.0 - 2026-07
+
+🚗 New feature :  blood alcohol (BAC) estimation with a "can I drive?" verdict for the current evening
+
 	- add : alert when evening consumption record is beaten
 	- add : alerts can now be disabled
 	- add : new alert - drink water
+	- add : blood alcohol concentration
+	- add : time zone is detected automatically
 	- change : gunicorn is now used as web server
 	- change : security improvements 
 

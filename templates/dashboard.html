@@ -138,6 +138,33 @@
                 </label>
                 <span class="settings-hint" data-i18n="settings_disable_hint">0 = alerte désactivée</span>
             </div>
+
+            <div class="settings-section">
+                <h3 data-i18n="settings_bac_title">🚗 Alcoolémie</h3>
+                <span class="settings-hint" data-i18n="settings_bac_hint">Poids et sexe permettent d'estimer votre taux d'alcool dans le sang.</span>
+                <label class="settings-number-field" for="bac-weight">
+                    <span class="settings-field-label" data-i18n="settings_bac_weight">Poids</span>
+                    <span class="settings-number-input">
+                        <input type="number" id="bac-weight" min="30" max="250" step="1" inputmode="numeric" placeholder="—">
+                        <span>kg</span>
+                    </span>
+                </label>
+                <label class="settings-number-field" for="bac-sex">
+                    <span class="settings-field-label" data-i18n="settings_bac_sex">Sexe</span>
+                    <select id="bac-sex" class="settings-select">
+                        <option value="" data-i18n="settings_bac_sex_unset">Non renseigné</option>
+                        <option value="m" data-i18n="settings_bac_sex_male">Homme</option>
+                        <option value="f" data-i18n="settings_bac_sex_female">Femme</option>
+                    </select>
+                </label>
+                <label class="settings-number-field" for="bac-beer-abv">
+                    <span class="settings-field-label" data-i18n="settings_bac_beer_abv">Degré moyen des bières</span>
+                    <span class="settings-number-input">
+                        <input type="number" id="bac-beer-abv" min="1" max="20" step="0.1" inputmode="decimal">
+                        <span>°</span>
+                    </span>
+                </label>
+            </div>
         </div>
     </div>
 
@@ -247,7 +274,33 @@
                 </div>
             </div>
         </section>
-        
+
+        <section class="dashboard-section" id="bac-section" style="display:none;">
+            <div class="card bac-card">
+                <h3 data-i18n="bac_title">🚗 Alcoolémie estimée</h3>
+
+                <div class="bac-profile-missing" id="bac-profile-missing" style="display:none;">
+                    <p data-i18n="bac_profile_missing">Renseignez votre poids et votre sexe dans les réglages pour estimer votre taux d'alcool dans le sang.</p>
+                    <button type="button" class="btn-secondary" id="bac-open-settings" data-i18n="bac_open_settings">Ouvrir les réglages</button>
+                </div>
+
+                <div class="bac-content" id="bac-content" style="display:none;">
+                    <div class="bac-gauge" id="bac-gauge">
+                        <div class="bac-value-wrap">
+                            <span class="bac-value" id="bac-value">0.00</span>
+                            <span class="bac-unit">g/L</span>
+                        </div>
+                        <div class="bac-verdict" id="bac-verdict"></div>
+                    </div>
+                    <div class="bac-details">
+                        <p class="bac-legal-info" id="bac-legal-info"></p>
+                        <p class="bac-probation" data-i18n="bac_probation_note">🔰 Permis probatoire / jeune conducteur : 0 g/L autorisé — aucun verre d'alcool.</p>
+                        <p class="bac-disclaimer" data-i18n="bac_disclaimer">⚠️ Estimation indicative (formule de Widmark). Elle ne remplace pas un éthylotest. En cas de doute, ne prenez pas le volant.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
         <section class="dashboard-section">
             <div class="card">
                 <h3 data-i18n="stats_title">Statistiques</h3>
