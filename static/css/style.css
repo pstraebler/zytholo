@@ -1266,6 +1266,35 @@ body.modal-open {
     color: var(--text-color);
 }
 
+.stat-record-name {
+    margin-top: 0.4rem;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.stat-record-name-value {
+    font-weight: 700;
+    color: var(--gold-color);
+}
+
+.stat-record-name-btn {
+    padding: 0.15rem 0.6rem;
+    border: 1px solid var(--card-border-color);
+    border-radius: 999px;
+    background: var(--card-bg);
+    color: var(--text-color);
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.stat-record-name-btn:hover {
+    border-color: var(--gold-color);
+}
+
 .stat-record-details {
     margin-top: 0.55rem;
     color: var(--text-color);

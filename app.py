@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, session, redirect, url_for, j
 from datetime import datetime, timedelta, date
 from models import Database
 from auth import hash_password, verify_password, login_required, admin_required, verify_user_exists, bcrypt
-from utils import calculate_stats, export_csv, import_csv, get_top_drinkers, get_top_drinkers_for_month, get_top_drinkers_for_week, calculate_weekly_stats, estimate_current_bac
+from utils import calculate_stats, export_csv, import_csv, get_top_drinkers, get_top_drinkers_for_month, get_top_drinkers_for_week, calculate_weekly_stats, estimate_current_bac, sync_record_evening, set_record_evening_name
 from config import Config
 from flask_wtf.csrf import CSRFProtect
 from i18n import get_request_language, t
@@ -458,6 +458,7 @@ def api_consumption():
         user_settings['legal_bac_limit'],
         tz_offset_minutes=tz_offset_minutes
     )
+    record_evening = sync_record_evening(user_id)
     all_users = Database.get_all_users()
     all_user_records = Database.get_consumption_for_all_users(start_date, end_date)
     
@@ -479,7 +480,8 @@ def api_consumption():
         'all_user_records': [dict(record) for record in all_user_records],
         'records': [dict(record) for record in stats['all_records']],
         'weekly_stats': weekly_stats,  # AJOUTER CETTE LIGNE
-        'bac_estimate': bac_estimate
+        'bac_estimate': bac_estimate,
+        'record_evening': record_evening
     })
 
 
@@ -578,6 +580,22 @@ def api_settings():
         'beer_abv': beer_abv,
         'legal_bac_limit': legal_bac_limit
     })
+
+@app.route('/api/record-evening-name', methods=['POST'])
+@login_required
+def api_record_evening_name():
+    user_id = session['user_id']
+    data = request.get_json() or {}
+    name = data.get('name', '')
+    if not isinstance(name, str):
+        return jsonify({'success': False, 'message': t('invalid_settings')}), 400
+
+    record = set_record_evening_name(user_id, name)
+    if record is None:
+        # Aucune soiree record a nommer (aucune consommation enregistree).
+        return jsonify({'success': False, 'message': t('invalid_settings')}), 400
+
+    return jsonify({'success': True, 'record_evening': record})
 
 @app.route('/api/rankings', methods=['GET'])
 @login_required

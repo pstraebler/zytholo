@@ -101,6 +101,7 @@ let passwordModalCloseTimer = null;
 let passwordChangeRequired = false;
 let lastStatsData = null;
 let showAllUsersTimeline = false;
+let lastRecordEvening = null;
 
 const averageBeerPriceStorageKey = 'zytholo_average_beer_price';
 const defaultAverageBeerPrice = 6;
@@ -212,6 +213,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initPasswordModal();
     initSettingsModal();
     initNightModeModal();
+    initRecordNameModal();
     initTimelineModeToggle();
 
     document.addEventListener('languageChanged', function() {
@@ -1676,6 +1678,7 @@ function updateStatsDisplay(data) {
     if (total33El) total33El.innerText = data.total_33cl;
     if (totalLitersEl) totalLitersEl.innerText = data.total_liters;
     
+    lastRecordEvening = data.record_evening || null;
     updateEstimatedCost(data.total_liters);
     updateBestEveningDisplay(data.best_evening);
     renderBac(data.bac_estimate);
@@ -1803,8 +1806,11 @@ function updateBestEveningDisplay(bestEvening) {
         valueEl.innerText = '-';
         dateEl.innerText = t('stats_best_evening_empty');
         detailsEl.innerHTML = '';
+        renderRecordEveningName(null);
         return;
     }
+
+    renderRecordEveningName(bestEvening);
 
     valueEl.innerText = `${bestEvening.total_liters}L`;
     dateEl.innerText = t('stats_best_evening_on_date', {
@@ -1824,6 +1830,136 @@ function updateBestEveningDisplay(bestEvening) {
     }
 
     detailsEl.innerHTML = details.join('');
+}
+
+// La soirée affichée est-elle le record absolu (celui que l'on peut nommer) ?
+function isDisplayedEveningTheRecord(bestEvening) {
+    return !!(bestEvening && lastRecordEvening && bestEvening.date === lastRecordEvening.date);
+}
+
+function renderRecordEveningName(bestEvening) {
+    const nameEl = document.getElementById('best-evening-name');
+    const valueEl = document.getElementById('best-evening-name-value');
+    const btnEl = document.getElementById('best-evening-name-btn');
+    if (!nameEl || !valueEl || !btnEl) return;
+
+    // On ne propose le nom que sur la soirée record absolue.
+    if (!isDisplayedEveningTheRecord(bestEvening)) {
+        nameEl.style.display = 'none';
+        valueEl.textContent = '';
+        return;
+    }
+
+    const name = (lastRecordEvening.name || '').trim();
+    nameEl.style.display = 'flex';
+    if (name) {
+        valueEl.textContent = `🏆 « ${name} »`;
+        valueEl.style.display = '';
+        btnEl.textContent = t('record_name_edit');
+        btnEl.setAttribute('aria-label', t('record_name_edit'));
+    } else {
+        valueEl.textContent = '';
+        valueEl.style.display = 'none';
+        btnEl.textContent = t('record_name_add');
+        btnEl.setAttribute('aria-label', t('record_name_add'));
+    }
+}
+
+function openRecordNameModal() {
+    const modal = document.getElementById('record-name-modal');
+    const input = document.getElementById('record-name-input');
+    const clearBtn = document.getElementById('record-name-clear');
+    if (!modal || !input) return;
+
+    const currentName = (lastRecordEvening && lastRecordEvening.name) ? lastRecordEvening.name : '';
+    input.value = currentName;
+    if (clearBtn) clearBtn.style.display = currentName ? '' : 'none';
+
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('modal-open');
+    setTimeout(() => input.focus(), 50);
+}
+
+function closeRecordNameModal() {
+    const modal = document.getElementById('record-name-modal');
+    if (!modal) return;
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('modal-open');
+}
+
+function saveRecordName(name) {
+    fetch('/api/record-evening-name', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        },
+        body: JSON.stringify({ name: name })
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Record name update failed');
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data && data.record_evening) {
+            lastRecordEvening = data.record_evening;
+        }
+        closeRecordNameModal();
+        loadStats();
+    })
+    .catch(error => {
+        console.error('Record name error:', error);
+        alert(t('error_generic_update'));
+    });
+}
+
+function initRecordNameModal() {
+    const btnEl = document.getElementById('best-evening-name-btn');
+    if (btnEl) {
+        btnEl.addEventListener('click', function(event) {
+            event.stopPropagation();
+            openRecordNameModal();
+        });
+    }
+
+    const closeBtn = document.getElementById('record-name-modal-close');
+    if (closeBtn) closeBtn.addEventListener('click', closeRecordNameModal);
+
+    const saveBtn = document.getElementById('record-name-save');
+    if (saveBtn) {
+        saveBtn.addEventListener('click', function() {
+            const input = document.getElementById('record-name-input');
+            saveRecordName(input ? input.value : '');
+        });
+    }
+
+    const clearBtn = document.getElementById('record-name-clear');
+    if (clearBtn) {
+        clearBtn.addEventListener('click', function() {
+            saveRecordName('');
+        });
+    }
+
+    const input = document.getElementById('record-name-input');
+    if (input) {
+        input.addEventListener('keydown', function(event) {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                saveRecordName(input.value);
+            }
+        });
+    }
+
+    const modal = document.getElementById('record-name-modal');
+    if (modal) {
+        modal.addEventListener('click', function(event) {
+            if (event.target === modal) closeRecordNameModal();
+        });
+    }
 }
 
 function updateEstimatedCost(totalLiters) {

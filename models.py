@@ -35,7 +35,9 @@ class Database:
                 weight_kg DECIMAL(5,1) DEFAULT NULL,
                 sex CHAR(1) DEFAULT NULL,
                 beer_abv DECIMAL(3,1) DEFAULT 5.0,
-                legal_bac_limit DECIMAL(3,2) DEFAULT 0.50
+                legal_bac_limit DECIMAL(3,2) DEFAULT 0.50,
+                record_evening_date DATE DEFAULT NULL,
+                record_evening_name VARCHAR(100) DEFAULT NULL
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             '''
         )
@@ -113,6 +115,8 @@ class Database:
             ('sex', 'CHAR(1) DEFAULT NULL'),
             ('beer_abv', 'DECIMAL(3,1) DEFAULT 5.0'),
             ('legal_bac_limit', 'DECIMAL(3,2) DEFAULT 0.50'),
+            ('record_evening_date', 'DATE DEFAULT NULL'),
+            ('record_evening_name', 'VARCHAR(100) DEFAULT NULL'),
         ):
             cursor.execute(
                 '''
@@ -506,6 +510,46 @@ class Database:
                 legal_bac_limit,
                 user_id,
             ),
+        )
+        conn.commit()
+        conn.close()
+
+    @staticmethod
+    def get_record_evening_meta(user_id):
+        """Recupere la soiree record nommee (date + nom optionnel)."""
+        conn = Database.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            '''
+            SELECT DATE_FORMAT(record_evening_date, '%%Y-%%m-%%d') AS record_evening_date,
+                   record_evening_name
+            FROM users
+            WHERE id = %s
+            ''',
+            (user_id,),
+        )
+        result = cursor.fetchone()
+        conn.close()
+        if not result:
+            return {'date': None, 'name': None}
+        return {
+            'date': result['record_evening_date'],
+            'name': result['record_evening_name'],
+        }
+
+    @staticmethod
+    def set_record_evening_meta(user_id, record_date, name):
+        """Met a jour la soiree record nommee (date de reference + nom)."""
+        conn = Database.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            '''
+            UPDATE users
+            SET record_evening_date = %s,
+                record_evening_name = %s
+            WHERE id = %s
+            ''',
+            (record_date, name, user_id),
         )
         conn.commit()
         conn.close()

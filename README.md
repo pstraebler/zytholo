@@ -15,7 +15,7 @@ A web app to track beer consumption with multi-user management, configurable ale
   - Total liters consumed
   - Breakdown by format (pints, half-pints, 33cl)
   - Estimated cost based on a configurable average beer price
-  - Best evening over the selected period
+  - Best evening over the selected period, with an optional name for the all-time record evening (forgotten automatically when a new evening beats the record)
   - Monthly chart and rolling 4-week chart
   - Full consumption timeline
 - **Configurable alerts**:

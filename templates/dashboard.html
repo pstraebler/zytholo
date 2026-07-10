@@ -201,6 +201,27 @@
         </div>
     </div>
 
+    <div class="password-modal-backdrop" id="record-name-modal" aria-hidden="true">
+        <div class="password-modal-dialog settings-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="record-name-modal-title">
+            <div class="password-modal-header">
+                <h2 id="record-name-modal-title" data-i18n="record_name_modal_title">🏆 Nommer la soirée record</h2>
+                <button type="button" class="password-modal-close" id="record-name-modal-close" aria-label="Fermer">×</button>
+            </div>
+
+            <p class="record-name-modal-intro" id="record-name-modal-subtitle" data-i18n="record_name_modal_intro">
+                Donnez un nom à cette soirée record (facultatif).
+            </p>
+            <div class="form-group">
+                <input type="text" id="record-name-input" maxlength="100" autocomplete="off" data-i18n-placeholder="record_name_placeholder">
+            </div>
+
+            <div class="password-modal-actions">
+                <button type="button" class="btn-secondary" id="record-name-clear" data-i18n="record_name_clear">Effacer le nom</button>
+                <button type="button" class="btn-primary" id="record-name-save" data-i18n="save">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
     <div class="container" id="dashboard-content">
         <div class="warnings-section" id="warnings-container" style="display:none;">
             <div class="card warning">
@@ -353,6 +374,10 @@
                         <div class="stat-label" data-i18n="stats_best_evening">Soirée record</div>
                         <div class="stat-value stat-value-record" id="best-evening-value">-</div>
                         <div class="stat-record-date" id="best-evening-date" data-i18n="stats_best_evening_empty">Aucune donnée sur cette période.</div>
+                        <div class="stat-record-name" id="best-evening-name" style="display:none;">
+                            <span class="stat-record-name-value" id="best-evening-name-value"></span>
+                            <button type="button" class="stat-record-name-btn" id="best-evening-name-btn"></button>
+                        </div>
                         <div class="stat-record-details" id="best-evening-details"></div>
                         <div class="stat-record-tooltip" id="best-evening-tooltip" role="tooltip" aria-hidden="true"></div>
                     </div>

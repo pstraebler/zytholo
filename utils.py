@@ -274,6 +274,77 @@ def check_record_evening_beaten(user_id, reference_datetime=None, rollover_hour=
         'previous_record_date': previous_key,
     }
 
+def _all_time_record_evening(user_id, rollover_hour=EVENING_ROLLOVER_HOUR):
+    """Retourne (date_iso, litres) de la soiree la plus consommee, ou None."""
+    records = Database.get_consumption(user_id)
+    if not records:
+        return None
+
+    evening_totals = {}
+    for record in records:
+        evening_date, _ = get_evening_reference(record, rollover_hour)
+        pints = record['pints'] or 0
+        half_pints = record['half_pints'] or 0
+        liters_33 = record['liters_33'] or 0
+        liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
+        key = evening_date.isoformat()
+        evening_totals[key] = evening_totals.get(key, 0) + liters
+
+    if not evening_totals:
+        return None
+
+    record_key, record_liters = max(evening_totals.items(), key=lambda item: (item[1], item[0]))
+    if record_liters <= 0:
+        return None
+    return record_key, record_liters
+
+
+def sync_record_evening(user_id):
+    """Synchronise le nom de la soiree record avec le record absolu courant.
+
+    Si une soiree differente detient desormais le record, l'ancien nom est oublie.
+    Retourne {'date', 'total_liters', 'name'} ou None si aucune soiree consommee.
+    """
+    record = _all_time_record_evening(user_id)
+    if record is None:
+        return None
+
+    record_key, record_liters = record
+    meta = Database.get_record_evening_meta(user_id)
+    name = meta['name']
+
+    # Le record a change de soiree : on oublie le nom precedent.
+    if meta['date'] != record_key:
+        name = None
+        Database.set_record_evening_meta(user_id, record_key, None)
+
+    return {
+        'date': record_key,
+        'total_liters': round(record_liters, 2),
+        'name': name,
+    }
+
+
+def set_record_evening_name(user_id, name):
+    """Nomme la soiree record courante (nom optionnel, vide = efface).
+
+    Retourne l'etat mis a jour, ou None si aucune soiree record n'existe.
+    """
+    record = sync_record_evening(user_id)
+    if record is None:
+        return None
+
+    cleaned = (name or '').strip()
+    if not cleaned:
+        cleaned = None
+    elif len(cleaned) > 100:
+        cleaned = cleaned[:100]
+
+    Database.set_record_evening_meta(user_id, record['date'], cleaned)
+    record['name'] = cleaned
+    return record
+
+
 def calculate_stats(
     user_id,
     start_date=None,
