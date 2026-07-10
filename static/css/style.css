@@ -815,9 +815,63 @@ body {
 }
 
 .bac-legal-info {
-    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    font-weight: 700;
+    font-size: 1.05rem;
+    line-height: 1.3;
     color: var(--text-color);
-    margin-bottom: 0.6rem;
+    margin-top: 0.5rem;
+    margin-bottom: 0.8rem;
+    padding: 0.7rem 0.9rem;
+    border-radius: 10px;
+    background: var(--muted-surface);
+    border-left: 4px solid var(--secondary-color);
+}
+
+.bac-legal-info::before {
+    content: "⏱️";
+    font-size: 1.6rem;
+    line-height: 1;
+}
+
+.bac-legal-body {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+}
+
+.bac-legal-lead {
+    font-size: 0.85rem;
+    font-weight: 600;
+    opacity: 0.8;
+}
+
+.bac-legal-time {
+    font-size: 1.6rem;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.bac-legal-eta {
+    font-size: 0.85rem;
+    font-weight: 600;
+    opacity: 0.8;
+}
+
+/* En attente de pouvoir conduire : accent d'alerte. */
+.bac-legal-info--wait {
+    border-left-color: var(--warning-color);
+}
+
+.bac-legal-info--wait::before {
+    content: "⏳";
+}
+
+/* Déjà sous le seuil, simple retour à 0 : accent rassurant. */
+.bac-legal-info--clear {
+    border-left-color: var(--success-color);
 }
 
 .bac-legal-info:empty {

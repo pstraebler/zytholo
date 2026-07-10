@@ -1659,13 +1659,47 @@ function updateBacDisplay() {
         verdictEl.classList.add('bac-verdict-ok');
     }
 
+    legalEl.classList.remove('bac-legal-info--wait', 'bac-legal-info--clear');
+    let legalLead = null;
+    let legalTargetIso = null;
     if (!canDrive && bacAnchor.soberLegalAt) {
-        legalEl.textContent = t('bac_legal_until', { limit: limitText, time: formatClockTime(bacAnchor.soberLegalAt) });
+        legalLead = t('bac_legal_until_label', { limit: limitText });
+        legalTargetIso = bacAnchor.soberLegalAt;
+        legalEl.classList.add('bac-legal-info--wait');
     } else if (canDrive && bac > 0 && bacAnchor.soberAt) {
-        legalEl.textContent = t('bac_sober_at', { time: formatClockTime(bacAnchor.soberAt) });
-    } else {
-        legalEl.textContent = '';
+        legalLead = t('bac_sober_label');
+        legalTargetIso = bacAnchor.soberAt;
+        legalEl.classList.add('bac-legal-info--clear');
     }
+
+    if (legalLead && legalTargetIso) {
+        const clock = formatClockTime(legalTargetIso);
+        const etaMs = new Date(legalTargetIso).getTime() - Date.now();
+        legalEl.innerHTML =
+            '<span class="bac-legal-body">'
+            + `<span class="bac-legal-lead">${legalLead}</span>`
+            + `<span class="bac-legal-time">${t('bac_clock_at', { time: clock })}</span>`
+            + `<span class="bac-legal-eta">${formatBacEta(etaMs)}</span>`
+            + '</span>';
+    } else {
+        legalEl.innerHTML = '';
+    }
+}
+
+// Délai restant formaté (ex. "dans ~1 h 40"), mis à jour à chaque tick.
+function formatBacEta(ms) {
+    const totalMinutes = Math.max(1, Math.round(ms / 60000));
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+    let duration;
+    if (hours > 0 && minutes > 0) {
+        duration = t('duration_hm', { h: hours, m: minutes });
+    } else if (hours > 0) {
+        duration = t('duration_h', { h: hours });
+    } else {
+        duration = t('duration_m', { m: minutes });
+    }
+    return t('bac_eta', { duration: duration });
 }
 
 // Affiche le seuil légal dans la locale courante (ex. "0,5" en FR, "0.5" en EN).
