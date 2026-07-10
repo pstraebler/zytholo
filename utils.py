@@ -129,6 +129,7 @@ def estimate_current_bac(
     weight_kg,
     sex,
     beer_abv=5.0,
+    legal_limit=LEGAL_BAC_LIMIT,
     reference_datetime=None,
     tz_offset_minutes=None,
     rollover_hour=EVENING_ROLLOVER_HOUR,
@@ -148,6 +149,13 @@ def estimate_current_bac(
         beer_abv = 5.0
     if beer_abv <= 0:
         beer_abv = 5.0
+
+    try:
+        legal_limit = float(legal_limit)
+    except (TypeError, ValueError):
+        legal_limit = LEGAL_BAC_LIMIT
+    if legal_limit < 0:
+        legal_limit = LEGAL_BAC_LIMIT
 
     if reference_datetime is not None:
         now = reference_datetime
@@ -198,12 +206,12 @@ def estimate_current_bac(
     hours_elapsed = max(0.0, (now - first_datetime).total_seconds() / 3600.0)
     bac = max(0.0, peak_sum - ELIMINATION_RATE_PER_HOUR * hours_elapsed)
 
-    can_drive = bac < LEGAL_BAC_LIMIT
+    can_drive = bac < legal_limit
     sober_legal_at = None
     sober_at = None
     if ELIMINATION_RATE_PER_HOUR > 0:
-        if bac >= LEGAL_BAC_LIMIT:
-            hours_to_legal = (bac - LEGAL_BAC_LIMIT) / ELIMINATION_RATE_PER_HOUR
+        if bac >= legal_limit:
+            hours_to_legal = (bac - legal_limit) / ELIMINATION_RATE_PER_HOUR
             sober_legal_at = (now + timedelta(hours=hours_to_legal)).isoformat(timespec='seconds')
         if bac > 0:
             hours_to_zero = bac / ELIMINATION_RATE_PER_HOUR
@@ -213,7 +221,7 @@ def estimate_current_bac(
         'available': True,
         'has_drinks': True,
         'bac': round(bac, 2),
-        'legal_limit': LEGAL_BAC_LIMIT,
+        'legal_limit': round(legal_limit, 2),
         'can_drive': can_drive,
         'sober_legal_at': sober_legal_at,
         'sober_at': sober_at,

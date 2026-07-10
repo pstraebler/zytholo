@@ -25,7 +25,7 @@ A web app to track beer consumption with multi-user management, configurable ale
   - Any alert threshold can be set to `0` to disable that alert
 - **Blood alcohol estimation**:
   - Estimated blood alcohol content (BAC) for the current evening using the Widmark formula, based on your weight, sex, and average beer strength (set in the settings)
-  - Live decreasing estimate with a clear **can I drive?** verdict against the 0.5 g/L legal limit, plus the estimated time you drop back under it
+  - Live decreasing estimate with a clear **can I drive?** verdict against a configurable legal limit (default 0.5 g/L; adjust it per country), plus the estimated time you drop back under it
   - Always indicative only: it does not replace a breathalyser, and a probationary/novice licence allows 0 g/L
 - **Rankings**:
   - Weekly podium to compare your consumption with other users

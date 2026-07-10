@@ -118,7 +118,8 @@ const defaultBeerAbv = 5.0;
 let bacWeightKg = null;
 let bacSex = null;
 let bacBeerAbv = defaultBeerAbv;
-const bacLegalLimit = 0.5;
+const defaultBacLegalLimit = 0.5;
+let bacLegalLimit = defaultBacLegalLimit;
 const bacEliminationRatePerHour = 0.15;
 // Ancre pour faire décroître l'affichage en continu entre deux appels serveur.
 let bacAnchor = null;  // { bac, atMs, soberLegalAt, soberAt }
@@ -437,6 +438,11 @@ function initSettingsModal() {
         bacBeerAbvInput.addEventListener('change', saveBacProfile);
         bacBeerAbvInput.addEventListener('blur', saveBacProfile);
     }
+    const bacLegalLimitInput = document.getElementById('bac-legal-limit');
+    if (bacLegalLimitInput) {
+        bacLegalLimitInput.addEventListener('change', saveBacProfile);
+        bacLegalLimitInput.addEventListener('blur', saveBacProfile);
+    }
     updateBacProfileInputs();
 
     const bacOpenSettingsBtn = document.getElementById('bac-open-settings');
@@ -601,6 +607,10 @@ function updateBacProfileInputs() {
     if (abvInput && document.activeElement !== abvInput) {
         abvInput.value = Number(bacBeerAbv).toFixed(1);
     }
+    const legalLimitInput = document.getElementById('bac-legal-limit');
+    if (legalLimitInput && document.activeElement !== legalLimitInput) {
+        legalLimitInput.value = Number(bacLegalLimit).toFixed(1);
+    }
 }
 
 function applySettings(settings) {
@@ -627,6 +637,9 @@ function applySettings(settings) {
 
     const abv = parseFloat(settings?.beer_abv);
     bacBeerAbv = (Number.isFinite(abv) && abv >= 1 && abv <= 20) ? abv : defaultBeerAbv;
+
+    const legalLimit = parseFloat(settings?.legal_bac_limit);
+    bacLegalLimit = (Number.isFinite(legalLimit) && legalLimit >= 0 && legalLimit <= 2) ? legalLimit : defaultBacLegalLimit;
 
     updateThreeHourThresholdInput();
     updateWeeklyDaysThresholdInput();
@@ -741,11 +754,20 @@ function saveBacProfile() {
     }
     const roundedAbv = Math.round(beerAbv * 10) / 10;
 
+    const legalLimitInput = document.getElementById('bac-legal-limit');
+    const legalLimit = parseFloat((legalLimitInput?.value || '').replace(',', '.'));
+    if (!Number.isFinite(legalLimit) || legalLimit < 0 || legalLimit > 2) {
+        updateBacProfileInputs();
+        return;
+    }
+    const roundedLegalLimit = Math.round(legalLimit * 100) / 100;
+
     // Rien à envoyer si aucune valeur n'a changé.
     if (
         weightKg === bacWeightKg
         && sex === (bacSex || '')
         && Math.abs(roundedAbv - bacBeerAbv) < 0.001
+        && Math.abs(roundedLegalLimit - bacLegalLimit) < 0.001
     ) {
         updateBacProfileInputs();
         return;
@@ -760,7 +782,8 @@ function saveBacProfile() {
         body: JSON.stringify({
             weight_kg: weightKg,
             sex: sex,
-            beer_abv: roundedAbv
+            beer_abv: roundedAbv,
+            legal_bac_limit: roundedLegalLimit
         })
     })
     .then(response => {
@@ -1571,9 +1594,11 @@ function renderBac(estimate) {
     missing.style.display = 'none';
     content.style.display = 'block';
 
+    const legalLimit = Number(estimate.legal_limit);
     bacAnchor = {
         bac: Number(estimate.bac) || 0,
         atMs: Date.now(),
+        legalLimit: Number.isFinite(legalLimit) ? legalLimit : bacLegalLimit,
         soberLegalAt: estimate.sober_legal_at || null,
         soberAt: estimate.sober_at || null
     };
@@ -1598,32 +1623,45 @@ function updateBacDisplay() {
     const legalEl = document.getElementById('bac-legal-info');
     if (!valueEl || !verdictEl || !gaugeEl || !legalEl) return;
 
+    const limit = bacAnchor.legalLimit;
+    const limitText = formatBacLimit(limit);
     const elapsedHours = (Date.now() - bacAnchor.atMs) / 3600000;
     const bac = Math.max(0, bacAnchor.bac - bacEliminationRatePerHour * elapsedHours);
-    const canDrive = bac < bacLegalLimit;
+    const canDrive = bac < limit;
 
     valueEl.textContent = bac.toFixed(2);
 
     gaugeEl.classList.remove('bac-level-ok', 'bac-level-warn', 'bac-level-danger');
-    if (bac >= bacLegalLimit) {
+    if (bac >= limit) {
+        // Au-dessus du seuil (ou tout taux positif si le seuil vaut 0).
         gaugeEl.classList.add('bac-level-danger');
-    } else if (bac >= 0.3) {
+    } else if (limit > 0 && bac >= limit * 0.6) {
         gaugeEl.classList.add('bac-level-warn');
     } else {
         gaugeEl.classList.add('bac-level-ok');
     }
 
-    verdictEl.textContent = canDrive ? t('bac_verdict_ok') : t('bac_verdict_no');
+    verdictEl.textContent = canDrive ? t('bac_verdict_ok', { limit: limitText }) : t('bac_verdict_no');
     verdictEl.classList.toggle('bac-verdict-ok', canDrive);
     verdictEl.classList.toggle('bac-verdict-no', !canDrive);
 
     if (!canDrive && bacAnchor.soberLegalAt) {
-        legalEl.textContent = t('bac_legal_until', { time: formatClockTime(bacAnchor.soberLegalAt) });
+        legalEl.textContent = t('bac_legal_until', { limit: limitText, time: formatClockTime(bacAnchor.soberLegalAt) });
     } else if (canDrive && bac > 0 && bacAnchor.soberAt) {
         legalEl.textContent = t('bac_sober_at', { time: formatClockTime(bacAnchor.soberAt) });
     } else {
         legalEl.textContent = '';
     }
+}
+
+// Affiche le seuil légal dans la locale courante (ex. "0,5" en FR, "0.5" en EN).
+function formatBacLimit(limit) {
+    const value = Number(limit);
+    if (!Number.isFinite(value)) return '';
+    return value.toLocaleString(currentLocale(), {
+        minimumFractionDigits: 1,
+        maximumFractionDigits: 2
+    });
 }
 
 function updateStatsDisplay(data) {

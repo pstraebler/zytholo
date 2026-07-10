@@ -34,7 +34,8 @@ class Database:
                 water_reminder_threshold_liters DECIMAL(4,2) DEFAULT 1.00,
                 weight_kg DECIMAL(5,1) DEFAULT NULL,
                 sex CHAR(1) DEFAULT NULL,
-                beer_abv DECIMAL(3,1) DEFAULT 5.0
+                beer_abv DECIMAL(3,1) DEFAULT 5.0,
+                legal_bac_limit DECIMAL(3,2) DEFAULT 0.50
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             '''
         )
@@ -111,6 +112,7 @@ class Database:
             ('weight_kg', 'DECIMAL(5,1) DEFAULT NULL'),
             ('sex', 'CHAR(1) DEFAULT NULL'),
             ('beer_abv', 'DECIMAL(3,1) DEFAULT 5.0'),
+            ('legal_bac_limit', 'DECIMAL(3,2) DEFAULT 0.50'),
         ):
             cursor.execute(
                 '''
@@ -427,7 +429,8 @@ class Database:
                    water_reminder_threshold_liters,
                    weight_kg,
                    sex,
-                   beer_abv
+                   beer_abv,
+                   legal_bac_limit
             FROM users
             WHERE id = %s
             ''',
@@ -442,6 +445,7 @@ class Database:
         weight_kg = result['weight_kg'] if result else None
         sex = result['sex'] if result else None
         beer_abv = result['beer_abv'] if result else None
+        legal_bac_limit = result['legal_bac_limit'] if result else None
         # Ne retomber sur la valeur par defaut que si la colonne est NULL :
         # une valeur de 0 est valide et desactive l'alerte correspondante.
         if three_hour_threshold is None:
@@ -454,13 +458,16 @@ class Database:
         # poids et sexe restent NULL tant que l'utilisateur ne les renseigne pas.
         if beer_abv is None:
             beer_abv = 5.0
+        if legal_bac_limit is None:
+            legal_bac_limit = 0.5
         return {
             'three_hour_threshold_liters': float(three_hour_threshold),
             'weekly_drinking_days_threshold': int(weekly_days_threshold),
             'water_reminder_threshold_liters': float(water_reminder_threshold),
             'weight_kg': float(weight_kg) if weight_kg is not None else None,
             'sex': sex if sex in ('m', 'f') else None,
-            'beer_abv': float(beer_abv)
+            'beer_abv': float(beer_abv),
+            'legal_bac_limit': float(legal_bac_limit)
         }
 
     @staticmethod
@@ -471,7 +478,8 @@ class Database:
         water_reminder_threshold_liters,
         weight_kg=None,
         sex=None,
-        beer_abv=None
+        beer_abv=None,
+        legal_bac_limit=None
     ):
         """Met a jour les reglages utilisateur."""
         conn = Database.get_connection()
@@ -484,7 +492,8 @@ class Database:
                 water_reminder_threshold_liters = %s,
                 weight_kg = %s,
                 sex = %s,
-                beer_abv = %s
+                beer_abv = %s,
+                legal_bac_limit = %s
             WHERE id = %s
             ''',
             (
@@ -494,6 +503,7 @@ class Database:
                 weight_kg,
                 sex,
                 beer_abv,
+                legal_bac_limit,
                 user_id,
             ),
         )

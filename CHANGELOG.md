@@ -8,6 +8,7 @@
 	- add : alerts can now be disabled
 	- add : new alert - drink water
 	- add : blood alcohol concentration
+	- add : configurable legal blood alcohol limit (per country) for the driving verdict
 	- add : time zone is detected automatically
 	- change : gunicorn is now used as web server
 	- change : security improvements 

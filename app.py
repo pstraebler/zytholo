@@ -455,6 +455,7 @@ def api_consumption():
         user_settings['weight_kg'],
         user_settings['sex'],
         user_settings['beer_abv'],
+        user_settings['legal_bac_limit'],
         tz_offset_minutes=tz_offset_minutes
     )
     all_users = Database.get_all_users()
@@ -538,6 +539,7 @@ def api_settings():
         sex = raw_sex if raw_sex in ('m', 'f') else None
 
         beer_abv = float(data.get('beer_abv', current_settings['beer_abv']))
+        legal_bac_limit = float(data.get('legal_bac_limit', current_settings['legal_bac_limit']))
     except (TypeError, ValueError):
         return jsonify({'success': False, 'message': t('invalid_settings')}), 400
 
@@ -548,10 +550,12 @@ def api_settings():
         or not (water_reminder_threshold_liters == 0 or 0.1 <= water_reminder_threshold_liters <= 10)
         or (weight_kg is not None and not (30 <= weight_kg <= 250))
         or not (1 <= beer_abv <= 20)
+        or not (0 <= legal_bac_limit <= 2)
     ):
         return jsonify({'success': False, 'message': t('invalid_settings')}), 400
 
     beer_abv = round(beer_abv, 1)
+    legal_bac_limit = round(legal_bac_limit, 2)
 
     Database.update_user_settings(
         user_id,
@@ -560,7 +564,8 @@ def api_settings():
         round(water_reminder_threshold_liters, 2),
         weight_kg,
         sex,
-        beer_abv
+        beer_abv,
+        legal_bac_limit
     )
 
     return jsonify({
@@ -570,7 +575,8 @@ def api_settings():
         'water_reminder_threshold_liters': round(water_reminder_threshold_liters, 2),
         'weight_kg': weight_kg,
         'sex': sex,
-        'beer_abv': beer_abv
+        'beer_abv': beer_abv,
+        'legal_bac_limit': legal_bac_limit
     })
 
 @app.route('/api/rankings', methods=['GET'])
