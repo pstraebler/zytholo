@@ -187,10 +187,12 @@
     <script src="{{ url_for('static', filename='js/i18n.js') }}"></script>
     <script>
     function toggleAdminNightMode(userId, username) {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]').content;
         fetch(`/admin/night-mode/${userId}`, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'X-CSRFToken': csrfToken,
             }
         })
         .then(response => response.json())

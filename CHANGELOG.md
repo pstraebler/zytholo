@@ -14,6 +14,7 @@
 	- add : time zone is detected automatically
 	- change : gunicorn is now used as web server
 	- change : security improvements 
+	- fix : night mode in admin panel
 
 ## 3.0.3 - 2026-07-01
 	- change : simplify port configuration with APP_PORT default
