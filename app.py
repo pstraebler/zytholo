@@ -679,9 +679,13 @@ def api_export():
 @admin_required
 def admin():
     users = Database.get_all_users()
+    now = datetime.now()
+    for user in users:
+        night_mode_until = user['night_mode_until']
+        user['night_mode_active'] = bool(night_mode_until and night_mode_until > now)
     current_year = date.today().year
     top_drinkers = get_top_drinkers(current_year)
-    
+
     return render_template('admin.html', users=users, top_drinkers=top_drinkers, ranking_year=current_year)
 
 @app.route('/admin/user/create', methods=['POST'])

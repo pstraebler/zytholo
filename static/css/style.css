@@ -1645,6 +1645,54 @@ body.exporting-dashboard .export-section {
 }
 
 
+/* Identité utilisateur + statut mode soirée */
+.user-identity {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    min-width: 150px;
+}
+
+.user-identity .user-name {
+    min-width: 0;
+}
+
+.night-mode-badge {
+    display: inline-flex;
+    align-items: center;
+    align-self: flex-start;
+    padding: 0.15rem 0.55rem;
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    min-width: 0;
+    white-space: nowrap;
+}
+
+.night-mode-badge-on {
+    background-color: #f39c12;
+    color: #fff;
+}
+
+.night-mode-badge-off {
+    background-color: var(--border-color);
+    color: var(--text-color);
+    opacity: 0.75;
+}
+
+.night-mode-toggle {
+    background-color: var(--muted-surface);
+    color: var(--text-color);
+    border: 1px solid #f39c12;
+}
+
+.night-mode-toggle-on {
+    background-color: #f39c12;
+    color: #fff;
+    border-color: #f39c12;
+}
+
+
 /* RANKING TABLE */
 .ranking-table {
     width: 100%;

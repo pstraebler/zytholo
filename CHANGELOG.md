@@ -12,6 +12,7 @@
 	- add : optional name for the all-time record evening 
 	- add : peak blood alcohol level reached during the record evening
 	- add : time zone is detected automatically
+	- add : admin can see night mode state for each user
 	- change : gunicorn is now used as web server
 	- change : security improvements 
 	- fix : night mode in admin panel

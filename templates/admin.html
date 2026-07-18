@@ -99,7 +99,14 @@
                 <div class="users-list">
                     {% for user in users %}
                         <div class="user-item">
-                            <span>{{ user.username }}</span>
+                            <span class="user-identity">
+                                <span class="user-name">{{ user.username }}</span>
+                                {% if user.night_mode_active %}
+                                    <span class="night-mode-badge night-mode-badge-on" data-i18n="admin_night_mode_on">🌙 Mode soirée actif</span>
+                                {% else %}
+                                    <span class="night-mode-badge night-mode-badge-off" data-i18n="admin_night_mode_off">Mode soirée inactif</span>
+                                {% endif %}
+                            </span>
                             <div class="user-actions">
                                 <form method="POST" action="/admin/user/{{ user.id }}/force-password-change" class="inline-form admin-checkbox-form">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
@@ -113,8 +120,12 @@
                                     <input type="password" name="password" placeholder="Nouveau mot de passe" data-i18n-placeholder="new_password_placeholder" required>
                                     <button type="submit" class="btn-secondary btn-sm" data-i18n="change_password_short">Changer MDP</button>
                                 </form>
-                                <button onclick="toggleAdminNightMode('{{ user.id }}', '{{ user.username|e }}')" class="btn-sm" style="background-color: #f39c12; color: white;">
-                                        <span data-i18n="night_mode">🌙 Mode Soirée</span>
+                                <button onclick="toggleAdminNightMode('{{ user.id }}', '{{ user.username|e }}')" class="btn-sm night-mode-toggle{% if user.night_mode_active %} night-mode-toggle-on{% endif %}">
+                                    {% if user.night_mode_active %}
+                                        <span data-i18n="admin_night_mode_disable">🌙 Désactiver</span>
+                                    {% else %}
+                                        <span data-i18n="admin_night_mode_enable">🌙 Activer</span>
+                                    {% endif %}
                                 </button>
                                 <form method="POST" action="/admin/user/{{ user.id }}/delete" class="inline-form" data-i18n-confirm="confirm_delete_user">
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

@@ -254,7 +254,7 @@ class Database:
         conn = Database.get_connection()
         cursor = conn.cursor()
         cursor.execute(
-            'SELECT id, username, created_at, force_password_change FROM users WHERE is_admin = 0 ORDER BY username'
+            'SELECT id, username, created_at, force_password_change, night_mode_until FROM users WHERE is_admin = 0 ORDER BY username'
         )
         users = cursor.fetchall()
         conn.close()
