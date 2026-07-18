@@ -1734,6 +1734,7 @@ function updateStatsDisplay(data) {
     lastRecordEvening = data.record_evening || null;
     updateEstimatedCost(data.total_liters);
     updateBestEveningDisplay(data.best_evening);
+    updateFirstConsumptionDisplay(data.first_consumption_date);
     renderBac(data.bac_estimate);
     
     const warningsContainer = document.getElementById('warnings-container');
@@ -1844,6 +1845,20 @@ function updateStatsDisplay(data) {
             warningsContainer.style.display = 'none';
         }
     }
+}
+
+function updateFirstConsumptionDisplay(firstDate) {
+    const el = document.getElementById('stats-since');
+    if (!el) return;
+
+    if (!firstDate) {
+        el.hidden = true;
+        el.textContent = '';
+        return;
+    }
+
+    el.hidden = false;
+    el.textContent = t('stats_first_consumption', { date: formatSelectedDate(firstDate) });
 }
 
 function updateBestEveningDisplay(bestEvening) {

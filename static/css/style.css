@@ -1252,6 +1252,13 @@ body.modal-open {
 }
 
 
+.stats-since {
+    margin: -0.5rem 0 1.25rem;
+    font-size: 0.9rem;
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
 .date-range {
     display: flex;
     gap: 1rem;

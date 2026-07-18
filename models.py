@@ -334,6 +334,20 @@ class Database:
         return records
 
     @staticmethod
+    def get_first_consumption_date(user_id):
+        """Date de la toute premiere consommation d'un utilisateur (ISO), ou None."""
+        conn = Database.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT DATE_FORMAT(MIN(date), '%%Y-%%m-%%d') AS first_date "
+            'FROM consumption WHERE user_id = %s',
+            (user_id,),
+        )
+        result = cursor.fetchone()
+        conn.close()
+        return result['first_date'] if result else None
+
+    @staticmethod
     def get_consumption_for_all_users(start_date=None, end_date=None):
         """Obtenir la consommation de tous les utilisateurs non-admin."""
         conn = Database.get_connection()

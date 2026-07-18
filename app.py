@@ -495,7 +495,10 @@ def api_consumption():
         'records': [dict(record) for record in stats['all_records']],
         'weekly_stats': weekly_stats,  # AJOUTER CETTE LIGNE
         'bac_estimate': bac_estimate,
-        'record_evening': record_evening
+        'record_evening': record_evening,
+        # Date de la toute premiere biere (independante de la plage selectionnee) :
+        # indique depuis quand l'utilisateur suit sa consommation.
+        'first_consumption_date': Database.get_first_consumption_date(user_id)
     })
 
 

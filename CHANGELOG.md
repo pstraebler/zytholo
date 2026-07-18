@@ -13,6 +13,7 @@
 	- add : peak blood alcohol level reached during the record evening
 	- add : time zone is detected automatically
 	- add : admin can see night mode state for each user
+	- add : date of first beer
 	- change : gunicorn is now used as web server
 	- change : security improvements 
 	- change : login now shows a generic error regardless of the cause 
