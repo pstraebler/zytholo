@@ -544,12 +544,14 @@ def api_settings():
         ))
 
         # Reglages d'alcoolemie. Poids et sexe peuvent rester vides (non renseignes) :
-        # une chaine vide ou null remet le champ a NULL et desactive l'estimation.
+        # une chaine vide, null ou 0 remet le champ a NULL et desactive l'estimation.
         raw_weight = data.get('weight_kg', current_settings['weight_kg'])
         if raw_weight in (None, ''):
             weight_kg = None
         else:
             weight_kg = round(float(raw_weight), 1)
+            if weight_kg == 0:
+                weight_kg = None
 
         raw_sex = data.get('sex', current_settings['sex'])
         sex = raw_sex if raw_sex in ('m', 'f') else None

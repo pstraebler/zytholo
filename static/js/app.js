@@ -739,12 +739,19 @@ function saveBacProfile() {
     const rawWeight = weightInput.value.replace(',', '.').trim();
     let weightKg = null;
     if (rawWeight !== '') {
-        weightKg = parseFloat(rawWeight);
-        if (!Number.isFinite(weightKg) || weightKg < 30 || weightKg > 250) {
+        const parsedWeight = parseFloat(rawWeight);
+        if (!Number.isFinite(parsedWeight)) {
             updateBacProfileInputs();
             return;
         }
-        weightKg = Math.round(weightKg * 10) / 10;
+        // 0 (comme un champ vide) desactive l'estimation d'alcoolemie.
+        if (parsedWeight !== 0) {
+            if (parsedWeight < 30 || parsedWeight > 250) {
+                updateBacProfileInputs();
+                return;
+            }
+            weightKg = Math.round(parsedWeight * 10) / 10;
+        }
     }
 
     const sex = (sexInput.value === 'm' || sexInput.value === 'f') ? sexInput.value : '';
