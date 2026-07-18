@@ -852,6 +852,12 @@ body {
     text-align: center;
 }
 
+.bac-chart-wrap {
+    position: relative;
+    height: 220px;
+    margin-top: 1.25rem;
+}
+
 .bac-verdict-ok {
     color: var(--success-color);
 }
@@ -1896,7 +1902,7 @@ body.exporting-dashboard .export-section {
 }
 
 .dashboard-card-grid-rankings .other-ranking-section {
-    margin-top: auto;
+    margin-top: 1.25rem;
     padding-top: 1.25rem;
 }
 
@@ -1911,6 +1917,11 @@ body.exporting-dashboard .export-section {
 
 .other-ranking-table th {
     font-weight: 800;
+}
+
+/* Lignes uniformes (pas de zébrage) pour les tableaux "autres utilisateurs". */
+.other-ranking-table tbody tr:nth-child(even) {
+    background-color: transparent;
 }
 
 .other-ranking-empty {
@@ -1988,6 +1999,12 @@ body.exporting-dashboard .export-section {
     .dashboard-card-grid-rankings {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         align-items: start;
+    }
+
+    /* Réserve 2 lignes au titre pour que podiums et tableaux s'alignent entre
+       les cartes, quel que soit le nombre de lignes du titre. */
+    .dashboard-card-grid-rankings > .card > h3 {
+        min-height: 4.375rem;
     }
 
     .stats-grid {

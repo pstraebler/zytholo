@@ -114,6 +114,29 @@ def get_current_evening_total(user_id, reference_datetime=None, rollover_hour=EV
     return round(total, 2)
 
 
+def get_current_evening_last_datetime(user_id, reference_datetime=None, rollover_hour=EVENING_ROLLOVER_HOUR):
+    """Horodatage (heure locale) de la derniere consommation de la soiree en cours, ou None."""
+    records = Database.get_consumption(user_id)
+    if not records:
+        return None
+
+    now = reference_datetime or datetime.now()
+    current_evening_date = now.date()
+    if now.hour < rollover_hour:
+        current_evening_date -= timedelta(days=1)
+    current_key = current_evening_date.isoformat()
+
+    last_datetime = None
+    for record in records:
+        evening_date, chronological_datetime = get_evening_reference(record, rollover_hour)
+        if evening_date.isoformat() != current_key:
+            continue
+        if last_datetime is None or chronological_datetime > last_datetime:
+            last_datetime = chronological_datetime
+
+    return last_datetime
+
+
 # --- Estimation de l'alcoolemie (formule de Widmark) ---
 # Valeurs standard. L'estimation reste indicative : elle ne remplace pas un
 # ethylotest et ne prejuge pas de l'aptitude reelle a conduire.
@@ -214,11 +237,13 @@ def estimate_current_bac(
     total_peak = 0.0     # taux atteint une fois toutes les prises absorbees
     absorbed_now = 0.0   # taux effectivement absorbe a l'instant present
     first_datetime = None
+    peaks = []           # (horodatage, pic) de chaque prise, pour tracer la courbe
     for chronological_datetime, liters in evening_drinks:
         grams = liters * beer_abv * ETHANOL_G_PER_LITER_PER_DEGREE
         peak = grams / (weight_kg * r)
         total_peak += peak
         absorbed_now += peak * _absorbed_fraction(now, chronological_datetime)
+        peaks.append((chronological_datetime, peak))
         if first_datetime is None or chronological_datetime < first_datetime:
             first_datetime = chronological_datetime
 
@@ -243,6 +268,23 @@ def estimate_current_bac(
     # (une prise en cours d'absorption peut faire repasser au-dessus).
     can_drive = bac < legal_limit and sober_legal_at is None
 
+    # Courbe modelisee du taux, du debut de soiree jusqu'au retour a 0. La fonction est
+    # lineaire par morceaux : on l'evalue a chaque point de rupture (chaque prise, chaque
+    # fin d'absorption) plus l'instant de retour a 0. La courbe se recalcule donc a chaque
+    # ajout / retrait de biere de la soiree.
+    curve = []
+    if ELIMINATION_RATE_PER_HOUR > 0:
+        zero_datetime = first_datetime + timedelta(hours=total_peak / ELIMINATION_RATE_PER_HOUR)
+        breakpoints = {first_datetime, zero_datetime}
+        for drink_datetime, _peak in peaks:
+            breakpoints.add(drink_datetime)
+            breakpoints.add(drink_datetime + timedelta(hours=ABSORPTION_HOURS))
+        for moment in sorted(m for m in breakpoints if first_datetime <= m <= zero_datetime):
+            absorbed = sum(peak * _absorbed_fraction(moment, t) for t, peak in peaks)
+            elapsed = (moment - first_datetime).total_seconds() / 3600.0
+            value = max(0.0, absorbed - ELIMINATION_RATE_PER_HOUR * elapsed)
+            curve.append({'t': moment.isoformat(timespec='seconds'), 'bac': round(value, 3)})
+
     return {
         'available': True,
         'has_drinks': True,
@@ -251,6 +293,8 @@ def estimate_current_bac(
         'can_drive': can_drive,
         'sober_legal_at': sober_legal_at,
         'sober_at': sober_at,
+        'now': now.isoformat(timespec='seconds'),
+        'curve': curve,
     }
 
 
@@ -593,6 +637,12 @@ def calculate_stats(
     if water_reminder_threshold_liters > 0:
         current_evening_total = get_current_evening_total(user_id)
         if current_evening_total >= water_reminder_threshold_liters:
+            # L'alerte disparait automatiquement 2h apres la derniere biere.
+            last_datetime = get_current_evening_last_datetime(user_id)
+            expires_at = (
+                (last_datetime + timedelta(hours=2)).isoformat(timespec='seconds')
+                if last_datetime else None
+            )
             three_hour_warnings.append({
                 'type': 'water',
                 'start_time': '00:00:00',
@@ -601,6 +651,7 @@ def calculate_stats(
                 'threshold_liters': round(water_reminder_threshold_liters, 2),
                 'start_date': today_str,
                 'end_date': today_str,
+                'expires_at': expires_at,
                 'items': [],
             })
 

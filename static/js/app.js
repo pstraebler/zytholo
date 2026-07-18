@@ -92,6 +92,8 @@ let currentBeer = {
 
 let monthlyChart = null;
 let totalChart = null;
+let bacChart = null;
+let bacChartNowIndex = -1;  // index du dataset "Maintenant" dans le graphe d'alcoolémie
 let savingInProgress = false;
 let nightModeEnabled = false;
 let lastClickTime = 0;
@@ -1586,6 +1588,7 @@ function renderBac(estimate) {
     // Aucune donnée, ou soirée sans consommation : on masque la carte.
     if (!estimate || estimate.has_drinks === false) {
         bacAnchor = null;
+        destroyBacChart();
         section.style.display = 'none';
         return;
     }
@@ -1593,6 +1596,7 @@ function renderBac(estimate) {
     // Profil incomplet : on invite à le renseigner (seulement si une soirée est en cours).
     if (estimate.available === false) {
         bacAnchor = null;
+        destroyBacChart();
         section.style.display = 'block';
         missing.style.display = 'block';
         content.style.display = 'none';
@@ -1603,13 +1607,19 @@ function renderBac(estimate) {
     missing.style.display = 'none';
     content.style.display = 'block';
 
+    updateBacChart(estimate);
+
     const legalLimit = Number(estimate.legal_limit);
     bacAnchor = {
         bac: Number(estimate.bac) || 0,
         atMs: Date.now(),
         legalLimit: Number.isFinite(legalLimit) ? legalLimit : bacLegalLimit,
         soberLegalAt: estimate.sober_legal_at || null,
-        soberAt: estimate.sober_at || null
+        soberAt: estimate.sober_at || null,
+        // Courbe modélisée (temps local -> taux) : le nombre en direct s'y réfère pour
+        // suivre la montée pendant l'absorption, comme le graphe (et non une simple descente).
+        curve: (Array.isArray(estimate.curve) ? estimate.curve : [])
+            .map(p => ({ ms: new Date(p.t).getTime(), bac: Number(p.bac) || 0 }))
     };
 
     updateBacDisplay();
@@ -1623,6 +1633,156 @@ function stopBacTick() {
     }
 }
 
+function destroyBacChart() {
+    if (bacChart) {
+        bacChart.destroy();
+        bacChart = null;
+    }
+    bacChartNowIndex = -1;
+    const wrap = document.getElementById('bac-chart-wrap');
+    if (wrap) wrap.style.display = 'none';
+}
+
+// Interpole le taux d'alcoolemie sur la courbe modelisee (points {ms, bac}) a l'instant ms.
+function bacFromCurve(curve, ms) {
+    if (!curve || curve.length === 0) return 0;
+    if (ms <= curve[0].ms) return curve[0].bac;
+    if (ms >= curve[curve.length - 1].ms) return 0;  // apres le retour a 0
+    for (let i = 1; i < curve.length; i++) {
+        if (ms <= curve[i].ms) {
+            const a = curve[i - 1];
+            const b = curve[i];
+            const span = b.ms - a.ms;
+            const frac = span > 0 ? (ms - a.ms) / span : 0;
+            return Math.max(0, a.bac + frac * (b.bac - a.bac));
+        }
+    }
+    return 0;
+}
+
+// Trace la courbe modelisee du taux d'alcoolemie (debut de soiree -> retour a 0).
+function updateBacChart(estimate) {
+    const wrap = document.getElementById('bac-chart-wrap');
+    const canvas = document.getElementById('bacChart');
+    const curve = estimate && Array.isArray(estimate.curve) ? estimate.curve : [];
+
+    if (typeof Chart === 'undefined' || !wrap || !canvas || curve.length < 2) {
+        destroyBacChart();
+        return;
+    }
+
+    const theme = getChartThemeColors();
+    const lineColor = getCssColor('--secondary-color', '#3498db');
+    const limitColor = getCssColor('--accent-color', '#e74c3c');
+    const nowColor = getCssColor('--warning-color', '#f39c12');
+
+    const points = curve.map(p => ({ x: new Date(p.t).getTime(), y: p.bac }));
+    const minX = points[0].x;
+    const maxX = points[points.length - 1].x;
+    const legalLimit = Number(estimate.legal_limit);
+    const nowMs = estimate.now ? new Date(estimate.now).getTime() : null;
+    const currentBac = Number(estimate.bac) || 0;
+
+    const datasets = [{
+        label: t('bac_chart_series'),
+        data: points,
+        borderColor: lineColor,
+        backgroundColor: colorWithAlpha(lineColor, 0.15),
+        borderWidth: 2,
+        pointRadius: 0,
+        fill: true,
+        // Segments droits : le modèle est linéaire par morceaux, et le point
+        // « Maintenant » (interpolation linéaire) doit tomber exactement sur la courbe.
+        tension: 0,
+        order: 3
+    }];
+
+    if (Number.isFinite(legalLimit) && legalLimit > 0) {
+        datasets.push({
+            label: t('bac_chart_legal'),
+            data: [{ x: minX, y: legalLimit }, { x: maxX, y: legalLimit }],
+            borderColor: limitColor,
+            borderWidth: 1.5,
+            borderDash: [6, 6],
+            pointRadius: 0,
+            fill: false,
+            order: 2
+        });
+    }
+
+    bacChartNowIndex = -1;
+    if (nowMs != null && nowMs >= minX && nowMs <= maxX) {
+        datasets.push({
+            label: t('bac_chart_now'),
+            data: [{ x: nowMs, y: currentBac }],
+            borderColor: nowColor,
+            backgroundColor: nowColor,
+            pointRadius: 5,
+            pointHoverRadius: 6,
+            showLine: false,
+            order: 1
+        });
+        bacChartNowIndex = datasets.length - 1;
+    }
+
+    wrap.style.display = 'block';
+
+    if (bacChart) {
+        bacChart.destroy();
+    }
+
+    bacChart = new Chart(canvas, {
+        type: 'line',
+        data: { datasets },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { intersect: false, mode: 'nearest' },
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: { color: theme.textColor, usePointStyle: true, padding: 14 }
+                },
+                tooltip: {
+                    backgroundColor: colorWithAlpha(theme.textColor, 0.92),
+                    titleColor: getCssColor('--card-bg', '#ffffff'),
+                    bodyColor: getCssColor('--card-bg', '#ffffff'),
+                    padding: 10,
+                    cornerRadius: 8,
+                    callbacks: {
+                        title: items => formatTime(new Date(items[0].parsed.x).toTimeString().slice(0, 8)),
+                        label: ctx => `${ctx.dataset.label}: ${Number(ctx.parsed.y).toFixed(2)} g/L`
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    border: { display: false },
+                    grid: { color: theme.gridColor },
+                    ticks: {
+                        color: theme.textColor,
+                        padding: 6,
+                        callback: value => value + ' g/L'
+                    }
+                },
+                x: {
+                    type: 'linear',
+                    grid: { display: false },
+                    ticks: {
+                        color: theme.textColor,
+                        maxRotation: 0,
+                        autoSkip: true,
+                        maxTicksLimit: 7,
+                        padding: 6,
+                        callback: value => new Date(value).toLocaleTimeString(currentLocale(), { hour: '2-digit', minute: '2-digit' })
+                    }
+                }
+            }
+        }
+    });
+}
+
 // Calcule le taux courant à partir de l'ancre serveur (décroissance continue).
 function updateBacDisplay() {
     if (!bacAnchor) return;
@@ -1634,11 +1794,25 @@ function updateBacDisplay() {
 
     const limit = bacAnchor.legalLimit;
     const limitText = formatBacLimit(limit);
-    const elapsedHours = (Date.now() - bacAnchor.atMs) / 3600000;
-    const bac = Math.max(0, bacAnchor.bac - bacEliminationRatePerHour * elapsedHours);
+    const nowMs = Date.now();
+    let bac;
+    if (bacAnchor.curve && bacAnchor.curve.length >= 2) {
+        // On lit la courbe modélisée : montée pendant l'absorption puis descente.
+        bac = bacFromCurve(bacAnchor.curve, nowMs);
+    } else {
+        // Repli : décroissance linéaire depuis la dernière valeur serveur.
+        const elapsedHours = (nowMs - bacAnchor.atMs) / 3600000;
+        bac = Math.max(0, bacAnchor.bac - bacEliminationRatePerHour * elapsedHours);
+    }
     const canDrive = bac < limit;
 
     valueEl.textContent = bac.toFixed(2);
+
+    // Garde le point « Maintenant » du graphe aligné sur le nombre en direct.
+    if (bacChart && bacChartNowIndex >= 0 && bacChart.data.datasets[bacChartNowIndex]) {
+        bacChart.data.datasets[bacChartNowIndex].data = [{ x: nowMs, y: bac }];
+        bacChart.update('none');
+    }
 
     // Niveau : rouge au-dessus du seuil, jaune dans les 40 % sous le seuil, vert sinon.
     let level;
@@ -1749,6 +1923,8 @@ function updateStatsDisplay(data) {
         const waterAck = getWaterReminderAck();
         const waterWarnings = data.warnings.filter(w => {
             if (w.type !== 'water') return false;
+            // Disparaît automatiquement 2h après la dernière bière (échéance fournie par le serveur).
+            if (w.expires_at && new Date(w.expires_at) <= now) return false;
             // Nouvelle soirée (ou jamais validé) : le serveur garantit déjà total >= seuil.
             if (waterAck.key !== w.start_date) return true;
             // Sinon, réafficher seulement après un seuil complet bu depuis la validation.
@@ -1811,14 +1987,24 @@ function updateStatsDisplay(data) {
                     dismissBtn.setAttribute('aria-label', t('alert_water_done'));
                     dismissBtn.setAttribute('title', t('alert_water_done'));
                     dismissBtn.innerText = '✓';
-                    dismissBtn.addEventListener('click', function() {
-                        acknowledgeWaterReminder(warning.start_date, warning.total_liters);
+                    const hideWaterWarning = function() {
                         warningDiv.remove();
                         if (!warningsList.children.length) {
                             warningsContainer.style.display = 'none';
                         }
+                    };
+                    dismissBtn.addEventListener('click', function() {
+                        acknowledgeWaterReminder(warning.start_date, warning.total_liters);
+                        hideWaterWarning();
                     });
                     warningDiv.appendChild(dismissBtn);
+                    // Disparition automatique 2h après la dernière bière, sans rechargement.
+                    if (warning.expires_at) {
+                        const msLeft = new Date(warning.expires_at).getTime() - Date.now();
+                        if (msLeft > 0) {
+                            setTimeout(hideWaterWarning, msLeft);
+                        }
+                    }
                 } else if (warning.type === 'weekly') {
                     // Avertissement 3ème jour
                     const dayIndexes = warning.day_indexes || [];
