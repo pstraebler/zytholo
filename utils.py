@@ -122,6 +122,22 @@ WIDMARK_R_MALE = 0.68
 WIDMARK_R_FEMALE = 0.55
 ELIMINATION_RATE_PER_HOUR = 0.15  # g/L eliminee par heure
 LEGAL_BAC_LIMIT = 0.5  # g/L (seuil general France ; 0 en permis probatoire)
+# Une biere ne se boit pas d'un trait : on modelise une absorption progressive.
+# Chaque prise fait monter l'alcoolemie lineairement de 0 a son pic sur cette duree,
+# au lieu d'un saut instantane. L'elimination s'applique en parallele.
+ABSORPTION_MINUTES = 30.0
+ABSORPTION_HOURS = ABSORPTION_MINUTES / 60.0
+
+
+def _absorbed_fraction(now, drink_datetime):
+    """Fraction (0 a 1) du pic d'une prise deja absorbee a l'instant 'now'.
+
+    Montee lineaire sur ABSORPTION_HOURS depuis l'heure de la prise, puis plateau a 1.
+    """
+    if ABSORPTION_HOURS <= 0:
+        return 1.0 if now >= drink_datetime else 0.0
+    elapsed_hours = (now - drink_datetime).total_seconds() / 3600.0
+    return min(1.0, max(0.0, elapsed_hours / ABSORPTION_HOURS))
 
 
 def estimate_current_bac(
@@ -192,30 +208,40 @@ def estimate_current_bac(
     if not has_drinks:
         return {'available': True, 'has_drinks': False, 'bac': 0.0}
 
-    # Somme des "pics" d'alcoolemie apportes par chaque prise de la soiree en cours,
-    # et horodatage de la premiere prise (debut de l'elimination).
+    # Pour chaque prise : son "pic" d'alcoolemie (contribution une fois totalement
+    # absorbee) et la part deja absorbee a l'instant present (montee progressive).
     r = WIDMARK_R_MALE if sex == 'm' else WIDMARK_R_FEMALE
-    peak_sum = 0.0
+    total_peak = 0.0     # taux atteint une fois toutes les prises absorbees
+    absorbed_now = 0.0   # taux effectivement absorbe a l'instant present
     first_datetime = None
     for chronological_datetime, liters in evening_drinks:
         grams = liters * beer_abv * ETHANOL_G_PER_LITER_PER_DEGREE
-        peak_sum += grams / (weight_kg * r)
+        peak = grams / (weight_kg * r)
+        total_peak += peak
+        absorbed_now += peak * _absorbed_fraction(now, chronological_datetime)
         if first_datetime is None or chronological_datetime < first_datetime:
             first_datetime = chronological_datetime
 
     hours_elapsed = max(0.0, (now - first_datetime).total_seconds() / 3600.0)
-    bac = max(0.0, peak_sum - ELIMINATION_RATE_PER_HOUR * hours_elapsed)
+    eliminated = ELIMINATION_RATE_PER_HOUR * hours_elapsed
+    bac = max(0.0, absorbed_now - eliminated)
 
-    can_drive = bac < legal_limit
+    # Projections "quand puis-je reconduire / etre a zero" : elles se basent sur le pic
+    # une fois TOUT absorbe (total_peak), pas sur le taux partiel actuel. Sinon, juste
+    # apres une biere encore en cours d'absorption, on annoncerait a tort une descente.
     sober_legal_at = None
     sober_at = None
     if ELIMINATION_RATE_PER_HOUR > 0:
-        if bac >= legal_limit:
-            hours_to_legal = (bac - legal_limit) / ELIMINATION_RATE_PER_HOUR
+        hours_to_legal = (total_peak - legal_limit) / ELIMINATION_RATE_PER_HOUR - hours_elapsed
+        if hours_to_legal > 0:
             sober_legal_at = (now + timedelta(hours=hours_to_legal)).isoformat(timespec='seconds')
-        if bac > 0:
-            hours_to_zero = bac / ELIMINATION_RATE_PER_HOUR
+        hours_to_zero = total_peak / ELIMINATION_RATE_PER_HOUR - hours_elapsed
+        if hours_to_zero > 0:
             sober_at = (now + timedelta(hours=hours_to_zero)).isoformat(timespec='seconds')
+
+    # On ne peut conduire que si l'on est sous le seuil maintenant ET destine a y rester
+    # (une prise en cours d'absorption peut faire repasser au-dessus).
+    can_drive = bac < legal_limit and sober_legal_at is None
 
     return {
         'available': True,
@@ -231,9 +257,11 @@ def estimate_current_bac(
 def peak_bac_for_evening(user_id, evening_key, weight_kg, sex, beer_abv=5.0, rollover_hour=EVENING_ROLLOVER_HOUR):
     """Estimer le pic d'alcoolemie atteint durant une soiree donnee (formule de Widmark).
 
-    Le maximum est atteint juste apres une prise (absorption supposee instantanee,
-    elimination lineaire entre les verres). Retourne un taux g/L, ou None si le profil
-    (poids/sexe) manque ou si la soiree n'a aucune consommation.
+    Chaque prise est absorbee progressivement (montee lineaire sur ABSORPTION_HOURS),
+    l'elimination etant lineaire en parallele. Le taux resultant est une fonction
+    lineaire par morceaux : son maximum se trouve donc a un point de rupture, c.-a-d.
+    a l'instant d'une prise ou a la fin de l'absorption d'une prise. Retourne un taux
+    g/L, ou None si le profil (poids/sexe) manque ou si la soiree n'a aucune consommation.
     """
     if not weight_kg or weight_kg <= 0 or sex not in ('m', 'f') or not evening_key:
         return None
@@ -265,12 +293,23 @@ def peak_bac_for_evening(user_id, evening_key, weight_kg, sex, beer_abv=5.0, rol
     drinks.sort(key=lambda item: item[0])
     r = WIDMARK_R_MALE if sex == 'm' else WIDMARK_R_FEMALE
     first_datetime = drinks[0][0]
-    cumulative_grams = 0.0
+    peaks = [
+        (chronological_datetime, liters * beer_abv * ETHANOL_G_PER_LITER_PER_DEGREE / (weight_kg * r))
+        for chronological_datetime, liters in drinks
+    ]
+
+    # Le taux est lineaire par morceaux ; on l'evalue a chaque point de rupture (chaque
+    # prise et chaque fin d'absorption) et on retient le maximum.
+    candidate_times = set()
+    for chronological_datetime, _ in peaks:
+        candidate_times.add(chronological_datetime)
+        candidate_times.add(chronological_datetime + timedelta(hours=ABSORPTION_HOURS))
+
     peak = 0.0
-    for chronological_datetime, liters in drinks:
-        cumulative_grams += liters * beer_abv * ETHANOL_G_PER_LITER_PER_DEGREE
-        hours_elapsed = max(0.0, (chronological_datetime - first_datetime).total_seconds() / 3600.0)
-        bac_at = cumulative_grams / (weight_kg * r) - ELIMINATION_RATE_PER_HOUR * hours_elapsed
+    for moment in candidate_times:
+        absorbed = sum(p * _absorbed_fraction(moment, t) for t, p in peaks)
+        hours_elapsed = max(0.0, (moment - first_datetime).total_seconds() / 3600.0)
+        bac_at = absorbed - ELIMINATION_RATE_PER_HOUR * hours_elapsed
         if bac_at > peak:
             peak = bac_at
 
