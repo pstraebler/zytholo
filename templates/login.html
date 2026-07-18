@@ -9,6 +9,30 @@
     <meta name="csrf-token" content="{{ csrf_token() }}">
 </head>
 <body class="login-page" data-i18n-title="page_login_title" data-force-browser-language="true">
+    <div class="login-bg" aria-hidden="true">
+        <svg class="login-bg-art" viewBox="0 0 500 320" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="xMidYMid slice">
+            <defs>
+                <linearGradient id="loginBarGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop class="login-bar-stop-top" offset="0"/>
+                    <stop class="login-bar-stop-bottom" offset="1"/>
+                </linearGradient>
+            </defs>
+            <g class="login-bg-bars" fill="url(#loginBarGradient)">
+                <rect x="120" y="200" width="66" height="80" rx="10"/>
+                <rect x="200" y="160" width="66" height="120" rx="10"/>
+                <rect x="280" y="115" width="66" height="165" rx="10"/>
+                <rect x="360" y="65" width="66" height="215" rx="10"/>
+            </g>
+            <polyline class="login-bg-line" points="60,258 150,238 250,206 350,150 440,100"/>
+            <g class="login-bg-nodes">
+                <circle cx="60" cy="258" r="7"/>
+                <circle cx="150" cy="238" r="7"/>
+                <circle cx="250" cy="206" r="7"/>
+                <circle cx="350" cy="150" r="7"/>
+                <circle cx="440" cy="100" r="7"/>
+            </g>
+        </svg>
+    </div>
     <div class="login-container">
         <div class="login-box">
             <img src="{{ url_for('static', filename='img/logo.png') }}" alt="Zytholo" class="login-logo">

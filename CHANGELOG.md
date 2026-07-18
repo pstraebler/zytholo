@@ -16,6 +16,7 @@
 	- change : gunicorn is now used as web server
 	- change : security improvements 
 	- change : login now shows a generic error regardless of the cause 
+	- change : update login page
 	- fix : night mode in admin panel
 
 ## 3.0.3 - 2026-07-01

@@ -366,12 +366,66 @@ body {
 
 /* LOGIN PAGE */
 .login-page {
+    position: relative;
     display: flex;
     flex-direction: column;
     min-height: 100vh;
     min-height: 100dvh;
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
     padding-top: max(1.5rem, env(safe-area-inset-top));
+}
+
+/* Filigrane rappelant le logo (histogramme + courbe). SVG inline => couleurs pilotees
+   par variables CSS, donc adaptees au mode jour / nuit. */
+.login-bg {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    pointer-events: none;
+    /* Motif incolore et translucide (effet "verre depoli") : les barres ont un degrade
+       blanc semi-transparent, l'alpha est porte par les couleurs pour laisser
+       transparaitre le fond. */
+    --login-art-bar-top: rgba(255, 252, 245, 0.30);
+    --login-art-bar-bottom: rgba(255, 252, 245, 0.04);
+    --login-art-line: rgba(255, 255, 255, 0.55);
+}
+
+.login-bg-art {
+    /* Occupe toute la page, centre. On couvre la surface (slice) : le motif est
+       toujours plein cadre quel que soit le format d'ecran. */
+    width: 100%;
+    height: 100%;
+}
+
+.login-bar-stop-top { stop-color: var(--login-art-bar-top); }
+.login-bar-stop-bottom { stop-color: var(--login-art-bar-bottom); }
+
+.login-bg-line {
+    fill: none;
+    stroke: var(--login-art-line);
+    stroke-width: 3;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+}
+
+.login-bg-nodes circle {
+    fill: var(--login-art-line);
+}
+
+.login-container,
+.login-page .bottom-message {
+    position: relative;
+    z-index: 1;
+}
+
+:root[data-theme="dark"] .login-bg {
+    --login-art-bar-top: rgba(226, 237, 248, 0.18);
+    --login-art-bar-bottom: rgba(226, 237, 248, 0.02);
+    --login-art-line: rgba(226, 237, 248, 0.42);
 }
 
 
