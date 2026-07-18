@@ -24,9 +24,10 @@ A web app to track beer consumption with multi-user management, configurable ale
   - Water reminder inviting you to drink a glass of water once the evening's consumption passes a threshold (default 1 L); dismiss it with the check button and it reappears after another full threshold is consumed
   - Any alert threshold can be set to `0` to disable that alert
 - **Blood alcohol estimation**:
-  - Estimated blood alcohol content (BAC) for the current evening using the Widmark formula, based on your weight, sex, and average beer strength (set in the settings)
-  - Live decreasing estimate with a clear **can I drive?** verdict against a configurable legal limit (default 0.5 g/L; adjust it per country), plus the estimated time you drop back under it
-  - Always indicative only: it does not replace a breathalyser, and a probationary/novice licence allows 0 g/L
+  - Estimated blood alcohol content (BAC) for the current evening using the Widmark formula with gradual (~30 min) absorption, based on your weight, sex, and average beer strength (set in the settings)
+  - Live estimate that rises while a beer is being absorbed and falls afterwards, with a clear **can I drive?** verdict against a configurable legal limit (default 0.5 g/L; adjust it per country), plus the estimated time you drop back under it and reach 0
+  - Interactive graph of the estimated BAC across the whole evening (until it returns to 0), with the legal-limit line and a live "now" marker; it updates whenever a beer is added or removed
+  - Always indicative only: it does not replace a breathalyser, and a probationary/novice licence allows 0 g/L — see [How the blood alcohol estimate works](#how-the-blood-alcohol-estimate-works)
 - **Rankings**:
   - Weekly podium to compare your consumption with other users
   - Monthly podium to see where you stand against the rest of the app
@@ -52,6 +53,55 @@ A web app to track beer consumption with multi-user management, configurable ale
 - **Global ranking**: View the yearly comparison table for all non-admin users with totals by format and liters.
 - **CSV import/export**: Export all data or import bulk history from CSV files.
 - **Automatic user provisioning**: Missing users are created automatically during import with a temporary password.
+
+## How the blood alcohol estimate works
+
+The dashboard shows an estimated blood alcohol content (BAC, in g/L) for the current evening. It requires your **weight** and **sex** in the settings (leave the weight empty or set it to `0` to disable the estimate).
+
+### The formula
+
+Each logged beer contributes a mass of pure alcohol:
+
+```
+alcohol (g) = volume (L) × strength (% ABV) × 7.89
+```
+
+(7.89 g is the mass of pure ethanol in one liter of beer per degree of alcohol.)
+
+That mass is converted into a peak BAC contribution with the **Widmark formula**:
+
+```
+peak (g/L) = alcohol (g) / (weight (kg) × r)
+```
+
+where `r` is the body-water distribution ratio: **0.68 for men**, **0.55 for women**.
+
+Two refinements make the estimate more realistic than a raw Widmark snapshot:
+
+- **Gradual absorption** — a beer is not downed in one gulp, so each drink's contribution rises **linearly from 0 to its peak over ~30 minutes** (the average time to drink one) instead of jumping instantly.
+- **Elimination** — the body clears alcohol at a constant **0.15 g/L per hour**, applied continuously from the first drink of the evening.
+
+So at any instant `t`, the estimated BAC is:
+
+```
+BAC(t) = max(0, Σ peakᵢ × absorbedᵢ(t) − 0.15 × (hours since the first drink))
+```
+
+where `absorbedᵢ(t)` ramps from 0 to 1 over the 30 minutes following drink `i`.
+
+The **can-I-drive?** verdict compares this value to the configurable legal limit (default **0.5 g/L**; e.g. 0.8 in the UK/USA, 0.0 for a probationary licence). The times to drop back under the limit and to reach 0 are projected from the fully-absorbed peak, so they stay correct even while a beer is still being absorbed.
+
+### The graph
+
+Below the current value, a chart plots the modeled BAC curve for the whole evening — **from the first drink until the level returns to 0**. Because the model is linear between events, the curve is drawn as straight, piecewise-linear segments. It shows:
+
+- the **estimated BAC** curve — rising during absorption, falling during elimination; it can show several bumps when drinks are spaced out (the level dips between an absorbed drink and the next one);
+- a dashed **legal-limit** line;
+- a **"now"** marker sitting exactly on the curve at the current time.
+
+The curve is recomputed every time a beer is added or removed during the evening, and the live value and the marker follow it in real time.
+
+> ⚠️ The estimate is **indicative only**. It relies on standard averages and cannot know food intake, drinking pace, individual metabolism, medication, etc. It does not replace a breathalyser and must never be used to decide whether to drive. When in doubt, don't drive.
 
 ## Deployment (via Docker)
 
