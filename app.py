@@ -249,6 +249,10 @@ if not admin_password:
 
 admin_password_hash = hash_password(admin_password)
 
+# Hash "leurre" : sert a executer une verification bcrypt meme quand l'utilisateur
+# n'existe pas, afin d'egaliser le temps de reponse et d'empecher l'enumeration des comptes.
+DUMMY_PASSWORD_HASH = hash_password(str(uuid.uuid4()))
+
 conn = Database.get_connection()
 cursor = conn.cursor()
 
@@ -308,36 +312,37 @@ def login():
         password = request.form.get('password', '').strip()
         client_ip = get_client_ip()
         
-        # Vérifier si l'utilisateur classique existe
-        if Database.user_exists(username):
-            user_id = Database.get_user_id(username)
-            conn = Database.get_connection()
-            cursor = conn.cursor()
-            cursor.execute(
-                'SELECT id, password, is_admin, force_password_change FROM users WHERE username = %s',
-                (username,)
-            )
-            user = cursor.fetchone()
-            conn.close()
-            
-            if user and verify_password(password, user['password']):
-                app.logger.info(f'{client_ip} Authentification successful for user {username}')
-                session.clear()  # rotation de session
-                session['user_id'] = user['id']
-                session['username'] = username
-                session['is_admin'] = bool(user['is_admin'])
-                session['force_password_change'] = bool(user.get('force_password_change')) or password == "changeme123"
-                session.permanent = True
-                return redirect(url_for('index'))
+        conn = Database.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            'SELECT id, password, is_admin, force_password_change FROM users WHERE username = %s',
+            (username,)
+        )
+        user = cursor.fetchone()
+        conn.close()
 
-            else:
-                # Mot de passe utilisateur incorrect
-                app.logger.warning(f'{client_ip} Authentification failed for user {username} (incorrect password)')
-                return render_template('login.html', error=t("login_incorrect_password"))
+        if user and verify_password(password, user['password']):
+            app.logger.info(f'{client_ip} Authentification successful for user {username}')
+            session.clear()  # rotation de session
+            session['user_id'] = user['id']
+            session['username'] = username
+            session['is_admin'] = bool(user['is_admin'])
+            session['force_password_change'] = bool(user.get('force_password_change')) or password == "changeme123"
+            session.permanent = True
+            return redirect(url_for('index'))
+
+        # Echec d'authentification. On renvoie TOUJOURS le meme message, sans reveler si
+        # c'est l'utilisateur ou le mot de passe qui est en cause. Le motif precis reste
+        # uniquement dans les logs serveur.
+        if user:
+            reason = 'incorrect password'
         else:
-            # Utilisateur n'existe pas
-            app.logger.warning(f'{client_ip} Authentification failed for user {username} (unknown user)')
-            return render_template('login.html', error=t("login_unknown_user"))
+            # Utilisateur inconnu : on execute quand meme une verification bcrypt "a vide"
+            # pour que le temps de reponse soit identique (anti-enumeration).
+            verify_password(password, DUMMY_PASSWORD_HASH)
+            reason = 'unknown user'
+        app.logger.warning(f'{client_ip} Authentification failed for user {username} ({reason})')
+        return render_template('login.html', error=t("login_failed"))
     
     return render_template('login.html')
 

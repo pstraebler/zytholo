@@ -5,8 +5,7 @@ DEFAULT_LANGUAGE = "en"
 
 TRANSLATIONS = {
     "fr": {
-        "login_incorrect_password": "Mot de passe incorrect",
-        "login_unknown_user": "Utilisateur non trouvé",
+        "login_failed": "Nom d'utilisateur ou mot de passe incorrect",
         "admin_user_required": "Le nom d'utilisateur et le mot de passe sont requis",
         "admin_user_created": "Utilisateur créé avec succès",
         "admin_user_create_error": "Erreur lors de la création de l'utilisateur",
@@ -26,8 +25,7 @@ TRANSLATIONS = {
         "invalid_settings": "Réglages invalides",
     },
     "en": {
-        "login_incorrect_password": "Incorrect password",
-        "login_unknown_user": "User not found",
+        "login_failed": "Invalid username or password",
         "admin_user_required": "Username and password are required",
         "admin_user_created": "User created successfully",
         "admin_user_create_error": "Error while creating user",
