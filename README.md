@@ -103,7 +103,109 @@ The curve is recomputed every time a beer is added or removed during the evening
 
 > ⚠️ The estimate is **indicative only**. It relies on standard averages and cannot know food intake, drinking pace, individual metabolism, medication, etc. It does not replace a breathalyser and must never be used to decide whether to drive. When in doubt, don't drive.
 
-## Deployment (via Docker)
+## Quick start with Docker Compose (pre-built image)
+
+The fastest way to run Zytholo is with the pre-built image published on Docker Hub — [`pierrestraebler/zytholo`](https://hub.docker.com/r/pierrestraebler/zytholo) — so you don't need to clone the repository or build anything. All you need is Docker with the Compose plugin.
+
+**1.** Create an empty folder and add a `docker-compose.yml`:
+
+```yaml
+services:
+  mariadb:
+    image: mariadb:11
+    container_name: zytholo-db
+    restart: unless-stopped
+    environment:
+      MARIADB_DATABASE: ${DB_NAME}
+      MARIADB_USER: ${DB_USER}
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-uroot", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  zytholo:
+    image: pierrestraebler/zytholo:latest
+    container_name: zytholo-app
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${APP_PORT:-8080}:${APP_PORT:-8080}"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    env_file:
+      - .env
+
+volumes:
+  mariadb_data:
+    driver: local
+```
+
+**2.** Create a `.env` file next to it:
+
+```dotenv
+# --- Flask ---
+SECRET_KEY=generate_me            # REQUIRED — long random string (see below)
+
+# --- Admin account (created/updated on every startup) ---
+ADMIN_USERNAME=admin              # optional, default: admin
+ADMIN_PASSWORD=change_me          # REQUIRED
+
+# --- App ---
+APP_PORT=8080                     # host + container port
+USE_HTTPS=0                       # set to 1 only behind a TLS-terminating proxy
+
+# --- Database (shared between the app and the MariaDB container) ---
+DB_HOST=mariadb                   # must match the MariaDB service name above
+DB_PORT=3306
+DB_NAME=zytholo_db
+DB_USER=zytholo_user
+DB_PASSWORD=zytholo_password      # app database user password
+DB_ROOT_PASSWORD=change_root_password
+```
+
+Generate a strong `SECRET_KEY`:
+
+```bash
+python -c 'import secrets; print(secrets.token_hex(32))'
+# OR
+openssl rand -hex 32
+```
+
+**3.** Start it:
+
+```bash
+docker compose up -d
+```
+
+Open **http://localhost:8080** (or your `APP_PORT`) and log in with the admin credentials.
+
+### What each part does
+
+- **`.env`** — the single source of configuration, read by both services. The variables under *Database* are shared: MariaDB uses them to **create** the database and application user on first boot, while the app uses them to **connect**, so `DB_NAME` / `DB_USER` / `DB_PASSWORD` must be identical on both sides (they are, since they come from the same file). `SECRET_KEY` and `ADMIN_PASSWORD` are mandatory — the app refuses to start without them. Gunicorn can also be tuned via the [optional variables](#production-web-server) below.
+- **Database** — a **MariaDB 11** container. You never run any SQL yourself: the app **creates its schema automatically** on startup and creates/updates the admin account from `ADMIN_USERNAME` / `ADMIN_PASSWORD`. To use an external or managed database instead, remove the `mariadb` service and point `DB_HOST` / `DB_PORT` at it.
+- **Storage** — all data lives in the named Docker volume **`mariadb_data`** (mounted at `/var/lib/mysql`). It survives `docker compose down`, container recreation, and image upgrades; it is only wiped if you explicitly run `docker compose down -v` or delete the volume. Logs go to stdout/stderr (`docker logs zytholo-app`) — there is no other writable state to persist.
+
+### Updating
+
+```bash
+docker compose pull    # fetch the latest image
+docker compose up -d   # recreate the app container; data in mariadb_data is kept
+```
+
+### Backing up the database
+
+```bash
+docker exec zytholo-db sh -c 'exec mariadb-dump -uroot -p"$MARIADB_ROOT_PASSWORD" "$MARIADB_DATABASE"' > zytholo-backup.sql
+```
+
+## Deployment (via Docker, building from source)
+
+If you'd rather build the image yourself instead of pulling the published one (e.g. to modify the code):
 
 ```bash
 git clone https://github.com/pstraebler/zytholo.git
