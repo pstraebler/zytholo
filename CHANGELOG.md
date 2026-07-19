@@ -1,5 +1,8 @@
 # Changelog
 
+## 4.0.1 - 2026-07-19
+	- fix : correct a bug with the cache of some clients 
+
 ## 4.0 - 2026-07-19
 
 💡New alerts have been added, and they are now all customizable

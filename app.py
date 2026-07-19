@@ -20,6 +20,31 @@ app.config.from_object(Config)
 bcrypt.init_app(app)
 csrf = CSRFProtect(app)
 
+
+# Cache-busting des fichiers statiques : on ajoute automatiquement ?v=<date de modif> a
+# chaque URL generee par url_for('static', ...). Apres un deploiement, un fichier modifie
+# (app.js, style.css, i18n.js...) a donc une nouvelle URL et n'est plus servi depuis le
+# cache du navigateur — fini les melanges "ancien JS / nouveau HTML" qui cassent l'affichage
+# tant que l'utilisateur n'a pas vide son cache. La version ne change que pour les fichiers
+# reellement modifies (mtime), et est mise en cache pour la duree du process.
+_static_version_cache = {}
+
+
+@app.url_defaults
+def add_static_cache_bust(endpoint, values):
+    if endpoint != 'static' or not values or 'filename' not in values:
+        return
+    filename = values['filename']
+    version = _static_version_cache.get(filename)
+    if version is None:
+        try:
+            version = int(os.stat(os.path.join(app.static_folder, filename)).st_mtime)
+            _static_version_cache[filename] = version
+        except OSError:
+            version = None
+    if version:
+        values['v'] = version
+
 # Configuration du logging
 logging.basicConfig(
     level=logging.INFO,
