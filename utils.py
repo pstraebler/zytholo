@@ -163,6 +163,31 @@ def _absorbed_fraction(now, drink_datetime):
     return min(1.0, max(0.0, elapsed_hours / ABSORPTION_HOURS))
 
 
+def _net_evening_drinks(drinks):
+    """Deduire les retraits (litres negatifs) des prises positives d'une soiree.
+
+    Un retrait de biere est enregistre comme une ligne a litres negatifs (voir
+    add_consumption / changeBeer cote client). Il corrige une prise loggee par erreur :
+    on annule donc l'equivalent de prises positives, les plus recentes d'abord (comme
+    un « annuler »), pour que la courbe se recalcule comme si la biere n'avait jamais
+    ete ajoutee. Sans cela, la ligne negative serait ignoree et le taux resterait
+    inchange apres un retrait.
+
+    'drinks' : liste de (datetime, litres). Retourne les prises positives restantes
+    (datetime, litres), triees chronologiquement.
+    """
+    positives = sorted(([dt, liters] for dt, liters in drinks if liters > 0),
+                       key=lambda item: item[0])
+    to_remove = sum(-liters for _dt, liters in drinks if liters < 0)  # >= 0
+    index = len(positives) - 1
+    while to_remove > 1e-9 and index >= 0:
+        take = min(positives[index][1], to_remove)
+        positives[index][1] -= take
+        to_remove -= take
+        index -= 1
+    return [(dt, liters) for dt, liters in positives if liters > 1e-9]
+
+
 def estimate_current_bac(
     user_id,
     weight_kg,
@@ -219,10 +244,13 @@ def estimate_current_bac(
         half_pints = record['half_pints'] or 0
         liters_33 = record['liters_33'] or 0
         liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
-        if liters <= 0:
+        if liters == 0:
             continue
         evening_drinks.append((chronological_datetime, liters))
 
+    # Deduire les retraits (litres negatifs) des prises positives : sinon une biere
+    # retiree resterait comptee dans le taux.
+    evening_drinks = _net_evening_drinks(evening_drinks)
     has_drinks = len(evening_drinks) > 0
 
     if not weight_kg or weight_kg <= 0 or sex not in ('m', 'f'):
@@ -327,14 +355,16 @@ def peak_bac_for_evening(user_id, evening_key, weight_kg, sex, beer_abv=5.0, rol
         half_pints = record['half_pints'] or 0
         liters_33 = record['liters_33'] or 0
         liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
-        if liters <= 0:
+        if liters == 0:
             continue
         drinks.append((chronological_datetime, liters))
 
+    # Deduire les retraits (litres negatifs) des prises positives, comme pour
+    # l'estimation en direct, afin que le pic reflete les bieres retirees.
+    drinks = _net_evening_drinks(drinks)
     if not drinks:
         return None
 
-    drinks.sort(key=lambda item: item[0])
     r = WIDMARK_R_MALE if sex == 'm' else WIDMARK_R_FEMALE
     first_datetime = drinks[0][0]
     peaks = [
