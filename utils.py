@@ -9,6 +9,9 @@ EVENING_ROLLOVER_HOUR = 6
 # La navigation par jour (historique / carte d'alcoolemie) decoupe les journees a 07:00,
 # comme get_day_window_records et le "jour logique" cote client.
 DAY_ROLLOVER_HOUR = 7
+# Le rappel "verre d'eau" ne se declenche que si le volume seuil a ete bu rapidement,
+# c.-a-d. sur une fenetre glissante d'au plus cette duree (consommation rapide).
+WATER_REMINDER_WINDOW_HOURS = 2.0
 
 
 def get_evening_reference(record, rollover_hour=EVENING_ROLLOVER_HOUR):
@@ -138,6 +141,62 @@ def get_current_evening_last_datetime(user_id, reference_datetime=None, rollover
             last_datetime = chronological_datetime
 
     return last_datetime
+
+
+def get_current_evening_window_liters(
+    user_id,
+    window_hours=WATER_REMINDER_WINDOW_HOURS,
+    reference_datetime=None,
+    rollover_hour=EVENING_ROLLOVER_HOUR,
+):
+    """Volume maximal (litres) consomme sur une fenetre glissante de 'window_hours' au
+    cours de la soiree en cours.
+
+    Permet de distinguer une consommation rapide (le volume seuil bu en peu de temps)
+    d'une consommation etalee sur la soiree. Les retraits (litres negatifs) sont pris en
+    compte dans la somme, comme pour le total de la soiree.
+    """
+    records = Database.get_consumption(user_id)
+    if not records:
+        return 0.0
+
+    now = reference_datetime or datetime.now()
+    current_evening_date = now.date()
+    if now.hour < rollover_hour:
+        current_evening_date -= timedelta(days=1)
+    current_key = current_evening_date.isoformat()
+
+    drinks = []
+    for record in records:
+        evening_date, chronological_datetime = get_evening_reference(record, rollover_hour)
+        if evening_date.isoformat() != current_key:
+            continue
+        pints = record['pints'] or 0
+        half_pints = record['half_pints'] or 0
+        liters_33 = record['liters_33'] or 0
+        liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
+        if liters == 0:
+            continue
+        drinks.append((chronological_datetime, liters))
+
+    if not drinks:
+        return 0.0
+
+    drinks.sort(key=lambda item: item[0])
+    window = timedelta(hours=window_hours)
+    # Le maximum d'une fenetre glissante s'obtient toujours pour une fenetre commencant
+    # sur une prise : on somme, pour chaque prise, les prises tombant dans la fenetre suivante.
+    max_liters = 0.0
+    for start_index, (start_time, _) in enumerate(drinks):
+        window_sum = 0.0
+        for moment, liters in drinks[start_index:]:
+            if moment - start_time > window:
+                break
+            window_sum += liters
+        if window_sum > max_liters:
+            max_liters = window_sum
+
+    return round(max_liters, 2)
 
 
 # --- Estimation de l'alcoolemie (formule de Widmark) ---
@@ -698,10 +757,15 @@ def calculate_stats(
         })
 
     # Rappel de boire un verre d'eau au-delà d'un certain volume sur la soirée
-    # (un seuil de 0 désactive l'alerte)
+    # (un seuil de 0 désactive l'alerte). Le rappel ne se déclenche que si ce volume a été
+    # bu rapidement : le seuil doit être atteint sur une fenêtre glissante d'au plus 2h.
+    # Une consommation étalée dans le temps ne déclenche donc pas l'alerte.
     if water_reminder_threshold_liters > 0:
-        current_evening_total = get_current_evening_total(user_id)
-        if current_evening_total >= water_reminder_threshold_liters:
+        fast_intake_liters = get_current_evening_window_liters(
+            user_id, window_hours=WATER_REMINDER_WINDOW_HOURS
+        )
+        if fast_intake_liters >= water_reminder_threshold_liters:
+            current_evening_total = get_current_evening_total(user_id)
             # L'alerte disparait automatiquement 2h apres la derniere biere.
             last_datetime = get_current_evening_last_datetime(user_id)
             expires_at = (
