@@ -1,8 +1,14 @@
 # Changelog
 
-## 4.0 - 2026-07
+## 4.0 - 2026-07-19
 
-🚗 New feature :  blood alcohol (BAC) estimation with a "can I drive?" verdict for the current evening
+💡New alerts have been added, and they are now all customizable
+
+📈 Now you can track your blood alcohol level based on how much you've had to drink.
+
+🚗 "Can I drive?" estimation verdict for the current evening
+
+⚙️ The app's security and performance have been improved.
 
 	- add : alert when evening consumption record is beaten
 	- add : alerts can now be disabled
