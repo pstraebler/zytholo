@@ -1598,6 +1598,7 @@ function renderBac(estimate) {
     const gauge = document.getElementById('bac-gauge');
     const legalInfo = document.getElementById('bac-legal-info');
     const probation = section.querySelector('.bac-probation');
+    const disclaimer = section.querySelector('[data-i18n="bac_disclaimer"]');
 
     // Aucune donnée, ou journée sans consommation : on masque la carte.
     if (!estimate || estimate.has_drinks === false) {
@@ -1642,6 +1643,8 @@ function renderBac(estimate) {
         if (gauge) gauge.style.display = 'none';
         if (legalInfo) legalInfo.style.display = 'none';
         if (probation) probation.style.display = 'none';
+        // Journée passée : disclaimer sans « ne prenez pas le volant » (pas de conduite en jeu).
+        if (disclaimer) disclaimer.textContent = t('bac_disclaimer_summary');
         return;
     }
 
@@ -1649,6 +1652,7 @@ function renderBac(estimate) {
     if (gauge) gauge.style.display = '';
     if (legalInfo) legalInfo.style.display = '';
     if (probation) probation.style.display = '';
+    if (disclaimer) disclaimer.textContent = t('bac_disclaimer');
 
     const legalLimit = Number(estimate.legal_limit);
     bacAnchor = {
