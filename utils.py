@@ -214,40 +214,36 @@ ABSORPTION_MINUTES = 30.0
 ABSORPTION_HOURS = ABSORPTION_MINUTES / 60.0
 
 
-def _absorbed_fraction(now, drink_datetime):
-    """Fraction (0 a 1) du pic d'une prise deja absorbee a l'instant 'now'.
-
-    Montee lineaire sur ABSORPTION_HOURS depuis l'heure de la prise, puis plateau a 1.
-    """
-    if ABSORPTION_HOURS <= 0:
-        return 1.0 if now >= drink_datetime else 0.0
-    elapsed_hours = (now - drink_datetime).total_seconds() / 3600.0
-    return min(1.0, max(0.0, elapsed_hours / ABSORPTION_HOURS))
-
-
 def _net_evening_drinks(drinks):
     """Deduire les retraits (litres negatifs) des prises positives d'une soiree.
 
     Un retrait de biere est enregistre comme une ligne a litres negatifs (voir
     add_consumption / changeBeer cote client). Il corrige une prise loggee par erreur :
-    on annule donc l'equivalent de prises positives, les plus recentes d'abord (comme
-    un « annuler »), pour que la courbe se recalcule comme si la biere n'avait jamais
-    ete ajoutee. Sans cela, la ligne negative serait ignoree et le taux resterait
-    inchange apres un retrait.
+    on annule donc l'equivalent de prises positives, pour que la courbe se recalcule comme
+    si la biere n'avait jamais ete ajoutee. Sans cela, la ligne negative serait ignoree et
+    le taux resterait inchange apres un retrait.
+
+    On traite les evenements dans l'ordre chronologique : un retrait annule les prises
+    positives les plus recentes DEJA enregistrees a son instant (comportement « annuler »).
+    Il ne peut donc pas annuler une prise posterieure (ex. un retrait a 12h06 n'affecte pas
+    une biere prise a 17h).
 
     'drinks' : liste de (datetime, litres). Retourne les prises positives restantes
     (datetime, litres), triees chronologiquement.
     """
-    positives = sorted(([dt, liters] for dt, liters in drinks if liters > 0),
-                       key=lambda item: item[0])
-    to_remove = sum(-liters for _dt, liters in drinks if liters < 0)  # >= 0
-    index = len(positives) - 1
-    while to_remove > 1e-9 and index >= 0:
-        take = min(positives[index][1], to_remove)
-        positives[index][1] -= take
-        to_remove -= take
-        index -= 1
-    return [(dt, liters) for dt, liters in positives if liters > 1e-9]
+    stack = []  # prises positives non encore annulees : [datetime, litres restants]
+    for dt, liters in sorted(drinks, key=lambda item: item[0]):
+        if liters > 0:
+            stack.append([dt, liters])
+        elif liters < 0:
+            to_remove = -liters
+            index = len(stack) - 1
+            while to_remove > 1e-9 and index >= 0:
+                take = min(stack[index][1], to_remove)
+                stack[index][1] -= take
+                to_remove -= take
+                index -= 1
+    return [(dt, liters) for dt, liters in stack if liters > 1e-9]
 
 
 def _collect_day_drinks(user_id, day_key, rollover_hour=EVENING_ROLLOVER_HOUR):
@@ -271,26 +267,99 @@ def _collect_day_drinks(user_id, day_key, rollover_hour=EVENING_ROLLOVER_HOUR):
     return drinks
 
 
-def _bac_curve(first_datetime, total_peak, peaks):
-    """Courbe modelisee du taux (liste de {t, bac}), du debut de journee au retour a 0.
+def _bac_curve_points(peaks):
+    """Courbe du taux d'alcoolemie, integree correctement dans le temps.
 
-    La fonction est lineaire par morceaux : on l'evalue a chaque point de rupture (chaque
-    prise, chaque fin d'absorption) plus l'instant de retour a 0.
+    Renvoie une liste de (datetime, taux g/L), lineaire par morceaux, du debut de journee
+    jusqu'au retour a 0.
+
+    Modele : chaque prise fait monter le taux lineairement de 0 a son pic sur
+    ABSORPTION_HOURS ; l'elimination (ELIMINATION_RATE_PER_HOUR) s'applique en parallele
+    MAIS seulement tant qu'il reste de l'alcool. Le taux ne descend jamais sous 0 et ne
+    creuse pas de « dette » : apres un retour a 0, une prise ulterieure repart bien de 0.
+    On integre donc le taux (dont la pente est constante entre deux ruptures) en avancant
+    d'un instant de rupture a l'autre (prise / fin d'absorption) et en inserant les passages
+    a 0.
     """
-    curve = []
-    if ELIMINATION_RATE_PER_HOUR <= 0 or first_datetime is None or total_peak <= 0:
-        return curve
-    zero_datetime = first_datetime + timedelta(hours=total_peak / ELIMINATION_RATE_PER_HOUR)
-    breakpoints = {first_datetime, zero_datetime}
+    if not peaks or ELIMINATION_RATE_PER_HOUR <= 0 or ABSORPTION_HOURS <= 0:
+        return []
+
+    # Instants ou le taux d'absorption change : debut et fin d'absorption de chaque prise.
+    times = set()
     for drink_datetime, _peak in peaks:
-        breakpoints.add(drink_datetime)
-        breakpoints.add(drink_datetime + timedelta(hours=ABSORPTION_HOURS))
-    for moment in sorted(m for m in breakpoints if first_datetime <= m <= zero_datetime):
-        absorbed = sum(peak * _absorbed_fraction(moment, t) for t, peak in peaks)
-        elapsed = (moment - first_datetime).total_seconds() / 3600.0
-        value = max(0.0, absorbed - ELIMINATION_RATE_PER_HOUR * elapsed)
-        curve.append({'t': moment.isoformat(timespec='seconds'), 'bac': round(value, 3)})
-    return curve
+        times.add(drink_datetime)
+        times.add(drink_datetime + timedelta(hours=ABSORPTION_HOURS))
+    ordered = sorted(times)
+
+    def absorption_rate(at):
+        # g/L par heure apportes par les prises en cours d'absorption a l'instant 'at'.
+        rate = 0.0
+        for drink_datetime, peak in peaks:
+            if drink_datetime <= at < drink_datetime + timedelta(hours=ABSORPTION_HOURS):
+                rate += peak / ABSORPTION_HOURS
+        return rate
+
+    points = [(ordered[0], 0.0)]
+    bac = 0.0
+    for start, end in zip(ordered, ordered[1:]):
+        span_hours = (end - start).total_seconds() / 3600.0
+        if span_hours <= 0:
+            continue
+        slope = absorption_rate(start) - ELIMINATION_RATE_PER_HOUR  # pente sur [start, end)
+        if bac <= 0 and slope <= 0:
+            # Aucun alcool actif : le taux reste a 0 (pas de dette d'elimination).
+            bac = 0.0
+            points.append((end, 0.0))
+            continue
+        end_bac = bac + slope * span_hours
+        if end_bac < 0:
+            # Retour a 0 au sein du segment (descente).
+            t_zero = start + timedelta(hours=bac / -slope)
+            points.append((t_zero, 0.0))
+            bac = 0.0
+            points.append((end, 0.0))
+        else:
+            bac = end_bac
+            points.append((end, bac))
+
+    # Apres la derniere fin d'absorption, elimination pure jusqu'au retour a 0.
+    if bac > 0:
+        points.append((ordered[-1] + timedelta(hours=bac / ELIMINATION_RATE_PER_HOUR), 0.0))
+
+    return points
+
+
+def _bac_at(curve_points, at):
+    """Interpole le taux (g/L) sur la courbe integree 'curve_points' a l'instant 'at'."""
+    if not curve_points:
+        return 0.0
+    if at <= curve_points[0][0]:
+        return curve_points[0][1]
+    if at >= curve_points[-1][0]:
+        return curve_points[-1][1]
+    for (ta, va), (tb, vb) in zip(curve_points, curve_points[1:]):
+        if ta <= at <= tb:
+            span = (tb - ta).total_seconds()
+            if span <= 0:
+                return va
+            return va + (vb - va) * ((at - ta).total_seconds() / span)
+    return curve_points[-1][1]
+
+
+def _last_downward_crossing(curve_points, level):
+    """Dernier instant ou la courbe repasse (en descendant) sous 'level', ou None.
+
+    Sert aux projections « retour a 0 g/L » (level=0) et « retour sous le seuil legal ».
+    """
+    crossing = None
+    for (ta, va), (tb, vb) in zip(curve_points, curve_points[1:]):
+        # Segment descendant franchissant 'level' (inclut le retour exact a 0 : level=0, vb=0).
+        if va > vb and va >= level >= vb:
+            span = (tb - ta).total_seconds()
+            moment = ta + timedelta(seconds=span * ((va - level) / (va - vb)))
+            if crossing is None or moment > crossing:
+                crossing = moment
+    return crossing
 
 
 def estimate_bac_for_day(
@@ -355,24 +424,20 @@ def estimate_bac_for_day(
     if not has_drinks:
         return {'available': True, 'has_drinks': False, 'bac': 0.0, 'is_summary': not is_current}
 
-    # Pour chaque prise : son "pic" d'alcoolemie (contribution une fois totalement absorbee).
+    # Pic d'alcoolemie de chaque prise (contribution une fois totalement absorbee).
     r = WIDMARK_R_MALE if sex == 'm' else WIDMARK_R_FEMALE
-    total_peak = 0.0
-    first_datetime = None
-    peaks = []           # (horodatage, pic) de chaque prise, pour tracer la courbe
-    for chronological_datetime, liters in day_drinks:
-        grams = liters * beer_abv * ETHANOL_G_PER_LITER_PER_DEGREE
-        peak = grams / (weight_kg * r)
-        total_peak += peak
-        peaks.append((chronological_datetime, peak))
-        if first_datetime is None or chronological_datetime < first_datetime:
-            first_datetime = chronological_datetime
+    peaks = [
+        (chronological_datetime, liters * beer_abv * ETHANOL_G_PER_LITER_PER_DEGREE / (weight_kg * r))
+        for chronological_datetime, liters in day_drinks
+    ]
 
-    curve = _bac_curve(first_datetime, total_peak, peaks)
+    curve_points = _bac_curve_points(peaks)
+    curve = [{'t': moment.isoformat(timespec='seconds'), 'bac': round(value, 3)}
+             for moment, value in curve_points]
+    peak_value = max((value for _moment, value in curve_points), default=0.0)
 
     # Journee passee : resume graphique uniquement (courbe + pic), sans direct ni projection.
     if not is_current:
-        peak_value = max((point['bac'] for point in curve), default=0.0)
         return {
             'available': True,
             'has_drinks': True,
@@ -383,24 +448,20 @@ def estimate_bac_for_day(
             'curve': curve,
         }
 
-    # Soiree en cours : part deja absorbee a l'instant present (montee progressive).
-    absorbed_now = sum(peak * _absorbed_fraction(now, t) for t, peak in peaks)
-    hours_elapsed = max(0.0, (now - first_datetime).total_seconds() / 3600.0)
-    eliminated = ELIMINATION_RATE_PER_HOUR * hours_elapsed
-    bac = max(0.0, absorbed_now - eliminated)
+    # Soiree en cours : taux courant interpole sur la courbe integree.
+    bac = _bac_at(curve_points, now)
 
-    # Projections "quand puis-je reconduire / etre a zero" : elles se basent sur le pic
-    # une fois TOUT absorbe (total_peak), pas sur le taux partiel actuel. Sinon, juste
-    # apres une biere encore en cours d'absorption, on annoncerait a tort une descente.
-    sober_legal_at = None
-    sober_at = None
-    if ELIMINATION_RATE_PER_HOUR > 0:
-        hours_to_legal = (total_peak - legal_limit) / ELIMINATION_RATE_PER_HOUR - hours_elapsed
-        if hours_to_legal > 0:
-            sober_legal_at = (now + timedelta(hours=hours_to_legal)).isoformat(timespec='seconds')
-        hours_to_zero = total_peak / ELIMINATION_RATE_PER_HOUR - hours_elapsed
-        if hours_to_zero > 0:
-            sober_at = (now + timedelta(hours=hours_to_zero)).isoformat(timespec='seconds')
+    # Projections « retour a 0 g/L » et « retour sous le seuil legal » : dernier passage
+    # descendant sous chaque niveau, uniquement s'il est encore a venir.
+    sober_at = _last_downward_crossing(curve_points, 0.0)
+    if sober_at is not None and sober_at <= now:
+        sober_at = None
+    if legal_limit > 0:
+        sober_legal_at = _last_downward_crossing(curve_points, legal_limit)
+    else:
+        sober_legal_at = sober_at
+    if sober_legal_at is not None and sober_legal_at <= now:
+        sober_legal_at = None
 
     # On ne peut conduire que si l'on est sous le seuil maintenant ET destine a y rester
     # (une prise en cours d'absorption peut faire repasser au-dessus).
@@ -413,8 +474,8 @@ def estimate_bac_for_day(
         'bac': round(bac, 2),
         'legal_limit': round(legal_limit, 2),
         'can_drive': can_drive,
-        'sober_legal_at': sober_legal_at,
-        'sober_at': sober_at,
+        'sober_legal_at': sober_legal_at.isoformat(timespec='seconds') if sober_legal_at else None,
+        'sober_at': sober_at.isoformat(timespec='seconds') if sober_at else None,
         'now': now.isoformat(timespec='seconds'),
         'curve': curve,
     }
@@ -460,27 +521,15 @@ def peak_bac_for_evening(user_id, evening_key, weight_kg, sex, beer_abv=5.0, rol
         return None
 
     r = WIDMARK_R_MALE if sex == 'm' else WIDMARK_R_FEMALE
-    first_datetime = drinks[0][0]
     peaks = [
         (chronological_datetime, liters * beer_abv * ETHANOL_G_PER_LITER_PER_DEGREE / (weight_kg * r))
         for chronological_datetime, liters in drinks
     ]
 
-    # Le taux est lineaire par morceaux ; on l'evalue a chaque point de rupture (chaque
-    # prise et chaque fin d'absorption) et on retient le maximum.
-    candidate_times = set()
-    for chronological_datetime, _ in peaks:
-        candidate_times.add(chronological_datetime)
-        candidate_times.add(chronological_datetime + timedelta(hours=ABSORPTION_HOURS))
-
-    peak = 0.0
-    for moment in candidate_times:
-        absorbed = sum(p * _absorbed_fraction(moment, t) for t, p in peaks)
-        hours_elapsed = max(0.0, (moment - first_datetime).total_seconds() / 3600.0)
-        bac_at = absorbed - ELIMINATION_RATE_PER_HOUR * hours_elapsed
-        if bac_at > peak:
-            peak = bac_at
-
+    # Le pic est le maximum de la courbe integree (le taux ne creuse pas de dette
+    # d'elimination : une prise apres un retour a 0 repart bien de 0).
+    curve_points = _bac_curve_points(peaks)
+    peak = max((value for _moment, value in curve_points), default=0.0)
     return round(max(0.0, peak), 2)
 
 
