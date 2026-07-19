@@ -1778,7 +1778,24 @@ function updateBacChart(estimate) {
             plugins: {
                 legend: {
                     position: 'top',
-                    labels: { color: theme.textColor, usePointStyle: true, padding: 14 }
+                    labels: {
+                        color: theme.textColor,
+                        usePointStyle: true,
+                        padding: 14,
+                        // Le seuil légal (dataset en pointillés) est représenté dans la légende
+                        // par des tirets, comme sa ligne sur le graphe, plutôt que par un rond.
+                        generateLabels: chart => Chart.defaults.plugins.legend.labels
+                            .generateLabels(chart)
+                            .map(item => {
+                                const dataset = chart.data.datasets[item.datasetIndex];
+                                if (dataset && Array.isArray(dataset.borderDash) && dataset.borderDash.length) {
+                                    item.pointStyle = 'line';
+                                    item.lineWidth = dataset.borderWidth || 2;
+                                    item.lineDash = dataset.borderDash;
+                                }
+                                return item;
+                            })
+                    }
                 },
                 tooltip: {
                     backgroundColor: colorWithAlpha(theme.textColor, 0.92),
