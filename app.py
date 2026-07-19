@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, session, redirect, url_for, j
 from datetime import datetime, timedelta, date
 from models import Database
 from auth import hash_password, verify_password, login_required, admin_required, verify_user_exists, bcrypt
-from utils import calculate_stats, export_csv, import_csv, get_top_drinkers, get_top_drinkers_for_month, get_top_drinkers_for_week, calculate_weekly_stats, estimate_current_bac, sync_record_evening, set_record_evening_name, peak_bac_for_evening
+from utils import calculate_stats, export_csv, import_csv, get_top_drinkers, get_top_drinkers_for_month, get_top_drinkers_for_week, calculate_weekly_stats, estimate_bac_for_day, sync_record_evening, set_record_evening_name, peak_bac_for_evening, DAY_ROLLOVER_HOUR
 from config import Config
 from flask_wtf.csrf import CSRFProtect
 from i18n import get_request_language, t
@@ -451,18 +451,6 @@ def api_consumption():
             {'pints': 0, 'half_pints': 0, '33cl': 0}
         )
     weekly_stats = calculate_weekly_stats(user_id)  # AJOUTER CETTE LIGNE
-    # Décalage UTC du navigateur (minutes à l'est) pour raisonner à l'heure locale du client.
-    tz_offset_minutes = request.args.get('tz_offset', type=int)
-    if tz_offset_minutes is not None and not (-840 <= tz_offset_minutes <= 840):
-        tz_offset_minutes = None
-    bac_estimate = estimate_current_bac(
-        user_id,
-        user_settings['weight_kg'],
-        user_settings['sex'],
-        user_settings['beer_abv'],
-        user_settings['legal_bac_limit'],
-        tz_offset_minutes=tz_offset_minutes
-    )
     record_evening = sync_record_evening(user_id)
     # Pic d'alcoolémie de la soirée record affichée (nécessite le profil poids/sexe).
     if stats['best_evening']:
@@ -494,7 +482,6 @@ def api_consumption():
         'all_user_records': [dict(record) for record in all_user_records],
         'records': [dict(record) for record in stats['all_records']],
         'weekly_stats': weekly_stats,  # AJOUTER CETTE LIGNE
-        'bac_estimate': bac_estimate,
         'record_evening': record_evening,
         # Date de la toute premiere biere (independante de la plage selectionnee) :
         # indique depuis quand l'utilisateur suit sa consommation.
@@ -515,9 +502,27 @@ def api_day_history():
 
     day_window = get_day_window_records(user_id, selected_date)
 
+    # Estimation d'alcoolemie pour la journee affichee : mode direct si c'est la journee
+    # en cours, sinon resume graphique de la journee passee.
+    tz_offset_minutes = request.args.get('tz_offset', type=int)
+    if tz_offset_minutes is not None and not (-840 <= tz_offset_minutes <= 840):
+        tz_offset_minutes = None
+    user_settings = Database.get_user_settings(user_id)
+    bac_estimate = estimate_bac_for_day(
+        user_id,
+        user_settings['weight_kg'],
+        user_settings['sex'],
+        user_settings['beer_abv'],
+        user_settings['legal_bac_limit'],
+        selected_date=selected_date.isoformat(),
+        tz_offset_minutes=tz_offset_minutes,
+        rollover_hour=DAY_ROLLOVER_HOUR,
+    )
+
     return jsonify({
         'success': True,
         'selected_date': selected_date.isoformat(),
+        'bac_estimate': bac_estimate,
         **day_window
     })
 

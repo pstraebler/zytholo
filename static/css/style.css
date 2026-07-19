@@ -778,6 +778,14 @@ body {
 }
 
 /* --- Carte alcoolémie --- */
+.bac-subtitle {
+    margin: -0.4rem 0 0.9rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-color);
+    opacity: 0.7;
+}
+
 .bac-card .bac-profile-missing p {
     margin-bottom: 0.9rem;
     color: var(--text-color);

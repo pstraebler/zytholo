@@ -6,6 +6,9 @@ import io
 import secrets
 
 EVENING_ROLLOVER_HOUR = 6
+# La navigation par jour (historique / carte d'alcoolemie) decoupe les journees a 07:00,
+# comme get_day_window_records et le "jour logique" cote client.
+DAY_ROLLOVER_HOUR = 7
 
 
 def get_evening_reference(record, rollover_hour=EVENING_ROLLOVER_HOUR):
@@ -188,24 +191,72 @@ def _net_evening_drinks(drinks):
     return [(dt, liters) for dt, liters in positives if liters > 1e-9]
 
 
-def estimate_current_bac(
+def _collect_day_drinks(user_id, day_key, rollover_hour=EVENING_ROLLOVER_HOUR):
+    """Prises (datetime, litres) rattachees a la journee logique 'day_key'.
+
+    Inclut les retraits (litres negatifs) : le netting est applique par l'appelant.
+    """
+    records = Database.get_consumption(user_id)
+    drinks = []
+    for record in records:
+        evening_date, chronological_datetime = get_evening_reference(record, rollover_hour)
+        if evening_date.isoformat() != day_key:
+            continue
+        pints = record['pints'] or 0
+        half_pints = record['half_pints'] or 0
+        liters_33 = record['liters_33'] or 0
+        liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
+        if liters == 0:
+            continue
+        drinks.append((chronological_datetime, liters))
+    return drinks
+
+
+def _bac_curve(first_datetime, total_peak, peaks):
+    """Courbe modelisee du taux (liste de {t, bac}), du debut de journee au retour a 0.
+
+    La fonction est lineaire par morceaux : on l'evalue a chaque point de rupture (chaque
+    prise, chaque fin d'absorption) plus l'instant de retour a 0.
+    """
+    curve = []
+    if ELIMINATION_RATE_PER_HOUR <= 0 or first_datetime is None or total_peak <= 0:
+        return curve
+    zero_datetime = first_datetime + timedelta(hours=total_peak / ELIMINATION_RATE_PER_HOUR)
+    breakpoints = {first_datetime, zero_datetime}
+    for drink_datetime, _peak in peaks:
+        breakpoints.add(drink_datetime)
+        breakpoints.add(drink_datetime + timedelta(hours=ABSORPTION_HOURS))
+    for moment in sorted(m for m in breakpoints if first_datetime <= m <= zero_datetime):
+        absorbed = sum(peak * _absorbed_fraction(moment, t) for t, peak in peaks)
+        elapsed = (moment - first_datetime).total_seconds() / 3600.0
+        value = max(0.0, absorbed - ELIMINATION_RATE_PER_HOUR * elapsed)
+        curve.append({'t': moment.isoformat(timespec='seconds'), 'bac': round(value, 3)})
+    return curve
+
+
+def estimate_bac_for_day(
     user_id,
     weight_kg,
     sex,
     beer_abv=5.0,
     legal_limit=LEGAL_BAC_LIMIT,
+    selected_date=None,
     reference_datetime=None,
     tz_offset_minutes=None,
     rollover_hour=EVENING_ROLLOVER_HOUR,
 ):
-    """Estimer l'alcoolemie actuelle pour la soiree en cours (formule de Widmark).
+    """Estimer l'alcoolemie pour une journee logique (formule de Widmark).
 
-    Les consommations sont horodatees a l'heure locale du navigateur. Pour comparer
-    correctement quel que soit le fuseau du serveur, on reconstruit "maintenant" a
-    l'heure du client a partir de son decalage UTC (tz_offset_minutes, minutes a l'est).
+    Par defaut ('selected_date' vide) ou si la date visee est la journee en cours :
+    mode DIRECT -> taux courant, projections de retour (sous le seuil / a zero) et point
+    « maintenant ». Pour une journee passee : mode RESUME -> uniquement la courbe modelisee
+    et le pic de la journee, sans taux courant ni projection.
 
-    Retourne un dict decrivant l'estimation. 'available' vaut False si le profil
-    (poids/sexe) n'est pas renseigne ; 'has_drinks' indique si une soiree est en cours.
+    Les consommations sont horodatees a l'heure locale du navigateur ; on reconstruit
+    "maintenant" a l'heure du client via tz_offset_minutes (minutes a l'est de UTC).
+
+    Retourne un dict. 'available' vaut False si le profil (poids/sexe) manque ; 'has_drinks'
+    indique si la journee comporte des prises ; 'is_summary' vaut True pour une journee passee.
     """
     try:
         beer_abv = float(beer_abv)
@@ -227,54 +278,54 @@ def estimate_current_bac(
         now = datetime.utcnow() + timedelta(minutes=tz_offset_minutes)
     else:
         now = datetime.now()
-    current_evening_date = now.date()
+    current_day = now.date()
     if now.hour < rollover_hour:
-        current_evening_date -= timedelta(days=1)
-    current_key = current_evening_date.isoformat()
+        current_day -= timedelta(days=1)
+    current_key = current_day.isoformat()
 
-    records = Database.get_consumption(user_id)
+    target_key = selected_date or current_key
+    is_current = (target_key == current_key)
 
-    # Liste des prises de la soiree en cours (litres + horodatage), independamment du profil.
-    evening_drinks = []
-    for record in records:
-        evening_date, chronological_datetime = get_evening_reference(record, rollover_hour)
-        if evening_date.isoformat() != current_key:
-            continue
-        pints = record['pints'] or 0
-        half_pints = record['half_pints'] or 0
-        liters_33 = record['liters_33'] or 0
-        liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
-        if liters == 0:
-            continue
-        evening_drinks.append((chronological_datetime, liters))
-
-    # Deduire les retraits (litres negatifs) des prises positives : sinon une biere
-    # retiree resterait comptee dans le taux.
-    evening_drinks = _net_evening_drinks(evening_drinks)
-    has_drinks = len(evening_drinks) > 0
+    # Prises de la journee ciblee (litres nets des retraits), independamment du profil.
+    day_drinks = _net_evening_drinks(_collect_day_drinks(user_id, target_key, rollover_hour))
+    has_drinks = len(day_drinks) > 0
 
     if not weight_kg or weight_kg <= 0 or sex not in ('m', 'f'):
-        return {'available': False, 'has_drinks': has_drinks}
+        return {'available': False, 'has_drinks': has_drinks, 'is_summary': not is_current}
 
     if not has_drinks:
-        return {'available': True, 'has_drinks': False, 'bac': 0.0}
+        return {'available': True, 'has_drinks': False, 'bac': 0.0, 'is_summary': not is_current}
 
-    # Pour chaque prise : son "pic" d'alcoolemie (contribution une fois totalement
-    # absorbee) et la part deja absorbee a l'instant present (montee progressive).
+    # Pour chaque prise : son "pic" d'alcoolemie (contribution une fois totalement absorbee).
     r = WIDMARK_R_MALE if sex == 'm' else WIDMARK_R_FEMALE
-    total_peak = 0.0     # taux atteint une fois toutes les prises absorbees
-    absorbed_now = 0.0   # taux effectivement absorbe a l'instant present
+    total_peak = 0.0
     first_datetime = None
     peaks = []           # (horodatage, pic) de chaque prise, pour tracer la courbe
-    for chronological_datetime, liters in evening_drinks:
+    for chronological_datetime, liters in day_drinks:
         grams = liters * beer_abv * ETHANOL_G_PER_LITER_PER_DEGREE
         peak = grams / (weight_kg * r)
         total_peak += peak
-        absorbed_now += peak * _absorbed_fraction(now, chronological_datetime)
         peaks.append((chronological_datetime, peak))
         if first_datetime is None or chronological_datetime < first_datetime:
             first_datetime = chronological_datetime
 
+    curve = _bac_curve(first_datetime, total_peak, peaks)
+
+    # Journee passee : resume graphique uniquement (courbe + pic), sans direct ni projection.
+    if not is_current:
+        peak_value = max((point['bac'] for point in curve), default=0.0)
+        return {
+            'available': True,
+            'has_drinks': True,
+            'is_summary': True,
+            'legal_limit': round(legal_limit, 2),
+            'peak': round(peak_value, 2),
+            'selected_date': target_key,
+            'curve': curve,
+        }
+
+    # Soiree en cours : part deja absorbee a l'instant present (montee progressive).
+    absorbed_now = sum(peak * _absorbed_fraction(now, t) for t, peak in peaks)
     hours_elapsed = max(0.0, (now - first_datetime).total_seconds() / 3600.0)
     eliminated = ELIMINATION_RATE_PER_HOUR * hours_elapsed
     bac = max(0.0, absorbed_now - eliminated)
@@ -296,26 +347,10 @@ def estimate_current_bac(
     # (une prise en cours d'absorption peut faire repasser au-dessus).
     can_drive = bac < legal_limit and sober_legal_at is None
 
-    # Courbe modelisee du taux, du debut de soiree jusqu'au retour a 0. La fonction est
-    # lineaire par morceaux : on l'evalue a chaque point de rupture (chaque prise, chaque
-    # fin d'absorption) plus l'instant de retour a 0. La courbe se recalcule donc a chaque
-    # ajout / retrait de biere de la soiree.
-    curve = []
-    if ELIMINATION_RATE_PER_HOUR > 0:
-        zero_datetime = first_datetime + timedelta(hours=total_peak / ELIMINATION_RATE_PER_HOUR)
-        breakpoints = {first_datetime, zero_datetime}
-        for drink_datetime, _peak in peaks:
-            breakpoints.add(drink_datetime)
-            breakpoints.add(drink_datetime + timedelta(hours=ABSORPTION_HOURS))
-        for moment in sorted(m for m in breakpoints if first_datetime <= m <= zero_datetime):
-            absorbed = sum(peak * _absorbed_fraction(moment, t) for t, peak in peaks)
-            elapsed = (moment - first_datetime).total_seconds() / 3600.0
-            value = max(0.0, absorbed - ELIMINATION_RATE_PER_HOUR * elapsed)
-            curve.append({'t': moment.isoformat(timespec='seconds'), 'bac': round(value, 3)})
-
     return {
         'available': True,
         'has_drinks': True,
+        'is_summary': False,
         'bac': round(bac, 2),
         'legal_limit': round(legal_limit, 2),
         'can_drive': can_drive,

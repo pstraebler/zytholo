@@ -1108,10 +1108,13 @@ function loadTodayConsumption() {
     if (passwordChangeRequired) return;
 
     const selectedDate = document.getElementById('today-date').value;
-    
+
     console.log('Chargement de la consommation pour:', selectedDate);
-    
-    fetch(`/api/day-history?date=${selectedDate}`)
+
+    // Décalage UTC du navigateur : permet au serveur de savoir si le jour affiché est la
+    // journée en cours (estimation d'alcoolémie en direct) ou une journée passée (résumé).
+    const tzOffset = -new Date().getTimezoneOffset();
+    fetch(`/api/day-history?date=${selectedDate}&tz_offset=${tzOffset}`)
         .then(response => response.json())
         .then(data => {
             currentBeer = {
@@ -1121,11 +1124,13 @@ function loadTodayConsumption() {
             };
 
             console.log('Consommation totale du jour logique:', currentBeer);
-            
+
             document.getElementById('pints-count').innerText = currentBeer.pints;
             document.getElementById('half_pints-count').innerText = currentBeer.half_pints;
             document.getElementById('liters_33-count').innerText = currentBeer.liters_33;
             renderDayHistory(data);
+            // La carte d'alcoolémie suit désormais le jour sélectionné (et non la plage de stats).
+            renderBac(data.bac_estimate);
         })
         .catch(error => {
             console.error('Error while loading:', error);
@@ -1585,19 +1590,26 @@ function renderBac(estimate) {
 
     stopBacTick();
 
-    // Aucune donnée, ou soirée sans consommation : on masque la carte.
+    const subtitle = document.getElementById('bac-subtitle');
+    const gauge = document.getElementById('bac-gauge');
+    const legalInfo = document.getElementById('bac-legal-info');
+    const probation = section.querySelector('.bac-probation');
+
+    // Aucune donnée, ou journée sans consommation : on masque la carte.
     if (!estimate || estimate.has_drinks === false) {
         bacAnchor = null;
         destroyBacChart();
         section.style.display = 'none';
+        if (subtitle) subtitle.style.display = 'none';
         return;
     }
 
-    // Profil incomplet : on invite à le renseigner (seulement si une soirée est en cours).
+    // Profil incomplet : on invite à le renseigner (seulement si une journée a des prises).
     if (estimate.available === false) {
         bacAnchor = null;
         destroyBacChart();
         section.style.display = 'block';
+        if (subtitle) subtitle.style.display = 'none';
         missing.style.display = 'block';
         content.style.display = 'none';
         return;
@@ -1608,6 +1620,31 @@ function renderBac(estimate) {
     content.style.display = 'block';
 
     updateBacChart(estimate);
+
+    const isSummary = estimate.is_summary === true;
+
+    // Sous-titre : « aujourd'hui » en direct, ou la date pour une journée passée.
+    if (subtitle) {
+        subtitle.style.display = 'block';
+        subtitle.textContent = isSummary
+            ? t('bac_subtitle_day', { date: formatSelectedDate(estimate.selected_date) })
+            : t('bac_subtitle_today');
+    }
+
+    // Journée passée : résumé graphique uniquement. On retire le taux courant, les
+    // projections de retour (0 g/L / seuil légal) et la mention permis probatoire.
+    if (isSummary) {
+        bacAnchor = null;
+        if (gauge) gauge.style.display = 'none';
+        if (legalInfo) legalInfo.style.display = 'none';
+        if (probation) probation.style.display = 'none';
+        return;
+    }
+
+    // Soirée en cours : affichage complet et suivi en direct.
+    if (gauge) gauge.style.display = '';
+    if (legalInfo) legalInfo.style.display = '';
+    if (probation) probation.style.display = '';
 
     const legalLimit = Number(estimate.legal_limit);
     bacAnchor = {
@@ -1909,8 +1946,7 @@ function updateStatsDisplay(data) {
     updateEstimatedCost(data.total_liters);
     updateBestEveningDisplay(data.best_evening);
     updateFirstConsumptionDisplay(data.first_consumption_date);
-    renderBac(data.bac_estimate);
-    
+
     const warningsContainer = document.getElementById('warnings-container');
     const warningsList = document.getElementById('warnings-list');
     
