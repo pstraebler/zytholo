@@ -139,6 +139,11 @@ services:
         condition: service_healthy
     env_file:
       - .env
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"   # max size per log file before rotation
+        max-file: "5"     # number of files kept (→ ~50 MB max)
 
 volumes:
   mariadb_data:
