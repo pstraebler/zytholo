@@ -225,6 +225,9 @@ document.addEventListener('DOMContentLoaded', function() {
         updateNightModeUI();
         if (!passwordChangeRequired) {
             loadStats();
+            // La carte d'alcoolémie est pilotée par loadTodayConsumption : sans cet appel,
+            // ses libellés/légende (et couleurs de thème) ne se rafraîchissent pas tout de suite.
+            loadTodayConsumption();
         }
     });
 
@@ -232,6 +235,7 @@ document.addEventListener('DOMContentLoaded', function() {
         updateSettingsThemeSelection();
         if (!passwordChangeRequired) {
             loadStats();
+            loadTodayConsumption();
         }
     });
 });
