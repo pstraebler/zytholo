@@ -267,36 +267,66 @@ def _collect_day_drinks(user_id, day_key, rollover_hour=EVENING_ROLLOVER_HOUR):
     return drinks
 
 
+def _drink_absorptions(peaks):
+    """Fenetre d'absorption (debut, fin, taux_horaire) de chaque prise.
+
+    Chaque prise fait monter le taux lineairement de 0 a son pic sur ABSORPTION_HOURS.
+    Regle : boire une nouvelle biere moins de ABSORPTION_MINUTES apres la precedente
+    signifie que la precedente est finie. Son absorption est alors tronquee a l'instant
+    de la prise suivante (au lieu des 30 min complets) : la meme quantite d'alcool est
+    donc absorbee plus vite, ce qui fait monter le taux (et le graphique) en consequence.
+    La derniere prise absorbe toujours sur ABSORPTION_HOURS.
+    """
+    ordered_peaks = sorted(peaks, key=lambda item: item[0])
+    absorptions = []
+    for index, (drink_datetime, peak) in enumerate(ordered_peaks):
+        duration_hours = ABSORPTION_HOURS
+        if index + 1 < len(ordered_peaks):
+            gap_hours = (ordered_peaks[index + 1][0] - drink_datetime).total_seconds() / 3600.0
+            if 0 < gap_hours < duration_hours:
+                duration_hours = gap_hours
+        if duration_hours <= 0:
+            continue
+        absorptions.append(
+            (drink_datetime, drink_datetime + timedelta(hours=duration_hours), peak / duration_hours)
+        )
+    return absorptions
+
+
 def _bac_curve_points(peaks):
     """Courbe du taux d'alcoolemie, integree correctement dans le temps.
 
     Renvoie une liste de (datetime, taux g/L), lineaire par morceaux, du debut de journee
     jusqu'au retour a 0.
 
-    Modele : chaque prise fait monter le taux lineairement de 0 a son pic sur
-    ABSORPTION_HOURS ; l'elimination (ELIMINATION_RATE_PER_HOUR) s'applique en parallele
-    MAIS seulement tant qu'il reste de l'alcool. Le taux ne descend jamais sous 0 et ne
-    creuse pas de « dette » : apres un retour a 0, une prise ulterieure repart bien de 0.
-    On integre donc le taux (dont la pente est constante entre deux ruptures) en avancant
-    d'un instant de rupture a l'autre (prise / fin d'absorption) et en inserant les passages
-    a 0.
+    Modele : chaque prise fait monter le taux lineairement de 0 a son pic sur sa duree
+    d'absorption (voir _drink_absorptions : 30 min, ou moins si une prise suivante survient
+    avant) ; l'elimination (ELIMINATION_RATE_PER_HOUR) s'applique en parallele MAIS seulement
+    tant qu'il reste de l'alcool. Le taux ne descend jamais sous 0 et ne creuse pas de
+    « dette » : apres un retour a 0, une prise ulterieure repart bien de 0. On integre donc
+    le taux (dont la pente est constante entre deux ruptures) en avancant d'un instant de
+    rupture a l'autre (prise / fin d'absorption) et en inserant les passages a 0.
     """
     if not peaks or ELIMINATION_RATE_PER_HOUR <= 0 or ABSORPTION_HOURS <= 0:
         return []
 
+    absorptions = _drink_absorptions(peaks)
+    if not absorptions:
+        return []
+
     # Instants ou le taux d'absorption change : debut et fin d'absorption de chaque prise.
     times = set()
-    for drink_datetime, _peak in peaks:
-        times.add(drink_datetime)
-        times.add(drink_datetime + timedelta(hours=ABSORPTION_HOURS))
+    for start, end, _rate in absorptions:
+        times.add(start)
+        times.add(end)
     ordered = sorted(times)
 
     def absorption_rate(at):
         # g/L par heure apportes par les prises en cours d'absorption a l'instant 'at'.
         rate = 0.0
-        for drink_datetime, peak in peaks:
-            if drink_datetime <= at < drink_datetime + timedelta(hours=ABSORPTION_HOURS):
-                rate += peak / ABSORPTION_HOURS
+        for start, end, hourly_rate in absorptions:
+            if start <= at < end:
+                rate += hourly_rate
         return rate
 
     points = [(ordered[0], 0.0)]
@@ -484,7 +514,8 @@ def estimate_bac_for_day(
 def peak_bac_for_evening(user_id, evening_key, weight_kg, sex, beer_abv=5.0, rollover_hour=EVENING_ROLLOVER_HOUR):
     """Estimer le pic d'alcoolemie atteint durant une soiree donnee (formule de Widmark).
 
-    Chaque prise est absorbee progressivement (montee lineaire sur ABSORPTION_HOURS),
+    Chaque prise est absorbee progressivement (montee lineaire sur sa duree d'absorption,
+    tronquee si une prise suivante survient avant 30 min ; voir _drink_absorptions),
     l'elimination etant lineaire en parallele. Le taux resultant est une fonction
     lineaire par morceaux : son maximum se trouve donc a un point de rupture, c.-a-d.
     a l'instant d'une prise ou a la fin de l'absorption d'une prise. Retourne un taux
