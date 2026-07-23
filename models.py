@@ -260,39 +260,101 @@ class Database:
         conn.close()
         return users
 
+    # Champs quantitatifs d'une consommation (whitelist utilisee pour composer du SQL).
+    CONSUMPTION_FIELDS = ('pints', 'half_pints', 'liters_33')
+
+    @staticmethod
+    def _cancel_consumption(cursor, user_id, date, field, amount):
+        """Retirer `amount` unites de `field` en annulant les ajouts les plus recents
+        de la meme journee (LIFO). Les lignes entierement videes sont supprimees afin
+        qu'une biere retiree disparaisse completement, sans laisser de ligne negative
+        dans l'historique, la soiree record ou l'export CSV."""
+        if amount <= 0:
+            return
+
+        cursor.execute(
+            f'''
+            SELECT id, pints, half_pints, liters_33 FROM consumption
+            WHERE user_id = %s AND date = %s AND {field} > 0
+            ORDER BY time DESC, id DESC
+            ''',
+            (user_id, date),
+        )
+        rows = cursor.fetchall()
+
+        remaining = amount
+        for row in rows:
+            if remaining <= 0:
+                break
+
+            available = row[field] or 0
+            take = min(available, remaining)
+            remaining -= take
+            new_value = available - take
+
+            other_fields_nonzero = any(
+                (row[other] or 0) != 0
+                for other in Database.CONSUMPTION_FIELDS
+                if other != field
+            )
+
+            if new_value == 0 and not other_fields_nonzero:
+                cursor.execute('DELETE FROM consumption WHERE id = %s', (row['id'],))
+            else:
+                cursor.execute(
+                    f'UPDATE consumption SET {field} = %s WHERE id = %s',
+                    (new_value, row['id']),
+                )
+
     @staticmethod
     def add_consumption(user_id, date, pints=0, half_pints=0, liters_33=0, time='00:00:00'):
-        """Ajouter une consommation avec heure (AJOUTER, non remplacer)"""
+        """Ajouter une consommation avec heure (AJOUTER, non remplacer).
+
+        Une quantite negative correspond a un retrait : au lieu d'inserer une ligne
+        negative qui subsisterait, on annule les ajouts les plus recents du jour."""
         conn = Database.get_connection()
         cursor = conn.cursor()
 
-        cursor.execute(
-            'SELECT pints, half_pints, liters_33 FROM consumption WHERE user_id = %s AND date = %s AND time = %s',
-            (user_id, date, time),
-        )
-        existing = cursor.fetchone()
+        quantities = {'pints': pints, 'half_pints': half_pints, 'liters_33': liters_33}
 
-        if existing:
-            new_pints = (existing['pints'] or 0) + pints
-            new_half_pints = (existing['half_pints'] or 0) + half_pints
-            new_liters_33 = (existing['liters_33'] or 0) + liters_33
+        # Traiter d'abord les retraits (quantites negatives) en annulant les ajouts existants.
+        for field, quantity in quantities.items():
+            if quantity < 0:
+                Database._cancel_consumption(cursor, user_id, date, field, -quantity)
 
+        # Ne conserver que la partie positive pour l'ajout proprement dit.
+        add_pints = max(pints, 0)
+        add_half_pints = max(half_pints, 0)
+        add_liters_33 = max(liters_33, 0)
+
+        if add_pints or add_half_pints or add_liters_33:
             cursor.execute(
-                '''
-                UPDATE consumption
-                SET pints = %s, half_pints = %s, liters_33 = %s
-                WHERE user_id = %s AND date = %s AND time = %s
-                ''',
-                (new_pints, new_half_pints, new_liters_33, user_id, date, time),
+                'SELECT pints, half_pints, liters_33 FROM consumption WHERE user_id = %s AND date = %s AND time = %s',
+                (user_id, date, time),
             )
-        else:
-            cursor.execute(
-                '''
-                INSERT INTO consumption (user_id, date, time, pints, half_pints, liters_33)
-                VALUES (%s, %s, %s, %s, %s, %s)
-                ''',
-                (user_id, date, time, pints, half_pints, liters_33),
-            )
+            existing = cursor.fetchone()
+
+            if existing:
+                new_pints = (existing['pints'] or 0) + add_pints
+                new_half_pints = (existing['half_pints'] or 0) + add_half_pints
+                new_liters_33 = (existing['liters_33'] or 0) + add_liters_33
+
+                cursor.execute(
+                    '''
+                    UPDATE consumption
+                    SET pints = %s, half_pints = %s, liters_33 = %s
+                    WHERE user_id = %s AND date = %s AND time = %s
+                    ''',
+                    (new_pints, new_half_pints, new_liters_33, user_id, date, time),
+                )
+            else:
+                cursor.execute(
+                    '''
+                    INSERT INTO consumption (user_id, date, time, pints, half_pints, liters_33)
+                    VALUES (%s, %s, %s, %s, %s, %s)
+                    ''',
+                    (user_id, date, time, add_pints, add_half_pints, add_liters_33),
+                )
 
         conn.commit()
         conn.close()
