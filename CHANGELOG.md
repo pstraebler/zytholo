@@ -3,6 +3,7 @@
 ## 4.0.2 - 2026-07-23
 	- fix : bug with negative beer
 	- fix : update to the alcohol content calculation if a beer is finished early
+	- add : healtcheck for zytholo-app
 
 ## 4.0.1 - 2026-07-19
 	- fix : correct a bug with the cache of some clients 
