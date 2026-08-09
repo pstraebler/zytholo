@@ -432,7 +432,7 @@ def dashboard():
 def api_consumption():
     user_id = session['user_id']
     username = session['username']
-    
+
     if request.method == 'POST':
         data = request.get_json()
         consumption_date = data.get('date', datetime.now().strftime('%Y-%m-%d'))
@@ -440,15 +440,15 @@ def api_consumption():
         pints = int(data.get('pints', 0))
         half_pints = int(data.get('half_pints', 0))
         liters_33 = int(data.get('liters_33', 0))
-        
+
         Database.add_consumption(user_id, consumption_date, pints, half_pints, liters_33, time)
-        
+
         return jsonify({'success': True})
-    
+
     # GET - récupérer les stats
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
-    
+
     user_settings = Database.get_user_settings(user_id)
     three_hour_threshold_liters = user_settings['three_hour_threshold_liters']
     weekly_drinking_days_threshold = user_settings['weekly_drinking_days_threshold']
@@ -517,6 +517,20 @@ def api_consumption():
         # indique depuis quand l'utilisateur suit sa consommation.
         'first_consumption_date': Database.get_first_consumption_date(user_id)
     })
+
+
+@app.route('/api/consumption/<int:record_id>', methods=['DELETE'])
+@login_required
+def api_delete_consumption(record_id):
+    user_id = session['user_id']
+
+    # Vérifier que l'enregistrement appartient bien à l'utilisateur
+    success = Database.delete_consumption(user_id, record_id)
+
+    if success:
+        return jsonify({'success': True})
+    else:
+        return jsonify({'success': False, 'message': 'Record not found or access denied'}), 404
 
 
 @app.route('/api/day-history', methods=['GET'])

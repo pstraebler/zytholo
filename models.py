@@ -412,6 +412,32 @@ class Database:
         return records
 
     @staticmethod
+    def delete_consumption(user_id, record_id):
+        """Supprimer une entrée de consommation spécifique par son ID.
+        Vérifie que l'enregistrement appartient bien à l'utilisateur.
+        Retourne True si supprimé, False sinon."""
+        conn = Database.get_connection()
+        cursor = conn.cursor()
+
+        # Vérifier que l'enregistrement existe et appartient à l'utilisateur
+        cursor.execute(
+            'SELECT id FROM consumption WHERE id = %s AND user_id = %s',
+            (record_id, user_id)
+        )
+        result = cursor.fetchone()
+
+        if not result:
+            conn.close()
+            return False
+
+        # Supprimer l'enregistrement
+        cursor.execute('DELETE FROM consumption WHERE id = %s', (record_id,))
+        conn.commit()
+        conn.close()
+
+        return True
+
+    @staticmethod
     def get_first_consumption_date(user_id):
         """Date de la toute premiere consommation d'un utilisateur (ISO), ou None."""
         conn = Database.get_connection()

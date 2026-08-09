@@ -1064,20 +1064,12 @@ function changeBeer(type, value) {
   }
   lastClickTime = now;
 
-  // Empêcher la décrémentation en mode soirée
-  if (nightModeEnabled && value < 0) {
-    showNightModeDecrementNotification();
-  return;
-  }
-
-
-  // Vérifier si on est déjà à 0 avant de décrémenter
-  if (value < 0 && currentBeer[type] === 0) {
-    // Ne rien faire si on essaie de décrémenter une quantité déjà à 0
+  // Sécurité : empêcher toute valeur négative
+  if (value < 0) {
     return;
   }
 
-  currentBeer[type] = Math.max(0, currentBeer[type] + value);
+  currentBeer[type] = currentBeer[type] + value;
   document.getElementById(type + '-count').innerText = currentBeer[type];
   saveBeerAutomatic(type, value);
 }
@@ -1173,6 +1165,10 @@ function renderDayHistory(data) {
             ? `<span class="day-history-offset">${t('day_history_next_day')}</span>`
             : '';
 
+        const deleteButton = nightModeEnabled
+            ? ''
+            : `<button class="day-history-delete" onclick="deleteHistoryItem(${record.id})" title="${t('delete')}">×</button>`;
+
         return `
             <div class="day-history-item">
                 <div class="day-history-item-main">
@@ -1181,9 +1177,45 @@ function renderDayHistory(data) {
                     <div class="day-history-badges">${quantityBadges.join('')}</div>
                 </div>
                 <span class="day-history-liters">${formatDayHistoryLiters(record.total_liters)} L</span>
+                ${deleteButton}
             </div>
         `;
     }).join('');
+}
+
+// Supprimer une entrée de l'historique du jour
+function deleteHistoryItem(recordId) {
+    console.log('Attempting to delete record with ID:', recordId);
+
+    if (!confirm(t('confirm_delete_history'))) {
+        return;
+    }
+
+    fetch(`/api/consumption/${recordId}`, {
+        method: 'DELETE',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': csrfToken
+        }
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data);
+        if (data.success) {
+            // Rafraîchir l'historique du jour et les compteurs
+            loadTodayConsumption();
+            loadStats();
+        } else {
+            alert(data.message || t('error_delete_history'));
+        }
+    })
+    .catch(error => {
+        console.error('Error deleting history item:', error);
+        alert(t('error_delete_history'));
+    });
 }
 
 // Enregistrer automatiquement avec heure actuelle

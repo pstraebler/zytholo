@@ -363,6 +363,28 @@ body {
     font-style: italic;
 }
 
+.day-history-delete {
+    background: none;
+    border: none;
+    color: var(--danger-color, #dc3545);
+    font-size: 1.5rem;
+    line-height: 1;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    margin-left: 0.5rem;
+    opacity: 0.7;
+    transition: opacity 0.2s ease, transform 0.1s ease;
+}
+
+.day-history-delete:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+.day-history-delete:active {
+    transform: scale(0.95);
+}
+
 
 /* LOGIN PAGE */
 .login-page {
@@ -1111,20 +1133,42 @@ body.modal-open {
 /* BEER SELECTOR */
 .beer-selector {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.2rem;
     margin: 1.5rem 0;
+    align-items: stretch;
 }
 
 
 .beer-type {
     --beer-accent: var(--secondary-color);
-    text-align: left;
-    padding: 1.25rem;
+    text-align: center;
+    padding: 1.5rem 1rem;
     background: var(--muted-surface);
-    border-radius: 8px;
-    border: 1px solid var(--card-border-color);
-    border-left: 4px solid var(--beer-accent);
+    border-radius: 12px;
+    border: 2px solid var(--card-border-color);
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    min-height: 100%;
+}
+
+.beer-type::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: var(--beer-accent);
+}
+
+.beer-type:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    border-color: var(--beer-accent);
 }
 
 .beer-type-pint {
@@ -1142,39 +1186,54 @@ body.modal-open {
 
 .beer-type label {
     display: block;
-    margin-bottom: 0.9rem;
-    font-size: 1.05rem;
-    font-weight: 800;
+    margin-bottom: 1.2rem;
+    font-size: 1.1rem;
+    font-weight: 700;
     color: var(--text-color);
-    opacity: 0.9;
     text-align: center;
+    flex-shrink: 0;
+    min-height: 3rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 
 .quantity-control {
     display: flex;
-    justify-content: space-between;
+    flex-direction: column;
     align-items: center;
-    gap: 0.75rem;
+    gap: 1rem;
+    margin-top: auto;
 }
 
 
 .quantity-control span {
-    font-size: 1.5rem;
-    font-weight: bold;
-    min-width: 2.5rem;
+    font-size: 2rem;
+    font-weight: 700;
+    min-width: 3rem;
     color: var(--beer-accent);
     text-align: center;
+    line-height: 1;
 }
 
-.beer-type .btn-plus,
-.beer-type .btn-minus {
+.beer-type .btn-plus {
     background-color: var(--beer-accent);
+    width: 60px;
+    height: 60px;
+    font-size: 2rem;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
 }
 
-.beer-type .btn-plus:hover,
-.beer-type .btn-minus:hover {
-    filter: brightness(0.92);
+.beer-type .btn-plus:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.beer-type .btn-plus:active {
+    transform: scale(0.95);
 }
 
 
@@ -2038,7 +2097,8 @@ body.exporting-dashboard .export-section {
     }
 
     .beer-selector {
-        grid-template-columns: repeat(3, minmax(0, 1fr));
+        grid-template-columns: repeat(3, 1fr);
+    }
     }
 
     .trophy-podium {
@@ -2141,7 +2201,8 @@ body.exporting-dashboard .export-section {
     }
     
     .beer-selector {
-        grid-template-columns: 1fr;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 1rem;
     }
     
     .charts-section {
