@@ -1120,13 +1120,13 @@ def calculate_weekly_stats(user_id):
     """Calculer les stats des 4 dernières semaines en litres (incluant la semaine en cours)"""
     from datetime import datetime, timedelta
     from models import Database
-    
+
     today = datetime.now().date()
-    
+
     # Trouver le lundi de la semaine courante
     days_since_monday = today.weekday()
     current_week_start = today - timedelta(days=days_since_monday)
-    
+
     # Calculer les 4 semaines (incluant la courante)
     weeks = []
     for i in range(3, -1, -1):  # 3, 2, 1, 0
@@ -1136,30 +1136,88 @@ def calculate_weekly_stats(user_id):
             'start': week_start,
             'end': week_end
         })
-    
+
     # Récupérer les données pour chaque semaine
     weekly_data = []
     for week in weeks:
         records = Database.get_consumption(
-            user_id, 
-            week['start'].isoformat(), 
+            user_id,
+            week['start'].isoformat(),
             week['end'].isoformat()
         )
-        
+
         total_liters = 0
-        
+
         for record in records:
             pints = record['pints'] or 0
             half_pints = record['half_pints'] or 0
             liters_33 = record['liters_33'] or 0
-            
+
             # Convertir en litres : pinte=0.5L, demi=0.25L, 33cl=0.33L
             total_liters += (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
-        
+
         weekly_data.append({
             'week_start': week['start'].isoformat(),
             'week_end': week['end'].isoformat(),
             'total_liters': round(total_liters, 2)
         })
-    
+
     return weekly_data
+
+
+def calculate_consumption_rate_stats(user_id, start_date=None, end_date=None):
+    """Calculer les statistiques de consommation par semaine, mois et année sur la période sélectionnée"""
+    from datetime import datetime, timedelta
+    from models import Database
+
+    records = Database.get_consumption(user_id, start_date, end_date)
+
+    if not records:
+        return {
+            'beers_per_week': 0,
+            'beers_per_month': 0,
+            'beers_per_year': 0,
+            'period_days': 0
+        }
+
+    # Calculer le nombre total de bières (en unités)
+    total_beers = 0
+    for record in records:
+        pints = record['pints'] or 0
+        half_pints = record['half_pints'] or 0
+        liters_33 = record['liters_33'] or 0
+        total_beers += pints + half_pints + liters_33
+
+    # Calculer la durée de la période
+    if start_date and end_date:
+        start = datetime.strptime(start_date, '%Y-%m-%d').date()
+        end = datetime.strptime(end_date, '%Y-%m-%d').date()
+    else:
+        # Si pas de dates, utiliser la période complète des enregistrements
+        dates = [datetime.strptime(record['date'], '%Y-%m-%d').date() for record in records]
+        start = min(dates)
+        end = max(dates)
+
+    period_days = (end - start).days + 1  # +1 pour inclure le dernier jour
+
+    if period_days <= 0:
+        return {
+            'beers_per_week': 0,
+            'beers_per_month': 0,
+            'beers_per_year': 0,
+            'period_days': 0
+        }
+
+    # Calculer les moyennes
+    beers_per_day = total_beers / period_days
+    beers_per_week = round(beers_per_day * 7, 1)
+    beers_per_month = round(beers_per_day * 30.44, 1)  # Moyenne de jours par mois
+    beers_per_year = round(beers_per_day * 365.25, 1)  # Inclut les années bissextiles
+
+    return {
+        'beers_per_week': beers_per_week,
+        'beers_per_month': beers_per_month,
+        'beers_per_year': beers_per_year,
+        'period_days': period_days,
+        'total_beers': total_beers
+    }

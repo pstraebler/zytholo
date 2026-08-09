@@ -1971,6 +1971,7 @@ function updateStatsDisplay(data) {
     updateEstimatedCost(data.total_liters);
     updateBestEveningDisplay(data.best_evening);
     updateFirstConsumptionDisplay(data.first_consumption_date);
+    updateConsumptionRateStats(data.consumption_rate_stats);
 
     const warningsContainer = document.getElementById('warnings-container');
     const warningsList = document.getElementById('warnings-list');
@@ -2106,6 +2107,18 @@ function updateFirstConsumptionDisplay(firstDate) {
 
     el.hidden = false;
     el.textContent = t('stats_first_consumption', { date: formatSelectedDate(firstDate) });
+}
+
+function updateConsumptionRateStats(rateStats) {
+    const beersPerWeekEl = document.getElementById('beers-per-week');
+    const beersPerMonthEl = document.getElementById('beers-per-month');
+    const beersPerYearEl = document.getElementById('beers-per-year');
+
+    if (!rateStats || !beersPerWeekEl || !beersPerMonthEl || !beersPerYearEl) return;
+
+    beersPerWeekEl.innerText = rateStats.beers_per_week || 0;
+    beersPerMonthEl.innerText = rateStats.beers_per_month || 0;
+    beersPerYearEl.innerText = rateStats.beers_per_year || 0;
 }
 
 function updateBestEveningDisplay(bestEvening) {

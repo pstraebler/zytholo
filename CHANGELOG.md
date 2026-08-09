@@ -1,5 +1,8 @@
 # Changelog
 
+## 4.1 - 2026-08
+	- add : consumption stats per week / month / year
+
 ## 4.0.2 - 2026-07-23
 	- fix : bug with negative beer
 	- fix : update to the alcohol content calculation if a beer is finished early

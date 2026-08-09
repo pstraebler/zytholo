@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, session, redirect, url_for, j
 from datetime import datetime, timedelta, date
 from models import Database
 from auth import hash_password, verify_password, login_required, admin_required, verify_user_exists, bcrypt
-from utils import calculate_stats, export_csv, import_csv, get_top_drinkers, get_top_drinkers_for_month, get_top_drinkers_for_week, calculate_weekly_stats, estimate_bac_for_day, sync_record_evening, set_record_evening_name, peak_bac_for_evening, DAY_ROLLOVER_HOUR
+from utils import calculate_stats, export_csv, import_csv, get_top_drinkers, get_top_drinkers_for_month, get_top_drinkers_for_week, calculate_weekly_stats, calculate_consumption_rate_stats, estimate_bac_for_day, sync_record_evening, set_record_evening_name, peak_bac_for_evening, DAY_ROLLOVER_HOUR
 from config import Config
 from flask_wtf.csrf import CSRFProtect
 from i18n import get_request_language, t
@@ -476,6 +476,7 @@ def api_consumption():
             {'pints': 0, 'half_pints': 0, '33cl': 0}
         )
     weekly_stats = calculate_weekly_stats(user_id)  # AJOUTER CETTE LIGNE
+    consumption_rate_stats = calculate_consumption_rate_stats(user_id, start_date, end_date)
     record_evening = sync_record_evening(user_id)
     # Pic d'alcoolémie de la soirée record affichée (nécessite le profil poids/sexe).
     if stats['best_evening']:
@@ -495,7 +496,7 @@ def api_consumption():
         'total_33cl': stats['total_33cl'],
         'total_liters': stats['total_liters'],
         'best_evening': stats['best_evening'],
-        'warnings': stats['warnings'], 
+        'warnings': stats['warnings'],
         'settings': user_settings,
         'monthly_stats': stats['monthly_stats'],
         'monthly_chart_stats': monthly_chart_stats,
@@ -507,6 +508,7 @@ def api_consumption():
         'all_user_records': [dict(record) for record in all_user_records],
         'records': [dict(record) for record in stats['all_records']],
         'weekly_stats': weekly_stats,  # AJOUTER CETTE LIGNE
+        'consumption_rate_stats': consumption_rate_stats,
         'record_evening': record_evening,
         # Date de la toute premiere biere (independante de la plage selectionnee) :
         # indique depuis quand l'utilisateur suit sa consommation.
