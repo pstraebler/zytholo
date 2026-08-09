@@ -2,6 +2,7 @@
 
 ## 4.1 - 2026-08
 	- add : consumption stats per week / month / year
+	- add : alert when multiple unsucessfull login atempts
 
 ## 4.0.2 - 2026-07-23
 	- fix : bug with negative beer

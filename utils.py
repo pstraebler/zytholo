@@ -564,6 +564,28 @@ def peak_bac_for_evening(user_id, evening_key, weight_kg, sex, beer_abv=5.0, rol
     return round(max(0.0, peak), 2)
 
 
+def check_failed_login_attempts(user_id, threshold=3, hours=24):
+    """Détecte si l'utilisateur a eu trop de tentatives de connexion échouées.
+
+    Args:
+        user_id: ID de l'utilisateur
+        threshold: Nombre d'échecs à partir duquel alerter (défaut: 3)
+        hours: Fenêtre temporelle en heures (défaut: 24)
+
+    Retourne un dict avec les détails de l'alerte, ou None si sous le seuil.
+    """
+    failed_count = Database.get_failed_login_attempts(user_id, hours)
+
+    if failed_count < threshold:
+        return None
+
+    return {
+        'failed_count': failed_count,
+        'hours': hours,
+        'threshold': threshold,
+    }
+
+
 def check_record_evening_beaten(user_id, reference_datetime=None, rollover_hour=EVENING_ROLLOVER_HOUR):
     """Détecte si la soirée en cours a battu le précédent record de consommation.
 
@@ -609,6 +631,13 @@ def check_record_evening_beaten(user_id, reference_datetime=None, rollover_hour=
         'previous_record_liters': round(previous_record, 2),
         'previous_record_date': previous_key,
     }
+
+
+def check_weekly_drinking_days(user_id, today_str, weekly_drinking_days_threshold):
+    """Vérifie si le seuil de jours de consommation hebdomadaire est atteint.
+
+    Retourne (bool, list) : (seuil_atteint, liste_des_dates_de_consommation)
+    """
 
 def _all_time_record_evening(user_id, rollover_hour=EVENING_ROLLOVER_HOUR):
     """Retourne (date_iso, litres) de la soiree la plus consommee, ou None."""
@@ -863,6 +892,22 @@ def calculate_stats(
                 'expires_at': expires_at,
                 'items': [],
             })
+
+    # Vérifier les échecs de connexion sur les dernières 24h
+    failed_login_alert = check_failed_login_attempts(user_id, threshold=3, hours=24)
+    if failed_login_alert:
+        three_hour_warnings.append({
+            'type': 'failed_login',
+            'start_time': '00:00:00',
+            'end_time': '23:59:59',
+            'total_liters': 0,
+            'start_date': today_str,
+            'end_date': today_str,
+            'failed_count': failed_login_alert['failed_count'],
+            'threshold': failed_login_alert['threshold'],
+            'hours': failed_login_alert['hours'],
+            'items': [],
+        })
 
     return {
         'total_pints': total_pints,

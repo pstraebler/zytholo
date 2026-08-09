@@ -149,6 +149,22 @@ class Database:
             '''
         )
 
+        cursor.execute(
+            '''
+            CREATE TABLE IF NOT EXISTS login_attempts (
+                id INT PRIMARY KEY AUTO_INCREMENT,
+                username VARCHAR(255) NOT NULL,
+                user_id CHAR(36) DEFAULT NULL,
+                success TINYINT(1) NOT NULL,
+                ip_address VARCHAR(45) NOT NULL,
+                attempted_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                INDEX idx_username_attempted (username, attempted_at),
+                INDEX idx_user_id_attempted (user_id, attempted_at),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            '''
+        )
+
         conn.commit()
         conn.close()
 
@@ -629,3 +645,37 @@ class Database:
         )
         conn.commit()
         conn.close()
+
+    @staticmethod
+    def record_login_attempt(username, success, ip_address, user_id=None):
+        """Enregistre une tentative de connexion (succes ou echec)."""
+        conn = Database.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            '''
+            INSERT INTO login_attempts (username, user_id, success, ip_address)
+            VALUES (%s, %s, %s, %s)
+            ''',
+            (username, user_id, 1 if success else 0, ip_address),
+        )
+        conn.commit()
+        conn.close()
+
+    @staticmethod
+    def get_failed_login_attempts(user_id, hours=24):
+        """Compte les echecs de connexion pour un utilisateur sur les N dernieres heures."""
+        conn = Database.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            '''
+            SELECT COUNT(*) as failed_count
+            FROM login_attempts
+            WHERE user_id = %s
+              AND success = 0
+              AND attempted_at >= DATE_SUB(NOW(), INTERVAL %s HOUR)
+            ''',
+            (user_id, hours),
+        )
+        result = cursor.fetchone()
+        conn.close()
+        return result['failed_count'] if result else 0

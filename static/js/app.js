@@ -1978,7 +1978,7 @@ function updateStatsDisplay(data) {
     
     if (warningsContainer && warningsList) {
         const now = new Date();
-        
+
         // Séparer les avertissements hebdomadaires, record, eau et 3h
         const weeklyWarnings = data.warnings.filter(w => w.type === 'weekly');
         const recordWarnings = data.warnings.filter(w => w.type === 'record');
@@ -1993,8 +1993,24 @@ function updateStatsDisplay(data) {
             const threshold = Number(w.threshold_liters) || waterReminderThresholdLiters;
             return (Number(w.total_liters) - waterAck.total) >= threshold - 1e-9;
         });
+        const failedLoginWarnings = data.warnings.filter(w => {
+            if (w.type !== 'failed_login') return false;
+            // Vérifier si l'alerte a été dismissée récemment (dernières 24h)
+            try {
+                const dismissed = localStorage.getItem('failed_login_dismissed');
+                if (dismissed) {
+                    const dismissedTime = parseInt(dismissed);
+                    const hoursSinceDismiss = (Date.now() - dismissedTime) / (1000 * 60 * 60);
+                    // Ne pas réafficher si dismissée il y a moins de 24h
+                    if (hoursSinceDismiss < 24) return false;
+                }
+            } catch (error) {
+                // Stockage indisponible, afficher l'alerte
+            }
+            return true;
+        });
         const threeHourWarnings = data.warnings.filter(
-            w => w.type !== 'weekly' && w.type !== 'record' && w.type !== 'water'
+            w => w.type !== 'weekly' && w.type !== 'record' && w.type !== 'water' && w.type !== 'failed_login'
         );
 
         // Filtrer les avertissements 3h expirés
@@ -2004,7 +2020,7 @@ function updateStatsDisplay(data) {
         });
 
         // Combiner tous les avertissements actifs
-        const allWarnings = [...recordWarnings, ...weeklyWarnings, ...waterWarnings, ...activeThreeHourWarnings];
+        const allWarnings = [...recordWarnings, ...weeklyWarnings, ...waterWarnings, ...failedLoginWarnings, ...activeThreeHourWarnings];
         
         if (allWarnings.length > 0) {
             warningsContainer.style.display = 'block';
@@ -2067,6 +2083,40 @@ function updateStatsDisplay(data) {
                             setTimeout(hideWaterWarning, msLeft);
                         }
                     }
+                } else if (warning.type === 'failed_login') {
+                    // Alerte tentatives de connexion échouées
+                    warningDiv.style.borderLeftColor = '#e74c3c';
+                    warningDiv.style.position = 'relative';
+                    warningDiv.style.paddingRight = '2.5rem';
+                    warningDiv.innerHTML = `
+                        <strong style="font-size: 1.1rem;">${t('alert_failed_login_title')}</strong><br>
+                        ${t('alert_failed_login_message', {
+                            count: warning.failed_count,
+                            hours: warning.hours
+                        })}
+                    `;
+                    const dismissBtn = document.createElement('button');
+                    dismissBtn.type = 'button';
+                    dismissBtn.className = 'warning-dismiss';
+                    dismissBtn.setAttribute('aria-label', t('alert_dismiss'));
+                    dismissBtn.setAttribute('title', t('alert_dismiss'));
+                    dismissBtn.innerText = '×';
+                    const hideFailedLoginWarning = function() {
+                        warningDiv.remove();
+                        if (!warningsList.children.length) {
+                            warningsContainer.style.display = 'none';
+                        }
+                    };
+                    dismissBtn.addEventListener('click', function() {
+                        // Stocker le dismiss dans localStorage
+                        try {
+                            localStorage.setItem('failed_login_dismissed', Date.now().toString());
+                        } catch (error) {
+                            // Stockage indisponible
+                        }
+                        hideFailedLoginWarning();
+                    });
+                    warningDiv.appendChild(dismissBtn);
                 } else if (warning.type === 'weekly') {
                     // Avertissement 3ème jour
                     const dayIndexes = warning.day_indexes || [];

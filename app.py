@@ -348,6 +348,7 @@ def login():
 
         if user and verify_password(password, user['password']):
             app.logger.info(f'{client_ip} Authentification successful for user {username}')
+            Database.record_login_attempt(username, success=True, ip_address=client_ip, user_id=user['id'])
             session.clear()  # rotation de session
             session['user_id'] = user['id']
             session['username'] = username
@@ -361,11 +362,13 @@ def login():
         # uniquement dans les logs serveur.
         if user:
             reason = 'incorrect password'
+            Database.record_login_attempt(username, success=False, ip_address=client_ip, user_id=user['id'])
         else:
             # Utilisateur inconnu : on execute quand meme une verification bcrypt "a vide"
             # pour que le temps de reponse soit identique (anti-enumeration).
             verify_password(password, DUMMY_PASSWORD_HASH)
             reason = 'unknown user'
+            Database.record_login_attempt(username, success=False, ip_address=client_ip, user_id=None)
         app.logger.warning(f'{client_ip} Authentification failed for user {username} ({reason})')
         return render_template('login.html', error=t("login_failed"))
     
