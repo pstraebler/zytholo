@@ -141,7 +141,8 @@ def reconcile_day_history_records(records):
     positive_record_indexes = {
         'pints': [],
         'half_pints': [],
-        'liters_33': []
+        'liters_33': [],
+        'custom_cl': []
     }
 
     for record in sorted(records, key=lambda item: (item['date'], item['time'])):
@@ -150,9 +151,10 @@ def reconcile_day_history_records(records):
             'pints': record['pints'] or 0,
             'half_pints': record['half_pints'] or 0,
             'liters_33': record['liters_33'] or 0,
+            'custom_cl': record['custom_cl'] or 0,
         }
 
-        for field in ('pints', 'half_pints', 'liters_33'):
+        for field in ('pints', 'half_pints', 'liters_33', 'custom_cl'):
             quantity = normalized_record[field]
 
             if quantity > 0:
@@ -183,7 +185,7 @@ def reconcile_day_history_records(records):
 
         has_remaining_quantity = any(
             normalized_record[field] != 0
-            for field in ('pints', 'half_pints', 'liters_33')
+            for field in ('pints', 'half_pints', 'liters_33', 'custom_cl')
         )
         if not has_remaining_quantity:
             continue
@@ -191,20 +193,21 @@ def reconcile_day_history_records(records):
         normalized_record['total_liters'] = round(
             (normalized_record['pints'] * 0.5)
             + (normalized_record['half_pints'] * 0.25)
-            + (normalized_record['liters_33'] * 0.33),
+            + (normalized_record['liters_33'] * 0.33)
+            + (normalized_record['custom_cl'] * 0.01),
             2
         )
         reconciled_records.append(normalized_record)
 
         appended_index = len(reconciled_records) - 1
-        for field in ('pints', 'half_pints', 'liters_33'):
+        for field in ('pints', 'half_pints', 'liters_33', 'custom_cl'):
             if normalized_record[field] > 0:
                 positive_record_indexes[field].append(appended_index)
 
     return [
         record
         for record in reconciled_records
-        if any(record[field] != 0 for field in ('pints', 'half_pints', 'liters_33'))
+        if any(record[field] != 0 for field in ('pints', 'half_pints', 'liters_33', 'custom_cl'))
     ]
 
 
@@ -221,6 +224,7 @@ def get_day_window_records(user_id, selected_date):
     total_pints = 0
     total_half_pints = 0
     total_33cl = 0
+    total_custom_cl = 0
 
     for record in records:
         record_date = record['date']
@@ -236,10 +240,12 @@ def get_day_window_records(user_id, selected_date):
         pints = record['pints'] or 0
         half_pints = record['half_pints'] or 0
         liters_33 = record['liters_33'] or 0
+        custom_cl = record['custom_cl'] or 0
 
         total_pints += pints
         total_half_pints += half_pints
         total_33cl += liters_33
+        total_custom_cl += custom_cl
 
         filtered_records.append({
             **dict(record),
@@ -253,7 +259,8 @@ def get_day_window_records(user_id, selected_date):
         'total_pints': total_pints,
         'total_half_pints': total_half_pints,
         'total_33cl': total_33cl,
-        'total_liters': round((total_pints * 0.5) + (total_half_pints * 0.25) + (total_33cl * 0.33), 2),
+        'total_custom_cl': total_custom_cl,
+        'total_liters': round((total_pints * 0.5) + (total_half_pints * 0.25) + (total_33cl * 0.33) + (total_custom_cl * 0.01), 2),
         'window_start': f'{selected_date.isoformat()} 07:00:00',
         'window_end': f'{next_date.isoformat()} 06:59:59'
     }
@@ -440,8 +447,9 @@ def api_consumption():
         pints = int(data.get('pints', 0))
         half_pints = int(data.get('half_pints', 0))
         liters_33 = int(data.get('liters_33', 0))
+        custom_cl = int(data.get('custom_cl', 0))
 
-        Database.add_consumption(user_id, consumption_date, pints, half_pints, liters_33, time)
+        Database.add_consumption(user_id, consumption_date, pints, half_pints, liters_33, custom_cl, time)
 
         return jsonify({'success': True})
 

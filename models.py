@@ -143,11 +143,25 @@ class Database:
                 pints INT DEFAULT 0,
                 half_pints INT DEFAULT 0,
                 liters_33 INT DEFAULT 0,
+                custom_cl INT DEFAULT 0,
                 FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
                 UNIQUE KEY unique_user_date_time (user_id, date, time)
             ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
             '''
         )
+
+        cursor.execute(
+            '''
+            SELECT COUNT(*) as column_exists
+            FROM information_schema.columns
+            WHERE table_schema = %s
+            AND table_name = 'consumption'
+            AND column_name = 'custom_cl'
+            ''',
+            (DB_NAME,)
+        )
+        if not cursor.fetchone()['column_exists']:
+            cursor.execute('ALTER TABLE consumption ADD COLUMN custom_cl INT DEFAULT 0')
 
         cursor.execute(
             '''
@@ -277,7 +291,7 @@ class Database:
         return users
 
     # Champs quantitatifs d'une consommation (whitelist utilisee pour composer du SQL).
-    CONSUMPTION_FIELDS = ('pints', 'half_pints', 'liters_33')
+    CONSUMPTION_FIELDS = ('pints', 'half_pints', 'liters_33', 'custom_cl')
 
     @staticmethod
     def _cancel_consumption(cursor, user_id, date, field, amount):
@@ -290,7 +304,7 @@ class Database:
 
         cursor.execute(
             f'''
-            SELECT id, pints, half_pints, liters_33 FROM consumption
+            SELECT id, pints, half_pints, liters_33, custom_cl FROM consumption
             WHERE user_id = %s AND date = %s AND {field} > 0
             ORDER BY time DESC, id DESC
             ''',
@@ -323,7 +337,7 @@ class Database:
                 )
 
     @staticmethod
-    def add_consumption(user_id, date, pints=0, half_pints=0, liters_33=0, time='00:00:00'):
+    def add_consumption(user_id, date, pints=0, half_pints=0, liters_33=0, custom_cl=0, time='00:00:00'):
         """Ajouter une consommation avec heure (AJOUTER, non remplacer).
 
         Une quantite negative correspond a un retrait : au lieu d'inserer une ligne
@@ -331,7 +345,7 @@ class Database:
         conn = Database.get_connection()
         cursor = conn.cursor()
 
-        quantities = {'pints': pints, 'half_pints': half_pints, 'liters_33': liters_33}
+        quantities = {'pints': pints, 'half_pints': half_pints, 'liters_33': liters_33, 'custom_cl': custom_cl}
 
         # Traiter d'abord les retraits (quantites negatives) en annulant les ajouts existants.
         for field, quantity in quantities.items():
@@ -342,10 +356,11 @@ class Database:
         add_pints = max(pints, 0)
         add_half_pints = max(half_pints, 0)
         add_liters_33 = max(liters_33, 0)
+        add_custom_cl = max(custom_cl, 0)
 
-        if add_pints or add_half_pints or add_liters_33:
+        if add_pints or add_half_pints or add_liters_33 or add_custom_cl:
             cursor.execute(
-                'SELECT pints, half_pints, liters_33 FROM consumption WHERE user_id = %s AND date = %s AND time = %s',
+                'SELECT pints, half_pints, liters_33, custom_cl FROM consumption WHERE user_id = %s AND date = %s AND time = %s',
                 (user_id, date, time),
             )
             existing = cursor.fetchone()
@@ -354,22 +369,23 @@ class Database:
                 new_pints = (existing['pints'] or 0) + add_pints
                 new_half_pints = (existing['half_pints'] or 0) + add_half_pints
                 new_liters_33 = (existing['liters_33'] or 0) + add_liters_33
+                new_custom_cl = (existing['custom_cl'] or 0) + add_custom_cl
 
                 cursor.execute(
                     '''
                     UPDATE consumption
-                    SET pints = %s, half_pints = %s, liters_33 = %s
+                    SET pints = %s, half_pints = %s, liters_33 = %s, custom_cl = %s
                     WHERE user_id = %s AND date = %s AND time = %s
                     ''',
-                    (new_pints, new_half_pints, new_liters_33, user_id, date, time),
+                    (new_pints, new_half_pints, new_liters_33, new_custom_cl, user_id, date, time),
                 )
             else:
                 cursor.execute(
                     '''
-                    INSERT INTO consumption (user_id, date, time, pints, half_pints, liters_33)
-                    VALUES (%s, %s, %s, %s, %s, %s)
+                    INSERT INTO consumption (user_id, date, time, pints, half_pints, liters_33, custom_cl)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s)
                     ''',
-                    (user_id, date, time, add_pints, add_half_pints, add_liters_33),
+                    (user_id, date, time, add_pints, add_half_pints, add_liters_33, add_custom_cl),
                 )
 
         conn.commit()
@@ -389,7 +405,8 @@ class Database:
                 TIME_FORMAT(time, '%%H:%%i:%%s') AS time,
                 pints,
                 half_pints,
-                liters_33
+                liters_33,
+                custom_cl
             FROM consumption
             WHERE user_id = %s
         '''
@@ -466,7 +483,8 @@ class Database:
                 TIME_FORMAT(consumption.time, '%%H:%%i:%%s') AS time,
                 consumption.pints,
                 consumption.half_pints,
-                consumption.liters_33
+                consumption.liters_33,
+                consumption.custom_cl
             FROM consumption
             INNER JOIN users ON users.id = consumption.user_id
             WHERE users.is_admin = 0

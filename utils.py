@@ -40,7 +40,8 @@ def calculate_record_evening(records):
         pints = record['pints'] or 0
         half_pints = record['half_pints'] or 0
         liters_33 = record['liters_33'] or 0
-        liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
+        custom_cl = record['custom_cl'] or 0
+        liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33) + (custom_cl * 0.01)
 
         if evening_key not in evenings:
             evenings[evening_key] = {
@@ -115,7 +116,8 @@ def get_current_evening_total(user_id, reference_datetime=None, rollover_hour=EV
         pints = record['pints'] or 0
         half_pints = record['half_pints'] or 0
         liters_33 = record['liters_33'] or 0
-        total += (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
+        custom_cl = record['custom_cl'] or 0
+        total += (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33) + (custom_cl * 0.01)
 
     return round(total, 2)
 
@@ -174,7 +176,8 @@ def get_current_evening_window_liters(
         pints = record['pints'] or 0
         half_pints = record['half_pints'] or 0
         liters_33 = record['liters_33'] or 0
-        liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
+        custom_cl = record['custom_cl'] or 0
+        liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33) + (custom_cl * 0.01)
         if liters == 0:
             continue
         drinks.append((chronological_datetime, liters))
@@ -260,7 +263,8 @@ def _collect_day_drinks(user_id, day_key, rollover_hour=EVENING_ROLLOVER_HOUR):
         pints = record['pints'] or 0
         half_pints = record['half_pints'] or 0
         liters_33 = record['liters_33'] or 0
-        liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
+        custom_cl = record['custom_cl'] or 0
+        liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33) + (custom_cl * 0.01)
         if liters == 0:
             continue
         drinks.append((chronological_datetime, liters))
@@ -540,7 +544,8 @@ def peak_bac_for_evening(user_id, evening_key, weight_kg, sex, beer_abv=5.0, rol
         pints = record['pints'] or 0
         half_pints = record['half_pints'] or 0
         liters_33 = record['liters_33'] or 0
-        liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
+        custom_cl = record['custom_cl'] or 0
+        liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33) + (custom_cl * 0.01)
         if liters == 0:
             continue
         drinks.append((chronological_datetime, liters))
@@ -602,7 +607,8 @@ def check_record_evening_beaten(user_id, reference_datetime=None, rollover_hour=
         pints = record['pints'] or 0
         half_pints = record['half_pints'] or 0
         liters_33 = record['liters_33'] or 0
-        liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
+        custom_cl = record['custom_cl'] or 0
+        liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33) + (custom_cl * 0.01)
         key = evening_date.isoformat()
         evening_totals[key] = evening_totals.get(key, 0) + liters
 
@@ -651,7 +657,8 @@ def _all_time_record_evening(user_id, rollover_hour=EVENING_ROLLOVER_HOUR):
         pints = record['pints'] or 0
         half_pints = record['half_pints'] or 0
         liters_33 = record['liters_33'] or 0
-        liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
+        custom_cl = record['custom_cl'] or 0
+        liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33) + (custom_cl * 0.01)
         key = evening_date.isoformat()
         evening_totals[key] = evening_totals.get(key, 0) + liters
 
@@ -728,17 +735,18 @@ def calculate_stats(
     three_hour_warnings = []
     today_str = date.today().isoformat()
     monthly_stats = {}
-    
+
     for record in records:
         pints = record['pints'] or 0
         half_pints = record['half_pints'] or 0
         liters_33 = record['liters_33'] or 0
-        
+        custom_cl = record['custom_cl'] or 0
+
         total_pints += pints
         total_half_pints += half_pints
         total_33cl += liters_33
-        
-        daily_liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
+
+        daily_liters = (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33) + (custom_cl * 0.01)
         total_liters += daily_liters
         
         month_key = record['date'][:7]
@@ -788,8 +796,9 @@ def calculate_stats(
                         other_pints = other_record['pints'] or 0
                         other_half = other_record['half_pints'] or 0
                         other_33 = other_record['liters_33'] or 0
-                        
-                        other_liters = (other_pints * 0.5) + (other_half * 0.25) + (other_33 * 0.33)
+                        other_custom = other_record['custom_cl'] or 0
+
+                        other_liters = (other_pints * 0.5) + (other_half * 0.25) + (other_33 * 0.33) + (other_custom * 0.01)
                         window_liters += other_liters
                         window_items.append({
                             'time': other_time_str,
@@ -1197,9 +1206,10 @@ def calculate_weekly_stats(user_id):
             pints = record['pints'] or 0
             half_pints = record['half_pints'] or 0
             liters_33 = record['liters_33'] or 0
+            custom_cl = record['custom_cl'] or 0
 
-            # Convertir en litres : pinte=0.5L, demi=0.25L, 33cl=0.33L
-            total_liters += (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33)
+            # Convertir en litres : pinte=0.5L, demi=0.25L, 33cl=0.33L, custom=0.01L/cl
+            total_liters += (pints * 0.5) + (half_pints * 0.25) + (liters_33 * 0.33) + (custom_cl * 0.01)
 
         weekly_data.append({
             'week_start': week['start'].isoformat(),
@@ -1231,7 +1241,8 @@ def calculate_consumption_rate_stats(user_id, start_date=None, end_date=None):
         pints = record['pints'] or 0
         half_pints = record['half_pints'] or 0
         liters_33 = record['liters_33'] or 0
-        total_beers += pints + half_pints + liters_33
+        custom_cl = record['custom_cl'] or 0
+        total_beers += pints + half_pints + liters_33 + (custom_cl / 50)  # 50cl = 1 unité de bière
 
     # Calculer la durée de la période
     if start_date and end_date:

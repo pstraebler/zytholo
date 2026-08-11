@@ -1133,7 +1133,7 @@ body.modal-open {
 /* BEER SELECTOR */
 .beer-selector {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(4, 1fr);
     gap: 1.2rem;
     margin: 1.5rem 0;
     align-items: stretch;
@@ -1181,6 +1181,10 @@ body.modal-open {
 
 .beer-type-33 {
     --beer-accent: var(--stat-purple-color);
+}
+
+.beer-type-custom {
+    --beer-accent: var(--stat-blue-color);
 }
 
 
@@ -1234,6 +1238,35 @@ body.modal-open {
 
 .beer-type .btn-plus:active {
     transform: scale(0.95);
+}
+
+.quantity-control-custom {
+    flex-direction: row;
+    justify-content: center;
+}
+
+.quantity-control-custom input {
+    width: 80px;
+    padding: 0.5rem;
+    font-size: 1.2rem;
+    text-align: center;
+    border: 2px solid var(--card-border-color);
+    border-radius: 8px;
+    background: var(--background-color);
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.quantity-control-custom input:focus {
+    outline: none;
+    border-color: var(--beer-accent);
+    box-shadow: 0 0 0 3px rgba(var(--beer-accent-rgb), 0.1);
+}
+
+.quantity-control-custom .btn-plus {
+    width: 50px;
+    height: 50px;
+    font-size: 1.5rem;
 }
 
 
@@ -2201,8 +2234,8 @@ body.exporting-dashboard .export-section {
     }
     
     .beer-selector {
-        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-        gap: 1rem;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 0.8rem;
     }
     
     .charts-section {
@@ -2385,6 +2418,11 @@ body.exporting-dashboard .export-section {
 }
 
 @media (max-width: 480px) {
+    .beer-selector {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 0.8rem;
+    }
+
     .date-range {
         grid-template-columns: 6.5rem minmax(0, 1fr);
         gap: 0.5rem 0.75rem;

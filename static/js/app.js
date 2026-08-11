@@ -87,7 +87,8 @@ function formatDayHistoryLiters(value) {
 let currentBeer = {
     pints: 0,
     half_pints: 0,
-    liters_33: 0
+    liters_33: 0,
+    custom_cl: 0
 };
 
 let monthlyChart = null;
@@ -1074,6 +1075,28 @@ function changeBeer(type, value) {
   saveBeerAutomatic(type, value);
 }
 
+function addCustomBeer() {
+  const input = document.getElementById('custom-cl-input');
+  const customCl = parseInt(input.value);
+
+  if (!customCl || customCl <= 0 || customCl > 500) {
+    alert('Veuillez entrer une quantité valide entre 1 et 500 cl');
+    return;
+  }
+
+  const now = Date.now();
+  if (now - lastClickTime < 3000) {
+    return;
+  }
+  lastClickTime = now;
+
+  currentBeer.custom_cl = currentBeer.custom_cl + customCl;
+  saveBeerAutomatic('custom_cl', customCl);
+
+  // Réinitialiser le champ après ajout
+  input.value = '';
+}
+
 function showNightModeDecrementNotification() {
   const notificationDiv = document.createElement('div');
   notificationDiv.style.cssText = `
@@ -1116,7 +1139,8 @@ function loadTodayConsumption() {
             currentBeer = {
                 pints: data.total_pints || 0,
                 half_pints: data.total_half_pints || 0,
-                liters_33: data.total_33cl || 0
+                liters_33: data.total_33cl || 0,
+                custom_cl: data.total_custom_cl || 0
             };
 
             console.log('Consommation totale du jour logique:', currentBeer);
@@ -1159,6 +1183,9 @@ function renderDayHistory(data) {
         }
         if (record.liters_33) {
             quantityBadges.push(`<span class="day-history-badge">🥃 ${record.liters_33}</span>`);
+        }
+        if (record.custom_cl) {
+            quantityBadges.push(`<span class="day-history-badge">📏 ${record.custom_cl}cl</span>`);
         }
 
         const nextDayLabel = record.logical_day_offset === 1
@@ -1221,20 +1248,21 @@ function deleteHistoryItem(recordId) {
 // Enregistrer automatiquement avec heure actuelle
 function saveBeerAutomatic(type, value) {
     if (savingInProgress) return;
-    
+
     savingInProgress = true;
-    
+
     const date = document.getElementById('today-date').value;
     const now = new Date();
     const time = now.toTimeString().slice(0, 8); // HH:MM:SS
     const storageDate = getStorageDateForSelectedDay(date, time);
-    
+
     const payload = {
         date: storageDate,
         time: time,
         pints: type === 'pints' ? value : 0,
         half_pints: type === 'half_pints' ? value : 0,
-        liters_33: type === 'liters_33' ? value : 0
+        liters_33: type === 'liters_33' ? value : 0,
+        custom_cl: type === 'custom_cl' ? value : 0
     };
     
     fetch('/api/consumption', {
