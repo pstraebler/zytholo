@@ -524,6 +524,10 @@ def api_consumption():
 def api_delete_consumption(record_id):
     user_id = session['user_id']
 
+    # Vérifier si le mode soirée est actif
+    if Database.get_night_mode_status(user_id):
+        return jsonify({'success': False, 'message': 'Cannot delete consumption while night mode is active'}), 403
+
     # Vérifier que l'enregistrement appartient bien à l'utilisateur
     success = Database.delete_consumption(user_id, record_id)
 
