@@ -1034,6 +1034,11 @@ function updateNightModeUI() {
     const nextDayBtn = document.getElementById('next-day-btn');
     if (prevDayBtn) prevDayBtn.disabled = nightModeEnabled;
     if (nextDayBtn) nextDayBtn.disabled = nightModeEnabled;
+
+    const historyList = document.getElementById('day-history-list');
+    if (historyList) {
+        historyList.classList.toggle('night-mode-active', nightModeEnabled);
+    }
 }
 
 function showNightModeNotification() {
@@ -1197,9 +1202,7 @@ function renderDayHistory(data) {
             ? `<span class="day-history-offset">${t('day_history_next_day')}</span>`
             : '';
 
-        const deleteButton = nightModeEnabled
-            ? ''
-            : `<button class="day-history-delete" onclick="deleteHistoryItem(${record.id})" title="${t('delete')}">×</button>`;
+        const deleteButton = `<button class="day-history-delete" onclick="deleteHistoryItem(${record.id})" title="${t('delete')}">×</button>`;
 
         return `
             <div class="day-history-item">
