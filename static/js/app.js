@@ -1029,6 +1029,11 @@ function updateNightModeUI() {
     if (dateInput) {
         dateInput.disabled = nightModeEnabled;
     }
+
+    const prevDayBtn = document.getElementById('previous-day-btn');
+    const nextDayBtn = document.getElementById('next-day-btn');
+    if (prevDayBtn) prevDayBtn.disabled = nightModeEnabled;
+    if (nextDayBtn) nextDayBtn.disabled = nightModeEnabled;
 }
 
 function showNightModeNotification() {
