@@ -6,7 +6,7 @@
 
 
 :root {
-    --content-max-width: 1200px;
+    --content-max-width: 1400px;
     --content-padding-x: 1rem;
     --primary-color: #2c3e50;
     --secondary-color: #3498db;
@@ -1133,17 +1133,18 @@ body.modal-open {
 /* BEER SELECTOR */
 .beer-selector {
     display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 1.2rem;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1rem;
     margin: 1.5rem 0;
     align-items: stretch;
+    width: 100%;
 }
 
 
 .beer-type {
     --beer-accent: var(--secondary-color);
     text-align: center;
-    padding: 1.5rem 1rem;
+    padding: 1rem 0.75rem;
     background: var(--muted-surface);
     border-radius: 12px;
     border: 2px solid var(--card-border-color);
@@ -1153,6 +1154,8 @@ body.modal-open {
     display: flex;
     flex-direction: column;
     min-height: 100%;
+    min-width: 0;
+    max-width: 100%;
 }
 
 .beer-type::before {
@@ -1243,18 +1246,22 @@ body.modal-open {
 .quantity-control-custom {
     flex-direction: row;
     justify-content: center;
+    gap: 0.5rem;
+    align-items: center;
 }
 
 .quantity-control-custom input {
-    width: 80px;
-    padding: 0.5rem;
-    font-size: 1.2rem;
+    width: 70px;
+    min-width: 0;
+    padding: 0.4rem;
+    font-size: 1.1rem;
     text-align: center;
     border: 2px solid var(--card-border-color);
     border-radius: 8px;
     background: var(--background-color);
     color: var(--text-color);
     font-weight: 600;
+    flex-shrink: 1;
 }
 
 .quantity-control-custom input:focus {
@@ -1267,6 +1274,18 @@ body.modal-open {
     width: 50px;
     height: 50px;
     font-size: 1.5rem;
+    flex-shrink: 0;
+    background: var(--success-color);
+    color: white;
+}
+
+.quantity-control-custom .btn-plus:hover {
+    background: #229954;
+    transform: translateY(-2px);
+}
+
+.quantity-control-custom .btn-plus:active {
+    transform: scale(0.95);
 }
 
 
@@ -2130,7 +2149,7 @@ body.exporting-dashboard .export-section {
     }
 
     .beer-selector {
-        grid-template-columns: repeat(3, 1fr);
+        grid-template-columns: repeat(4, minmax(0, 1fr));
     }
     }
 
@@ -2234,8 +2253,19 @@ body.exporting-dashboard .export-section {
     }
     
     .beer-selector {
-        grid-template-columns: repeat(4, 1fr);
-        gap: 0.8rem;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+
+    .quantity-control-custom input {
+        width: 70px;
+        font-size: 1.1rem;
+    }
+
+    .quantity-control-custom .btn-plus {
+        width: 45px;
+        height: 45px;
+        font-size: 1.3rem;
     }
     
     .charts-section {

@@ -1421,9 +1421,10 @@ function showSaveNotification(type, value) {
     const beerLabels = {
         'pints': t('pints'),
         'half_pints': t('halves'),
-        'liters_33': '33cl'
+        'liters_33': '33cl',
+        'custom_cl': 'Perso'
     };
-    
+
     const notificationDiv = document.createElement('div');
     notificationDiv.style.cssText = `
         position: fixed;
@@ -1438,9 +1439,15 @@ function showSaveNotification(type, value) {
         font-weight: bold;
         animation: slideIn 0.3s ease-out;
     `;
-    
+
     const symbol = value > 0 ? '✅' : '❌';
-    notificationDiv.innerText = `${symbol} ${beerLabels[type]} ${value > 0 ? '+' : ''}${value}`;
+    let message;
+    if (type === 'custom_cl') {
+        message = `${symbol} ${value > 0 ? '+' : ''}${value}cl`;
+    } else {
+        message = `${symbol} ${beerLabels[type]} ${value > 0 ? '+' : ''}${value}`;
+    }
+    notificationDiv.innerText = message;
     
     document.body.appendChild(notificationDiv);
     

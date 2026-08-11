@@ -1,6 +1,7 @@
 # Changelog
 
 ## 4.1 - 2026-08
+	- add : add custom quantity of beer
 	- add : consumption stats per week / month / year
 	- add : alert when multiple unsucessfull login atempts
 	- add : a delete button for each beer consumed
