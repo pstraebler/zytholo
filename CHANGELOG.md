@@ -5,6 +5,7 @@
 	- add : consumption stats per week / month / year
 	- add : alert when multiple unsucessfull login atempts
 	- add : a delete button for each beer consumed
+	- change : calculation of blood alcohol content has been revised based on the amount consumed
 	- del : decrement buttons
 
 ## 4.0.2 - 2026-07-23

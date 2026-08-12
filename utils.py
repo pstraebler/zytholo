@@ -274,17 +274,19 @@ def _collect_day_drinks(user_id, day_key, rollover_hour=EVENING_ROLLOVER_HOUR):
 def _drink_absorptions(peaks):
     """Fenetre d'absorption (debut, fin, taux_horaire) de chaque prise.
 
-    Chaque prise fait monter le taux lineairement de 0 a son pic sur ABSORPTION_HOURS.
-    Regle : boire une nouvelle biere moins de ABSORPTION_MINUTES apres la precedente
-    signifie que la precedente est finie. Son absorption est alors tronquee a l'instant
-    de la prise suivante (au lieu des 30 min complets) : la meme quantite d'alcool est
-    donc absorbee plus vite, ce qui fait monter le taux (et le graphique) en consequence.
-    La derniere prise absorbe toujours sur ABSORPTION_HOURS.
+    Chaque prise fait monter le taux lineairement de 0 a son pic sur une duree proportionnelle
+    a la quantite : 50cl sont bus en 30 minutes, soit 0.6 minute par cl.
+    Regle : boire une nouvelle biere moins vite que son temps d'absorption naturel signifie
+    que la precedente est finie. Son absorption est alors tronquee a l'instant de la prise
+    suivante : la meme quantite d'alcool est donc absorbee plus vite, ce qui fait monter le
+    taux (et le graphique) en consequence.
+    La derniere prise absorbe toujours sur sa duree naturelle.
     """
     ordered_peaks = sorted(peaks, key=lambda item: item[0])
     absorptions = []
-    for index, (drink_datetime, peak) in enumerate(ordered_peaks):
-        duration_hours = ABSORPTION_HOURS
+    for index, (drink_datetime, peak, liters) in enumerate(ordered_peaks):
+        # Calcul du temps d'absorption base sur la quantite : 50cl en 30 min
+        duration_hours = (liters / 0.5) * ABSORPTION_HOURS
         if index + 1 < len(ordered_peaks):
             gap_hours = (ordered_peaks[index + 1][0] - drink_datetime).total_seconds() / 3600.0
             if 0 < gap_hours < duration_hours:
@@ -461,7 +463,7 @@ def estimate_bac_for_day(
     # Pic d'alcoolemie de chaque prise (contribution une fois totalement absorbee).
     r = WIDMARK_R_MALE if sex == 'm' else WIDMARK_R_FEMALE
     peaks = [
-        (chronological_datetime, liters * beer_abv * ETHANOL_G_PER_LITER_PER_DEGREE / (weight_kg * r))
+        (chronological_datetime, liters * beer_abv * ETHANOL_G_PER_LITER_PER_DEGREE / (weight_kg * r), liters)
         for chronological_datetime, liters in day_drinks
     ]
 
@@ -558,7 +560,7 @@ def peak_bac_for_evening(user_id, evening_key, weight_kg, sex, beer_abv=5.0, rol
 
     r = WIDMARK_R_MALE if sex == 'm' else WIDMARK_R_FEMALE
     peaks = [
-        (chronological_datetime, liters * beer_abv * ETHANOL_G_PER_LITER_PER_DEGREE / (weight_kg * r))
+        (chronological_datetime, liters * beer_abv * ETHANOL_G_PER_LITER_PER_DEGREE / (weight_kg * r), liters)
         for chronological_datetime, liters in drinks
     ]
 

@@ -78,7 +78,7 @@ where `r` is the body-water distribution ratio: **0.68 for men**, **0.55 for wom
 
 Two refinements make the estimate more realistic than a raw Widmark snapshot:
 
-- **Gradual absorption** — a beer is not downed in one gulp, so each drink's contribution rises **linearly from 0 to its peak over ~30 minutes** (the average time to drink one) instead of jumping instantly.
+- **Gradual absorption** — a beer is not downed in one gulp, so each drink's contribution rises **linearly from 0 to its peak over a duration proportional to the quantity** (50cl in ~30 minutes, so 0.6 min/cl) instead of jumping instantly.
 - **Elimination** — the body clears alcohol at a constant **0.15 g/L per hour**, applied continuously from the first drink of the evening.
 
 So at any instant `t`, the estimated BAC is:
@@ -87,7 +87,7 @@ So at any instant `t`, the estimated BAC is:
 BAC(t) = max(0, Σ peakᵢ × absorbedᵢ(t) − 0.15 × (hours since the first drink))
 ```
 
-where `absorbedᵢ(t)` ramps from 0 to 1 over the 30 minutes following drink `i`.
+where `absorbedᵢ(t)` ramps from 0 to 1 over a duration proportional to the drink's volume (50cl in 30 minutes).
 
 The **can-I-drive?** verdict compares this value to the configurable legal limit (default **0.5 g/L**; e.g. 0.8 in the UK/USA, 0.0 for a probationary licence). The times to drop back under the limit and to reach 0 are projected from the fully-absorbed peak, so they stay correct even while a beer is still being absorbed.
 
