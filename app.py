@@ -893,6 +893,107 @@ def get_night_mode_status(user_id):
     is_enabled = Database.get_night_mode_status(user_id)
     return jsonify({'night_mode_enabled': is_enabled})
 
+@app.route('/api/whats-new', methods=['GET'])
+@login_required
+def get_whats_new():
+    """Récupère les notes de mise à jour depuis le CHANGELOG"""
+    try:
+        changelog_path = os.path.join(os.path.dirname(__file__), 'CHANGELOG.md')
+
+        if not os.path.exists(changelog_path):
+            return jsonify({
+                'success': False,
+                'error': 'Changelog not found'
+            })
+
+        with open(changelog_path, 'r', encoding='utf-8') as f:
+            content = f.read()
+
+        # Parser le changelog
+        changelog = parse_changelog(content)
+
+        # Récupérer la version actuelle (première version du changelog)
+        current_version = changelog[0]['version'] if changelog else None
+
+        return jsonify({
+            'success': True,
+            'current_version': current_version,
+            'changelog': changelog
+        })
+
+    except Exception as e:
+        logging.error(f"Error loading changelog: {e}")
+        return jsonify({
+            'success': False,
+            'error': 'Error loading changelog'
+        })
+
+def parse_changelog(content):
+    """Parse le fichier CHANGELOG.md et retourne une liste de versions"""
+    versions = []
+    current_version = None
+    current_description = []
+    current_changes = []
+
+    lines = content.split('\n')
+
+    for line in lines:
+        # Détection d'une nouvelle version (## X.X.X - Date)
+        if line.startswith('## ') and not line.startswith('###'):
+            # Sauvegarder la version précédente
+            if current_version:
+                versions.append({
+                    'version': current_version,
+                    'description': '\n'.join(current_description).strip(),
+                    'changes': current_changes
+                })
+
+            # Nouvelle version
+            current_version = line.replace('##', '').strip()
+            current_description = []
+            current_changes = []
+
+        # Lignes de description (avant les bullet points)
+        elif current_version and line.strip() and not line.strip().startswith('-') and not line.strip().startswith('#'):
+            # Ignorer les lignes vides et les séparateurs
+            if line.strip() != '---':
+                current_description.append(line.strip())
+
+        # Bullet points avec type (add, change, fix, del)
+        elif current_version and line.strip().startswith('- '):
+            change_line = line.strip()[2:].strip()
+            change_type = 'change'
+            change_text = change_line
+
+            # Détecter le type de changement
+            if change_line.startswith('add :') or change_line.startswith('add:'):
+                change_type = 'add'
+                change_text = change_line.split(':', 1)[1].strip()
+            elif change_line.startswith('change :') or change_line.startswith('change:'):
+                change_type = 'change'
+                change_text = change_line.split(':', 1)[1].strip()
+            elif change_line.startswith('fix :') or change_line.startswith('fix:'):
+                change_type = 'fix'
+                change_text = change_line.split(':', 1)[1].strip()
+            elif change_line.startswith('del :') or change_line.startswith('del:'):
+                change_type = 'del'
+                change_text = change_line.split(':', 1)[1].strip()
+
+            current_changes.append({
+                'type': change_type,
+                'text': change_text
+            })
+
+    # Ajouter la dernière version
+    if current_version:
+        versions.append({
+            'version': current_version,
+            'description': '\n'.join(current_description).strip(),
+            'changes': current_changes
+        })
+
+    return versions
+
 @app.route('/change-password', methods=['GET', 'POST'])
 @login_required
 def change_password():

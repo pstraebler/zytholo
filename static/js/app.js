@@ -217,6 +217,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initSettingsModal();
     initNightModeModal();
     initRecordNameModal();
+    initWhatsNewModal();
     initTimelineModeToggle();
 
     document.addEventListener('languageChanged', function() {
@@ -2963,4 +2964,186 @@ function exportDashboardPng() {
             document.body.classList.remove('exporting-dashboard');
         });
     });
+}
+
+// Gestion de la modal "Quoi de neuf ?"
+const whatsNewVersionKey = 'zytholo_last_seen_version';
+
+function initWhatsNewModal() {
+    const modal = document.getElementById('whats-new-modal');
+    const openBtn = document.getElementById('whats-new-menu-item');
+    const closeBtn = document.getElementById('whats-new-modal-close');
+    const okBtn = document.getElementById('whats-new-modal-ok');
+
+    if (!modal || !openBtn) return;
+
+    openBtn.addEventListener('click', function() {
+        setUserMenuOpen(false);
+        openWhatsNewModal();
+    });
+
+    [closeBtn, okBtn].forEach(function(button) {
+        if (button) {
+            button.addEventListener('click', closeWhatsNewModal);
+        }
+    });
+
+    modal.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            closeWhatsNewModal();
+        }
+    });
+
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && modal.classList.contains('open')) {
+            closeWhatsNewModal();
+        }
+    });
+
+    // Vérifier si une nouvelle version est disponible
+    checkForNewVersion();
+}
+
+function openWhatsNewModal() {
+    const modal = document.getElementById('whats-new-modal');
+    if (!modal) return;
+
+    modal.classList.add('open');
+    modal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('modal-open');
+
+    loadWhatsNewContent();
+}
+
+function closeWhatsNewModal() {
+    const modal = document.getElementById('whats-new-modal');
+    if (!modal) return;
+
+    modal.classList.remove('open');
+    modal.setAttribute('aria-hidden', 'true');
+    document.body.classList.remove('modal-open');
+
+    // Marquer comme vu
+    markWhatsNewAsSeen();
+}
+
+function loadWhatsNewContent() {
+    const contentEl = document.getElementById('whats-new-content');
+    if (!contentEl) return;
+
+    contentEl.innerHTML = `<p class="whats-new-loading" data-i18n="whats_new_loading">${t('whats_new_loading')}</p>`;
+
+    fetch('/api/whats-new')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.changelog) {
+                renderWhatsNewContent(data.changelog, data.current_version);
+            } else {
+                contentEl.innerHTML = `<p class="whats-new-error">${t('whats_new_error')}</p>`;
+            }
+        })
+        .catch(error => {
+            console.error('Error loading whats new:', error);
+            contentEl.innerHTML = `<p class="whats-new-error">${t('whats_new_error')}</p>`;
+        });
+}
+
+function renderWhatsNewContent(changelog, currentVersion) {
+    const contentEl = document.getElementById('whats-new-content');
+    if (!contentEl) return;
+
+    let html = '';
+
+    if (currentVersion) {
+        html += `<div class="whats-new-version">Version ${currentVersion}</div>`;
+    }
+
+    // Afficher les 2 premières versions du changelog
+    const versions = changelog.slice(0, 2);
+
+    versions.forEach((version, index) => {
+        const isLatest = index === 0;
+        html += `<div class="whats-new-section${isLatest ? ' whats-new-latest' : ''}">`;
+        html += `<h3 class="whats-new-title">${version.version}</h3>`;
+
+        if (version.description) {
+            html += `<p class="whats-new-description">${version.description}</p>`;
+        }
+
+        if (version.changes && version.changes.length > 0) {
+            html += '<ul class="whats-new-list">';
+            version.changes.forEach(change => {
+                const icon = getChangeIcon(change.type);
+                html += `<li class="whats-new-item whats-new-item-${change.type}">`;
+                html += `<span class="whats-new-icon">${icon}</span>`;
+                html += `<span class="whats-new-text">${escapeHtml(change.text)}</span>`;
+                html += '</li>';
+            });
+            html += '</ul>';
+        }
+
+        html += '</div>';
+    });
+
+    contentEl.innerHTML = html;
+}
+
+function getChangeIcon(type) {
+    const icons = {
+        'add': '✨',
+        'change': '🔄',
+        'fix': '🐛',
+        'del': '🗑️'
+    };
+    return icons[type] || '•';
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function checkForNewVersion() {
+    if (passwordChangeRequired) return;
+
+    fetch('/api/whats-new')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.current_version) {
+                const lastSeenVersion = getLastSeenVersion();
+                if (!lastSeenVersion || lastSeenVersion !== data.current_version) {
+                    // Nouvelle version détectée, afficher la modal automatiquement
+                    setTimeout(() => openWhatsNewModal(), 1000);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error checking version:', error);
+        });
+}
+
+function getLastSeenVersion() {
+    try {
+        return localStorage.getItem(whatsNewVersionKey);
+    } catch (error) {
+        return null;
+    }
+}
+
+function markWhatsNewAsSeen() {
+    fetch('/api/whats-new')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.current_version) {
+                try {
+                    localStorage.setItem(whatsNewVersionKey, data.current_version);
+                } catch (error) {
+                    console.error('Error saving version:', error);
+                }
+            }
+        })
+        .catch(error => {
+            console.error('Error marking as seen:', error);
+        });
 }

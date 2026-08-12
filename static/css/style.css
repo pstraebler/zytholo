@@ -2489,3 +2489,115 @@ body.exporting-dashboard .export-section {
         min-height: 3.25rem;
     }
 }
+
+/* Styles pour la modal "Quoi de neuf ?" */
+.whats-new-modal-dialog {
+    max-width: 700px;
+    max-height: 80vh;
+    overflow-y: auto;
+}
+
+.whats-new-content {
+    margin: 1.5rem 0;
+    color: var(--text-color);
+}
+
+.whats-new-loading,
+.whats-new-error {
+    text-align: center;
+    padding: 2rem;
+    color: var(--text-secondary);
+}
+
+.whats-new-error {
+    color: var(--accent-color);
+}
+
+.whats-new-version {
+    text-align: center;
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: var(--primary-color);
+    margin-bottom: 1.5rem;
+    padding: 0.75rem;
+    background: var(--card-hover);
+    border-radius: 8px;
+}
+
+.whats-new-section {
+    margin-bottom: 2rem;
+    padding: 1.5rem;
+    background: var(--card-hover);
+    border-radius: 8px;
+    border-left: 4px solid var(--card-border-color);
+}
+
+.whats-new-latest {
+    border-left-color: var(--primary-color);
+    background: var(--card-bg);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.whats-new-title {
+    font-size: 1.1rem;
+    font-weight: bold;
+    margin: 0 0 1rem 0;
+    color: var(--primary-color);
+}
+
+.whats-new-description {
+    margin: 0 0 1rem 0;
+    color: var(--text-secondary);
+    line-height: 1.6;
+    white-space: pre-line;
+}
+
+.whats-new-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+
+.whats-new-item {
+    display: flex;
+    align-items: flex-start;
+    padding: 0.5rem 0;
+    line-height: 1.6;
+}
+
+.whats-new-icon {
+    flex-shrink: 0;
+    margin-right: 0.75rem;
+    font-size: 1.1rem;
+}
+
+.whats-new-text {
+    flex: 1;
+    color: var(--text-color);
+}
+
+.whats-new-item-add .whats-new-icon {
+    color: var(--success-color, #27ae60);
+}
+
+.whats-new-item-change .whats-new-icon {
+    color: var(--secondary-color);
+}
+
+.whats-new-item-fix .whats-new-icon {
+    color: var(--warning-color, #f39c12);
+}
+
+.whats-new-item-del .whats-new-icon {
+    color: var(--accent-color);
+}
+
+@media (max-width: 768px) {
+    .whats-new-modal-dialog {
+        max-height: 90vh;
+    }
+
+    .whats-new-section {
+        padding: 1rem;
+    }
+}

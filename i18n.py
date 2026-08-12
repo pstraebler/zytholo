@@ -23,6 +23,11 @@ TRANSLATIONS = {
         "password_current_incorrect": "Mot de passe actuel incorrect",
         "password_changed_success": "Mot de passe modifié avec succès",
         "invalid_settings": "Réglages invalides",
+        "navbar_whats_new": "✨ Quoi de neuf ?",
+        "whats_new_modal_title": "✨ Quoi de neuf ?",
+        "whats_new_loading": "Chargement...",
+        "whats_new_error": "Impossible de charger les notes de mise à jour.",
+        "ok": "OK",
     },
     "en": {
         "login_failed": "Invalid username or password",
@@ -43,6 +48,11 @@ TRANSLATIONS = {
         "password_current_incorrect": "Current password is incorrect",
         "password_changed_success": "Password changed successfully",
         "invalid_settings": "Invalid settings",
+        "navbar_whats_new": "✨ What's new?",
+        "whats_new_modal_title": "✨ What's new?",
+        "whats_new_loading": "Loading...",
+        "whats_new_error": "Unable to load release notes.",
+        "ok": "OK",
     },
 }
 

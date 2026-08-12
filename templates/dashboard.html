@@ -26,6 +26,7 @@
                     </span>
                 </button>
                 <div class="user-menu-dropdown" id="user-menu-dropdown" role="menu" aria-hidden="true">
+                    <button type="button" class="user-menu-item" id="whats-new-menu-item" role="menuitem" data-i18n="navbar_whats_new">✨ Quoi de neuf ?</button>
                     <button type="button" class="user-menu-item" id="settings-menu-item" role="menuitem" data-i18n="navbar_settings">⚙️ Réglages</button>
                     <button type="button" class="user-menu-item" id="change-password-menu-item" role="menuitem" data-i18n="navbar_change_password">🔒 Changer mot de passe</button>
                     <a href="{{ url_for('logout') }}" class="user-menu-item" role="menuitem" data-i18n="navbar_logout">👋 Déconnexion</a>
@@ -219,6 +220,23 @@
             <div class="password-modal-actions">
                 <button type="button" class="btn-secondary" id="record-name-clear" data-i18n="record_name_clear">Effacer le nom</button>
                 <button type="button" class="btn-primary" id="record-name-save" data-i18n="save">Enregistrer</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="password-modal-backdrop" id="whats-new-modal" aria-hidden="true">
+        <div class="password-modal-dialog settings-modal-dialog whats-new-modal-dialog" role="dialog" aria-modal="true" aria-labelledby="whats-new-modal-title">
+            <div class="password-modal-header">
+                <h2 id="whats-new-modal-title" data-i18n="whats_new_modal_title">✨ Quoi de neuf ?</h2>
+                <button type="button" class="password-modal-close" id="whats-new-modal-close" aria-label="Fermer">×</button>
+            </div>
+
+            <div class="whats-new-content" id="whats-new-content">
+                <p class="whats-new-loading" data-i18n="whats_new_loading">Chargement...</p>
+            </div>
+
+            <div class="password-modal-actions">
+                <button type="button" class="btn-primary" id="whats-new-modal-ok" data-i18n="ok">OK</button>
             </div>
         </div>
     </div>
