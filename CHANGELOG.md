@@ -1,6 +1,12 @@
 # Changelog
 
-## 4.1 - 2026-08
+## 4.1 - 2026-08-13
+
+💡 The addition and removal of consumptions have been revamped for a more intuitive experience.
+
+📈 New statistics are now available.
+
+⚙️ The app's security have been improved.
 
 	- add : add custom quantity of beer
 	- add : consumption stats per week / month / year
