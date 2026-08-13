@@ -1101,8 +1101,31 @@ function addCustomBeer() {
   }
   lastClickTime = now;
 
-  currentBeer.custom_cl = currentBeer.custom_cl + customCl;
-  saveBeerAutomatic('custom_cl', customCl);
+  // Détecter les valeurs standard et les enregistrer dans la bonne catégorie
+  let type, value;
+
+  if (customCl === 50) {
+    type = 'pints';
+    value = 1;
+  } else if (customCl === 25) {
+    type = 'half_pints';
+    value = 1;
+  } else if (customCl === 33) {
+    type = 'liters_33';
+    value = 1;
+  } else {
+    type = 'custom_cl';
+    value = customCl;
+  }
+
+  currentBeer[type] = currentBeer[type] + value;
+
+  // Mettre à jour l'affichage pour les types standard
+  if (type !== 'custom_cl') {
+    document.getElementById(type + '-count').innerText = currentBeer[type];
+  }
+
+  saveBeerAutomatic(type, value);
 
   // Réinitialiser le champ après ajout
   input.value = '';
