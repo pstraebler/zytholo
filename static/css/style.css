@@ -1252,24 +1252,23 @@ body.modal-open {
 }
 
 .quantity-control-custom {
-    flex-direction: row;
+    flex-direction: column;
     justify-content: center;
-    gap: 0.5rem;
+    gap: 1rem;
     align-items: center;
 }
 
 .quantity-control-custom input {
-    width: 70px;
+    width: 80px;
     min-width: 0;
-    padding: 0.4rem;
-    font-size: 1.1rem;
+    padding: 0.5rem;
+    font-size: 2rem;
     text-align: center;
     border: 2px solid var(--card-border-color);
     border-radius: 8px;
     background: var(--background-color);
     color: var(--text-color);
-    font-weight: 600;
-    flex-shrink: 1;
+    font-weight: 700;
 }
 
 .quantity-control-custom input:focus {
@@ -1278,22 +1277,24 @@ body.modal-open {
     box-shadow: 0 0 0 3px rgba(var(--beer-accent-rgb), 0.1);
 }
 
-.quantity-control-custom .btn-plus {
-    width: 50px;
-    height: 50px;
-    font-size: 1.5rem;
-    flex-shrink: 0;
-    background: var(--success-color);
-    color: white;
+.btn-plus-custom {
+    background-color: #e91e63 !important;
+    width: 60px;
+    height: 60px;
+    font-size: 2rem;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.quantity-control-custom .btn-plus:hover {
-    background: #229954;
-    transform: translateY(-2px);
+.btn-plus-custom:hover {
+    background-color: #c2185b !important;
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-.quantity-control-custom .btn-plus:active {
+.btn-plus-custom:active {
     transform: scale(0.95);
+}
 }
 
 
