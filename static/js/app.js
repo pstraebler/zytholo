@@ -3111,8 +3111,8 @@ function checkForNewVersion() {
         .then(response => response.json())
         .then(data => {
             if (data.success && data.current_version) {
-                const lastSeenVersion = getLastSeenVersion();
-                if (!lastSeenVersion || lastSeenVersion !== data.current_version) {
+                // Comparer avec la version vue côté serveur
+                if (!data.last_seen_version || data.last_seen_version !== data.current_version) {
                     // Nouvelle version détectée, afficher la modal automatiquement
                     setTimeout(() => openWhatsNewModal(), 1000);
                 }
@@ -3124,11 +3124,8 @@ function checkForNewVersion() {
 }
 
 function getLastSeenVersion() {
-    try {
-        return localStorage.getItem(whatsNewVersionKey);
-    } catch (error) {
-        return null;
-    }
+    // Deprecated - now handled server-side
+    return null;
 }
 
 function markWhatsNewAsSeen() {
@@ -3136,11 +3133,17 @@ function markWhatsNewAsSeen() {
         .then(response => response.json())
         .then(data => {
             if (data.success && data.current_version) {
-                try {
-                    localStorage.setItem(whatsNewVersionKey, data.current_version);
-                } catch (error) {
-                    console.error('Error saving version:', error);
-                }
+                // Envoyer la version au serveur
+                return fetch('/api/whats-new', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': csrfToken
+                    },
+                    body: JSON.stringify({
+                        version: data.current_version
+                    })
+                });
             }
         })
         .catch(error => {

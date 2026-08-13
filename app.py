@@ -893,10 +893,26 @@ def get_night_mode_status(user_id):
     is_enabled = Database.get_night_mode_status(user_id)
     return jsonify({'night_mode_enabled': is_enabled})
 
-@app.route('/api/whats-new', methods=['GET'])
+@app.route('/api/whats-new', methods=['GET', 'POST'])
 @login_required
 def get_whats_new():
     """Récupère les notes de mise à jour depuis le CHANGELOG"""
+    user_id = session.get('user_id')
+
+    # POST : marquer la version comme vue
+    if request.method == 'POST':
+        try:
+            data = request.get_json()
+            version = data.get('version')
+            if version:
+                Database.set_last_seen_whats_new_version(user_id, version)
+                return jsonify({'success': True})
+            return jsonify({'success': False, 'error': 'Version missing'})
+        except Exception as e:
+            logging.error(f"Error saving whats new version: {e}")
+            return jsonify({'success': False, 'error': 'Error saving version'})
+
+    # GET : récupérer le changelog et la dernière version vue
     try:
         changelog_path = os.path.join(os.path.dirname(__file__), 'CHANGELOG.md')
 
@@ -915,9 +931,13 @@ def get_whats_new():
         # Récupérer la version actuelle (première version du changelog)
         current_version = changelog[0]['version'] if changelog else None
 
+        # Récupérer la dernière version vue par l'utilisateur
+        last_seen_version = Database.get_last_seen_whats_new_version(user_id)
+
         return jsonify({
             'success': True,
             'current_version': current_version,
+            'last_seen_version': last_seen_version,
             'changelog': changelog
         })
 

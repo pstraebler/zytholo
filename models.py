@@ -117,6 +117,7 @@ class Database:
             ('legal_bac_limit', 'DECIMAL(3,2) DEFAULT 0.50'),
             ('record_evening_date', 'DATE DEFAULT NULL'),
             ('record_evening_name', 'VARCHAR(100) DEFAULT NULL'),
+            ('last_seen_whats_new_version', 'VARCHAR(50) DEFAULT NULL'),
         ):
             cursor.execute(
                 '''
@@ -686,6 +687,41 @@ class Database:
             WHERE id = %s
             ''',
             (record_date, name, user_id),
+        )
+        conn.commit()
+        conn.close()
+
+    @staticmethod
+    def get_last_seen_whats_new_version(user_id):
+        """Récupère la dernière version 'Quoi de neuf' vue par l'utilisateur."""
+        conn = Database.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            '''
+            SELECT last_seen_whats_new_version
+            FROM users
+            WHERE id = %s
+            ''',
+            (user_id,),
+        )
+        result = cursor.fetchone()
+        conn.close()
+        if not result:
+            return None
+        return result['last_seen_whats_new_version']
+
+    @staticmethod
+    def set_last_seen_whats_new_version(user_id, version):
+        """Met à jour la dernière version 'Quoi de neuf' vue par l'utilisateur."""
+        conn = Database.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            '''
+            UPDATE users
+            SET last_seen_whats_new_version = %s
+            WHERE id = %s
+            ''',
+            (version, user_id),
         )
         conn.commit()
         conn.close()
