@@ -1259,10 +1259,10 @@ body.modal-open {
 }
 
 .quantity-control-custom input {
-    width: 80px;
+    width: 100px;
     min-width: 0;
-    padding: 0.5rem;
-    font-size: 2rem;
+    padding: 0.4rem 0.5rem;
+    font-size: 1.8rem;
     text-align: center;
     border: 2px solid var(--card-border-color);
     border-radius: 8px;
