@@ -214,7 +214,12 @@
             day_5: "samedi",
             day_6: "dimanche",
             error_generic_update: "Erreur lors de la modification",
-            error_settings_update: "Erreur lors de l'enregistrement des réglages"
+            error_settings_update: "Erreur lors de l'enregistrement des réglages",
+            navbar_whats_new: "✨ Quoi de neuf ?",
+            whats_new_modal_title: "✨ Quoi de neuf ?",
+            whats_new_loading: "Chargement...",
+            whats_new_error: "Impossible de charger les notes de mise à jour.",
+            ok: "OK"
         },
         en: {
             page_dashboard_title: "Dashboard - Zytholo",
@@ -430,7 +435,12 @@
             day_5: "Saturday",
             day_6: "Sunday",
             error_generic_update: "Error while updating",
-            error_settings_update: "Error while saving settings"
+            error_settings_update: "Error while saving settings",
+            navbar_whats_new: "✨ What's new?",
+            whats_new_modal_title: "✨ What's new?",
+            whats_new_loading: "Loading...",
+            whats_new_error: "Unable to load release notes.",
+            ok: "OK"
         }
     };
 

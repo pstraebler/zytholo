@@ -2517,7 +2517,7 @@ body.exporting-dashboard .export-section {
     text-align: center;
     font-size: 1.2rem;
     font-weight: bold;
-    color: var(--primary-color);
+    color: var(--text-color);
     margin-bottom: 1.5rem;
     padding: 0.75rem;
     background: var(--card-hover);
@@ -2542,7 +2542,7 @@ body.exporting-dashboard .export-section {
     font-size: 1.1rem;
     font-weight: bold;
     margin: 0 0 1rem 0;
-    color: var(--primary-color);
+    color: var(--text-color);
 }
 
 .whats-new-description {
