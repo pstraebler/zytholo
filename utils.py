@@ -680,6 +680,83 @@ def _all_time_record_evening(user_id, rollover_hour=EVENING_ROLLOVER_HOUR):
     return record_key, record_liters
 
 
+def _get_evening_details(user_id, evening_key, rollover_hour=EVENING_ROLLOVER_HOUR):
+    """Retourne les détails d'une soirée : consommation par type, heures, et taux d'alcoolémie.
+
+    Retourne un dict:
+    {
+        'pints': int,
+        'half_pints': int,
+        'liters_33': float,
+        'custom_cl': int,
+        'start_time': str (HH:MM),
+        'end_time': str (HH:MM),
+        'peak_bac': float or None
+    }
+    """
+    from datetime import datetime, time as dt_time
+
+    records = Database.get_consumption(user_id)
+    if not records:
+        return None
+
+    # Filtrer les enregistrements de la soirée
+    evening_records = []
+    for record in records:
+        evening_date, _ = get_evening_reference(record, rollover_hour)
+        if evening_date.isoformat() == evening_key:
+            evening_records.append(record)
+
+    if not evening_records:
+        return None
+
+    # Agréger les consommations
+    total_pints = 0
+    total_half_pints = 0
+    total_33cl = 0
+    total_custom_cl = 0
+    times = []
+
+    for record in evening_records:
+        total_pints += record['pints'] or 0
+        total_half_pints += record['half_pints'] or 0
+        total_33cl += record['liters_33'] or 0
+        total_custom_cl += record['custom_cl'] or 0
+
+        # Collecter les heures
+        time_str = record['time']
+        times.append(time_str)
+
+    # Déterminer l'heure de début et de fin
+    times.sort()
+    start_time = times[0][:5] if times else None  # Format HH:MM
+    end_time = times[-1][:5] if times else None
+
+    # Calculer le taux d'alcoolémie (BAC) si les infos personnelles sont renseignées
+    user_settings = Database.get_user_settings(user_id)
+    peak_bac = None
+    if user_settings and user_settings.get('weight_kg') and user_settings.get('sex'):
+        beer_abv = user_settings.get('beer_abv') or 5.0
+        peak_bac = peak_bac_for_evening(
+            user_id,
+            evening_key,
+            user_settings['weight_kg'],
+            user_settings['sex'],
+            beer_abv,
+            rollover_hour
+        )
+
+    return {
+        'pints': total_pints,
+        'half_pints': total_half_pints,
+        'liters_33': round(total_33cl, 2),
+        'custom_cl': total_custom_cl,
+        'start_time': start_time,
+        'end_time': end_time,
+        'peak_bac': peak_bac
+    }
+
+
 def sync_record_evening(user_id):
     """Synchronise le nom de la soiree record avec le record absolu courant.
 
@@ -742,7 +819,7 @@ def get_all_users_record_evenings(rollover_hour=EVENING_ROLLOVER_HOUR):
     """Retourne la liste des records absolus de tous les utilisateurs.
 
     Retourne une liste triée par total_liters décroissant avec:
-    [{'user_id', 'username', 'date', 'total_liters', 'name', 'is_current_user'}, ...]
+    [{'user_id', 'username', 'date', 'total_liters', 'name', 'is_current_user', 'details'}, ...]
     """
     from flask import session
     current_user_id = session.get('user_id')
@@ -758,13 +835,17 @@ def get_all_users_record_evenings(rollover_hour=EVENING_ROLLOVER_HOUR):
         record_key, record_liters = record
         meta = Database.get_record_evening_meta(user['id'])
 
+        # Calculer les détails de la soirée record
+        details = _get_evening_details(user['id'], record_key, rollover_hour)
+
         records.append({
             'user_id': user['id'],
             'username': user['username'],
             'date': record_key,
             'total_liters': round(record_liters, 2),
             'name': meta['name'] if meta['date'] == record_key else None,
-            'is_current_user': (user['id'] == current_user_id)
+            'is_current_user': (user['id'] == current_user_id),
+            'details': details
         })
 
     # Trier par consommation décroissante, puis par date décroissante

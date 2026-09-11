@@ -2354,8 +2354,31 @@ function updateAllTimeRecordsDisplay(allUsersRecords) {
             details.push(`<span class="all-time-record-name">« ${escapeHtml(record.name)} »</span>`);
         }
 
+        // Construire le tooltip avec les détails de consommation
+        let tooltipContent = '';
+        if (record.details) {
+            const d = record.details;
+            const consumptionParts = [];
+
+            if (d.pints > 0) consumptionParts.push(`${d.pints} pinte${d.pints > 1 ? 's' : ''}`);
+            if (d.half_pints > 0) consumptionParts.push(`${d.half_pints} demi${d.half_pints > 1 ? 's' : ''}`);
+            if (d.liters_33 > 0) consumptionParts.push(`${d.liters_33} × 33cL`);
+            if (d.custom_cl > 0) consumptionParts.push(`${d.custom_cl}cL perso`);
+
+            const timeInfo = d.start_time && d.end_time ? `${d.start_time} - ${d.end_time}` : '';
+            const bacInfo = d.peak_bac != null ? `Pic: ${d.peak_bac}g/L` : '';
+
+            tooltipContent = [
+                consumptionParts.join(', '),
+                timeInfo,
+                bacInfo
+            ].filter(s => s).join(' • ');
+        }
+
+        const tooltipAttr = tooltipContent ? `data-tooltip="${escapeHtml(tooltipContent)}"` : '';
+
         return `
-            <div class="all-time-record-item">
+            <div class="all-time-record-item" ${tooltipAttr}>
                 <div class="all-time-record-rank ${rankClass}">${rankEmoji}</div>
                 <div class="all-time-record-info">
                     <div class="all-time-record-username ${userClass}">${escapeHtml(record.username)}</div>
