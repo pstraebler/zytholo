@@ -103,7 +103,7 @@ let userMenuOpen = false;
 let passwordModalCloseTimer = null;
 let passwordChangeRequired = false;
 let lastStatsData = null;
-let showAllUsersTimeline = false;
+let showAllUsersTimeline = true;
 let lastRecordEvening = null;
 
 const averageBeerPriceStorageKey = 'zytholo_average_beer_price';

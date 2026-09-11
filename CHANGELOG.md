@@ -8,6 +8,7 @@
 	- add : comparison of all-time records among all users
 	- change : period record can always be named
 	- change : several record can be named
+	- change : timeline total for all users displayed by default 
 
 ## 4.1 - 2026-08-13
 
