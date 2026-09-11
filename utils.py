@@ -844,7 +844,8 @@ def get_all_users_record_evenings(rollover_hour=EVENING_ROLLOVER_HOUR):
     # Trier par consommation décroissante, puis par date décroissante
     records.sort(key=lambda r: (-r['total_liters'], r['date']), reverse=False)
 
-    return records
+    # Ne garder que les 3 premiers
+    return records[:3]
 
 
 def calculate_stats(
