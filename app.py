@@ -2,7 +2,7 @@ from flask import Flask, render_template, request, session, redirect, url_for, j
 from datetime import datetime, timedelta, date
 from models import Database
 from auth import hash_password, verify_password, login_required, admin_required, verify_user_exists, bcrypt
-from utils import calculate_stats, export_csv, import_csv, get_top_drinkers, get_top_drinkers_for_month, get_top_drinkers_for_week, calculate_weekly_stats, calculate_consumption_rate_stats, estimate_bac_for_day, sync_record_evening, set_record_evening_name, peak_bac_for_evening, DAY_ROLLOVER_HOUR
+from utils import calculate_stats, export_csv, import_csv, get_top_drinkers, get_top_drinkers_for_month, get_top_drinkers_for_week, calculate_weekly_stats, calculate_consumption_rate_stats, estimate_bac_for_day, sync_record_evening, set_record_evening_name, peak_bac_for_evening, get_all_users_record_evenings, DAY_ROLLOVER_HOUR
 from config import Config
 from flask_wtf.csrf import CSRFProtect
 from i18n import get_request_language, t
@@ -489,6 +489,7 @@ def api_consumption():
     weekly_stats = calculate_weekly_stats(user_id)  # AJOUTER CETTE LIGNE
     consumption_rate_stats = calculate_consumption_rate_stats(user_id, start_date, end_date)
     record_evening = sync_record_evening(user_id)
+    all_users_records = get_all_users_record_evenings()
     # Pic d'alcoolémie de la soirée record affichée (nécessite le profil poids/sexe).
     if stats['best_evening']:
         stats['best_evening']['peak_bac'] = peak_bac_for_evening(
@@ -521,6 +522,7 @@ def api_consumption():
         'weekly_stats': weekly_stats,  # AJOUTER CETTE LIGNE
         'consumption_rate_stats': consumption_rate_stats,
         'record_evening': record_evening,
+        'all_users_records': all_users_records,
         # Date de la toute premiere biere (independante de la plage selectionnee) :
         # indique depuis quand l'utilisateur suit sa consommation.
         'first_consumption_date': Database.get_first_consumption_date(user_id)
@@ -667,10 +669,12 @@ def api_record_evening_name():
     user_id = session['user_id']
     data = request.get_json() or {}
     name = data.get('name', '')
+    evening_date = data.get('date')  # Date de la soirée à nommer (optionnel)
+
     if not isinstance(name, str):
         return jsonify({'success': False, 'message': t('invalid_settings')}), 400
 
-    record = set_record_evening_name(user_id, name)
+    record = set_record_evening_name(user_id, name, evening_date)
     if record is None:
         # Aucune soiree record a nommer (aucune consommation enregistree).
         return jsonify({'success': False, 'message': t('invalid_settings')}), 400

@@ -413,7 +413,7 @@
                         <div class="stat-value"><span id="beers-per-year">0</span> <span class="stat-unit" data-i18n="stats_beers_unit">bières</span></div>
                     </div>
                     <div class="stat-box stat-box-record" id="best-evening-card">
-                        <div class="stat-label" data-i18n="stats_best_evening">Soirée record</div>
+                        <div class="stat-label" data-i18n="stats_best_evening_period">Soirée record (pour la période sélectionnée)</div>
                         <div class="stat-value stat-value-record" id="best-evening-value">-</div>
                         <div class="stat-record-date" id="best-evening-date" data-i18n="stats_best_evening_empty">Aucune donnée sur cette période.</div>
                         <div class="stat-record-name" id="best-evening-name" style="display:none;">
@@ -423,6 +423,13 @@
                         <div class="stat-record-details" id="best-evening-details"></div>
                         <div class="stat-record-tooltip" id="best-evening-tooltip" role="tooltip" aria-hidden="true"></div>
                     </div>
+                </div>
+            </div>
+            <div class="card">
+                <h3 data-i18n="all_time_records">🏆 Records de tous les temps</h3>
+                <div id="all-time-records-container">
+                    <div id="all-time-records-empty" data-i18n="all_time_records_empty" style="text-align: center; padding: 2rem; color: var(--text-secondary);">Aucune donnée disponible.</div>
+                    <div id="all-time-records-list" style="display: none;"></div>
                 </div>
             </div>
             <div class="card">

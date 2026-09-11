@@ -1656,6 +1656,102 @@ body.modal-open {
     }
 }
 
+/* ALL-TIME RECORDS */
+#all-time-records-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.all-time-record-item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.875rem 1rem;
+    background: var(--muted-surface);
+    border: 1px solid var(--card-border-color);
+    border-radius: 8px;
+    transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.all-time-record-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(15, 23, 42, 0.08);
+}
+
+.all-time-record-rank {
+    font-size: 1.5rem;
+    font-weight: 700;
+    min-width: 2.5rem;
+    text-align: center;
+}
+
+.all-time-record-rank.rank-1 {
+    color: var(--gold-color);
+}
+
+.all-time-record-rank.rank-2 {
+    color: var(--silver-color);
+}
+
+.all-time-record-rank.rank-3 {
+    color: var(--bronze-color);
+}
+
+.all-time-record-info {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    min-width: 0;
+}
+
+.all-time-record-username {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text-color);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.all-time-record-username.current-user {
+    color: var(--secondary-color);
+}
+
+.all-time-record-details {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+}
+
+.all-time-record-name {
+    font-style: italic;
+    color: var(--text-secondary);
+}
+
+.all-time-record-value {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: var(--accent-color);
+    white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+    .all-time-record-item {
+        grid-template-columns: auto 1fr;
+        gap: 0.75rem;
+    }
+
+    .all-time-record-value {
+        grid-column: 2;
+        justify-self: end;
+        font-size: 1.125rem;
+    }
+}
+
 
 /* WARNINGS */
 .warnings-section {

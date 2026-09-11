@@ -28,6 +28,9 @@ TRANSLATIONS = {
         "whats_new_loading": "Chargement...",
         "whats_new_error": "Impossible de charger les notes de mise à jour.",
         "ok": "OK",
+        "stats_best_evening_period": "Soirée record (pour la période sélectionnée)",
+        "all_time_records": "🏆 Records de tous les temps",
+        "all_time_records_empty": "Aucune donnée disponible.",
     },
     "en": {
         "login_failed": "Invalid username or password",
@@ -53,6 +56,9 @@ TRANSLATIONS = {
         "whats_new_loading": "Loading...",
         "whats_new_error": "Unable to load release notes.",
         "ok": "OK",
+        "stats_best_evening_period": "Best evening (for the selected period)",
+        "all_time_records": "🏆 All-time records",
+        "all_time_records_empty": "No data available.",
     },
 }
 

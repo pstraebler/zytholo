@@ -27,7 +27,7 @@ def get_evening_reference(record, rollover_hour=EVENING_ROLLOVER_HOUR):
     return evening_date, chronological_datetime
 
 
-def calculate_record_evening(records):
+def calculate_record_evening(records, user_id=None):
     """Calculer la soirée la plus consommée sur les enregistrements fournis."""
     if not records:
         return None
@@ -93,6 +93,13 @@ def calculate_record_evening(records):
     best_evening.pop('first_datetime', None)
     best_evening.pop('last_datetime', None)
     best_evening['total_liters'] = round(best_evening['total_liters'], 2)
+
+    # Ajouter le nom de la soirée si disponible
+    if user_id:
+        meta = Database.get_record_evening_meta(user_id)
+        if meta and meta['date'] == best_evening['date']:
+            best_evening['name'] = meta['name']
+
     return best_evening
 
 
@@ -699,14 +706,23 @@ def sync_record_evening(user_id):
     }
 
 
-def set_record_evening_name(user_id, name):
-    """Nomme la soiree record courante (nom optionnel, vide = efface).
+def set_record_evening_name(user_id, name, evening_date=None):
+    """Nomme une soiree donnée (nom optionnel, vide = efface).
+
+    Si evening_date est fourni, nomme cette soirée spécifique.
+    Sinon, nomme le record absolu.
 
     Retourne l'etat mis a jour, ou None si aucune soiree record n'existe.
     """
-    record = sync_record_evening(user_id)
-    if record is None:
-        return None
+    if evening_date:
+        # Nommer une soirée spécifique
+        date_key = evening_date
+    else:
+        # Nommer le record absolu (comportement par défaut)
+        record = sync_record_evening(user_id)
+        if record is None:
+            return None
+        date_key = record['date']
 
     cleaned = (name or '').strip()
     if not cleaned:
@@ -714,9 +730,47 @@ def set_record_evening_name(user_id, name):
     elif len(cleaned) > 100:
         cleaned = cleaned[:100]
 
-    Database.set_record_evening_meta(user_id, record['date'], cleaned)
-    record['name'] = cleaned
-    return record
+    Database.set_record_evening_meta(user_id, date_key, cleaned)
+
+    return {
+        'date': date_key,
+        'name': cleaned
+    }
+
+
+def get_all_users_record_evenings(rollover_hour=EVENING_ROLLOVER_HOUR):
+    """Retourne la liste des records absolus de tous les utilisateurs.
+
+    Retourne une liste triée par total_liters décroissant avec:
+    [{'user_id', 'username', 'date', 'total_liters', 'name', 'is_current_user'}, ...]
+    """
+    from flask import session
+    current_user_id = session.get('user_id')
+
+    users = Database.get_all_users()
+    records = []
+
+    for user in users:
+        record = _all_time_record_evening(user['id'], rollover_hour)
+        if record is None:
+            continue
+
+        record_key, record_liters = record
+        meta = Database.get_record_evening_meta(user['id'])
+
+        records.append({
+            'user_id': user['id'],
+            'username': user['username'],
+            'date': record_key,
+            'total_liters': round(record_liters, 2),
+            'name': meta['name'] if meta['date'] == record_key else None,
+            'is_current_user': (user['id'] == current_user_id)
+        })
+
+    # Trier par consommation décroissante, puis par date décroissante
+    records.sort(key=lambda r: (-r['total_liters'], r['date']), reverse=False)
+
+    return records
 
 
 def calculate_stats(
@@ -928,7 +982,7 @@ def calculate_stats(
         'warnings': three_hour_warnings,
         'monthly_stats': monthly_stats,
         'all_records': records,
-        'best_evening': calculate_record_evening(records)
+        'best_evening': calculate_record_evening(records, user_id)
     }
 
 def export_csv(user_id=None, all_users=False):

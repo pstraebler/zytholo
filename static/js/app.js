@@ -2069,6 +2069,7 @@ function updateStatsDisplay(data) {
     lastRecordEvening = data.record_evening || null;
     updateEstimatedCost(data.total_liters);
     updateBestEveningDisplay(data.best_evening);
+    updateAllTimeRecordsDisplay(data.all_users_records);
     updateFirstConsumptionDisplay(data.first_consumption_date);
     updateConsumptionRateStats(data.consumption_rate_stats);
 
@@ -2269,8 +2270,11 @@ function updateConsumptionRateStats(rateStats) {
     beersPerMonthEl.innerText = rateStats.beers_per_month || 0;
     beersPerYearEl.innerText = rateStats.beers_per_year || 0;
 }
+// Variable pour garder en mémoire la soirée record affichée actuellement
+let currentBestEvening = null;
 
 function updateBestEveningDisplay(bestEvening) {
+    currentBestEvening = bestEvening;
     renderBestEveningTooltip(bestEvening);
 
     const valueEl = document.getElementById('best-evening-value');
@@ -2316,6 +2320,59 @@ function updateBestEveningDisplay(bestEvening) {
     detailsEl.innerHTML = details.join('');
 }
 
+// Affichage de la carte des records absolus de tous les utilisateurs
+function updateAllTimeRecordsDisplay(allUsersRecords) {
+    const emptyEl = document.getElementById('all-time-records-empty');
+    const listEl = document.getElementById('all-time-records-list');
+
+    if (!emptyEl || !listEl) return;
+
+    if (!allUsersRecords || allUsersRecords.length === 0) {
+        emptyEl.style.display = '';
+        listEl.style.display = 'none';
+        return;
+    }
+
+    emptyEl.style.display = 'none';
+    listEl.style.display = '';
+
+    // Trier par total_liters décroissant
+    const sorted = [...allUsersRecords].sort((a, b) => b.total_liters - a.total_liters);
+
+    listEl.innerHTML = sorted.map((record, index) => {
+        const rank = index + 1;
+        const rankClass = rank <= 3 ? `rank-${rank}` : '';
+        const isCurrentUser = record.is_current_user;
+        const userClass = isCurrentUser ? 'current-user' : '';
+
+        const rankEmoji = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `${rank}.`;
+
+        const details = [];
+        details.push(`<span>${formatSelectedDate(record.date)}</span>`);
+
+        if (record.name) {
+            details.push(`<span class="all-time-record-name">« ${escapeHtml(record.name)} »</span>`);
+        }
+
+        return `
+            <div class="all-time-record-item">
+                <div class="all-time-record-rank ${rankClass}">${rankEmoji}</div>
+                <div class="all-time-record-info">
+                    <div class="all-time-record-username ${userClass}">${escapeHtml(record.username)}</div>
+                    <div class="all-time-record-details">${details.join(' • ')}</div>
+                </div>
+                <div class="all-time-record-value">${record.total_liters}L</div>
+            </div>
+        `;
+    }).join('');
+}
+
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 // La soirée affichée est-elle le record absolu (celui que l'on peut nommer) ?
 function isDisplayedEveningTheRecord(bestEvening) {
     return !!(bestEvening && lastRecordEvening && bestEvening.date === lastRecordEvening.date);
@@ -2327,17 +2384,17 @@ function renderRecordEveningName(bestEvening) {
     const btnEl = document.getElementById('best-evening-name-btn');
     if (!nameEl || !valueEl || !btnEl) return;
 
-    // On ne propose le nom que sur la soirée record absolue.
-    if (!isDisplayedEveningTheRecord(bestEvening)) {
+    // On propose toujours le nom maintenant, pas seulement pour le record absolu.
+    if (!bestEvening || !bestEvening.date) {
         nameEl.style.display = 'none';
         valueEl.textContent = '';
         return;
     }
 
-    const name = (lastRecordEvening.name || '').trim();
+    const name = (bestEvening.name || '').trim();
     nameEl.style.display = 'flex';
     if (name) {
-        valueEl.textContent = `🏆 « ${name} »`;
+        valueEl.textContent = `« ${name} »`;
         valueEl.style.display = '';
         btnEl.textContent = t('record_name_edit');
         btnEl.setAttribute('aria-label', t('record_name_edit'));
@@ -2355,7 +2412,8 @@ function openRecordNameModal() {
     const clearBtn = document.getElementById('record-name-clear');
     if (!modal || !input) return;
 
-    const currentName = (lastRecordEvening && lastRecordEvening.name) ? lastRecordEvening.name : '';
+    // Utiliser le nom de la soirée affichée (pas forcément le record absolu)
+    const currentName = (currentBestEvening && currentBestEvening.name) ? currentBestEvening.name : '';
     input.value = currentName;
     if (clearBtn) clearBtn.style.display = currentName ? '' : 'none';
 
@@ -2374,13 +2432,21 @@ function closeRecordNameModal() {
 }
 
 function saveRecordName(name) {
+    if (!currentBestEvening || !currentBestEvening.date) {
+        console.error('No current best evening to name');
+        return;
+    }
+
     fetch('/api/record-evening-name', {
         method: 'POST',
         headers: {
             'Content-Type': 'application/json',
             'X-CSRFToken': csrfToken
         },
-        body: JSON.stringify({ name: name })
+        body: JSON.stringify({
+            name: name,
+            date: currentBestEvening.date
+        })
     })
     .then(response => {
         if (!response.ok) {
@@ -2390,7 +2456,14 @@ function saveRecordName(name) {
     })
     .then(data => {
         if (data && data.record_evening) {
-            lastRecordEvening = data.record_evening;
+            // Mettre à jour le nom dans currentBestEvening
+            if (currentBestEvening) {
+                currentBestEvening.name = data.record_evening.name;
+            }
+            // Mettre à jour aussi lastRecordEvening si c'est le même
+            if (lastRecordEvening && lastRecordEvening.date === data.record_evening.date) {
+                lastRecordEvening.name = data.record_evening.name;
+            }
         }
         closeRecordNameModal();
         loadStats();
