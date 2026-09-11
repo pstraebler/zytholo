@@ -96,9 +96,9 @@ def calculate_record_evening(records, user_id=None):
 
     # Ajouter le nom de la soirée si disponible
     if user_id:
-        meta = Database.get_record_evening_meta(user_id)
-        if meta and meta['date'] == best_evening['date']:
-            best_evening['name'] = meta['name']
+        name = Database.get_evening_name(user_id, best_evening['date'])
+        if name:
+            best_evening['name'] = name
 
     return best_evening
 
@@ -760,7 +760,6 @@ def _get_evening_details(user_id, evening_key, rollover_hour=EVENING_ROLLOVER_HO
 def sync_record_evening(user_id):
     """Synchronise le nom de la soiree record avec le record absolu courant.
 
-    Si une soiree differente detient desormais le record, l'ancien nom est oublie.
     Retourne {'date', 'total_liters', 'name'} ou None si aucune soiree consommee.
     """
     record = _all_time_record_evening(user_id)
@@ -768,13 +767,7 @@ def sync_record_evening(user_id):
         return None
 
     record_key, record_liters = record
-    meta = Database.get_record_evening_meta(user_id)
-    name = meta['name']
-
-    # Le record a change de soiree : on oublie le nom precedent.
-    if meta['date'] != record_key:
-        name = None
-        Database.set_record_evening_meta(user_id, record_key, None)
+    name = Database.get_evening_name(user_id, record_key)
 
     return {
         'date': record_key,
@@ -807,7 +800,7 @@ def set_record_evening_name(user_id, name, evening_date=None):
     elif len(cleaned) > 100:
         cleaned = cleaned[:100]
 
-    Database.set_record_evening_meta(user_id, date_key, cleaned)
+    Database.set_evening_name(user_id, date_key, cleaned)
 
     return {
         'date': date_key,
@@ -833,7 +826,7 @@ def get_all_users_record_evenings(rollover_hour=EVENING_ROLLOVER_HOUR):
             continue
 
         record_key, record_liters = record
-        meta = Database.get_record_evening_meta(user['id'])
+        name = Database.get_evening_name(user['id'], record_key)
 
         # Calculer les détails de la soirée record
         details = _get_evening_details(user['id'], record_key, rollover_hour)
@@ -843,7 +836,7 @@ def get_all_users_record_evenings(rollover_hour=EVENING_ROLLOVER_HOUR):
             'username': user['username'],
             'date': record_key,
             'total_liters': round(record_liters, 2),
-            'name': meta['name'] if meta['date'] == record_key else None,
+            'name': name,
             'is_current_user': (user['id'] == current_user_id),
             'details': details
         })

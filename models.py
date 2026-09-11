@@ -44,6 +44,18 @@ class Database:
 
         cursor.execute(
             '''
+            CREATE TABLE IF NOT EXISTS evening_names (
+                user_id CHAR(36) NOT NULL,
+                evening_date DATE NOT NULL,
+                name VARCHAR(100) NOT NULL,
+                PRIMARY KEY (user_id, evening_date),
+                FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+            '''
+        )
+
+        cursor.execute(
+            '''
             SELECT COUNT(*) AS column_exists
             FROM information_schema.COLUMNS
             WHERE TABLE_SCHEMA = DATABASE()
@@ -652,44 +664,67 @@ class Database:
         conn.close()
 
     @staticmethod
-    def get_record_evening_meta(user_id):
-        """Recupere la soiree record nommee (date + nom optionnel)."""
+    def get_evening_name(user_id, evening_date):
+        """Récupère le nom d'une soirée spécifique."""
         conn = Database.get_connection()
         cursor = conn.cursor()
         cursor.execute(
             '''
-            SELECT DATE_FORMAT(record_evening_date, '%%Y-%%m-%%d') AS record_evening_date,
-                   record_evening_name
-            FROM users
-            WHERE id = %s
+            SELECT name
+            FROM evening_names
+            WHERE user_id = %s AND evening_date = %s
             ''',
-            (user_id,),
+            (user_id, evening_date),
         )
         result = cursor.fetchone()
         conn.close()
-        if not result:
-            return {'date': None, 'name': None}
-        return {
-            'date': result['record_evening_date'],
-            'name': result['record_evening_name'],
-        }
+        return result['name'] if result else None
 
     @staticmethod
-    def set_record_evening_meta(user_id, record_date, name):
-        """Met a jour la soiree record nommee (date de reference + nom)."""
+    def set_evening_name(user_id, evening_date, name):
+        """Définit ou met à jour le nom d'une soirée."""
+        conn = Database.get_connection()
+        cursor = conn.cursor()
+
+        if name is None or name.strip() == '':
+            # Supprimer le nom si vide
+            cursor.execute(
+                '''
+                DELETE FROM evening_names
+                WHERE user_id = %s AND evening_date = %s
+                ''',
+                (user_id, evening_date),
+            )
+        else:
+            # Insérer ou mettre à jour
+            cursor.execute(
+                '''
+                INSERT INTO evening_names (user_id, evening_date, name)
+                VALUES (%s, %s, %s)
+                ON DUPLICATE KEY UPDATE name = %s
+                ''',
+                (user_id, evening_date, name, name),
+            )
+
+        conn.commit()
+        conn.close()
+
+    @staticmethod
+    def get_all_evening_names(user_id):
+        """Récupère tous les noms de soirées d'un utilisateur."""
         conn = Database.get_connection()
         cursor = conn.cursor()
         cursor.execute(
             '''
-            UPDATE users
-            SET record_evening_date = %s,
-                record_evening_name = %s
-            WHERE id = %s
+            SELECT DATE_FORMAT(evening_date, '%%Y-%%m-%%d') AS evening_date, name
+            FROM evening_names
+            WHERE user_id = %s
             ''',
-            (record_date, name, user_id),
+            (user_id,),
         )
-        conn.commit()
+        results = cursor.fetchall()
         conn.close()
+        return {row['evening_date']: row['name'] for row in results}
 
     @staticmethod
     def get_last_seen_whats_new_version(user_id):
