@@ -1,5 +1,14 @@
 # Changelog
 
+## 4.2 - 2026-09-11
+
+🏆 The records section has been improved: compare your consumption record with those of other users
+
+	- add : distinguishing between the record for a specific period and the all-time record
+	- add : comparison of all-time records among all users
+	- change : period record can always be named
+	- change : several record can be named
+
 ## 4.1 - 2026-08-13
 
 💡 The addition and removal of consumptions have been revamped for a more intuitive experience.
