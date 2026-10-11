@@ -1276,29 +1276,33 @@ def check_weekly_drinking_days(user_id, current_date, weekly_drinking_days_thres
     week_start = current_date_obj - timedelta(days=days_since_monday)
     week_end = week_start + timedelta(days=6)
     
-    # Récupérer les jours dont la consommation nette est positive.
-    # Un retrait crée une ligne négative horodatée, donc l'existence d'une
-    # ligne ne suffit pas pour considérer que le jour compte comme consommé.
-    conn = Database.get_connection()
-    cursor = conn.cursor()
-    cursor.execute("""
-        SELECT DATE_FORMAT(date, '%%Y-%%m-%%d') AS date
-        FROM consumption 
-        WHERE user_id = %s 
-        AND date >= %s 
-        AND date <= %s
-        GROUP BY consumption.date
-        HAVING (
-            COALESCE(SUM(pints), 0) * 0.5
-            + COALESCE(SUM(half_pints), 0) * 0.25
-            + COALESCE(SUM(liters_33), 0) * 0.33
-        ) > 0
-        ORDER BY consumption.date
-    """, (user_id, week_start.isoformat(), week_end.isoformat()))
-    
-    drinking_days = [row['date'] for row in cursor.fetchall()]
-    conn.close()
-    
+    # Une soirée peut déborder après minuit : on lit aussi le lendemain du dimanche
+    # pour rattacher les dernières consommations de la semaine à leur soirée.
+    records = Database.get_consumption(
+        user_id,
+        week_start.isoformat(),
+        (week_end + timedelta(days=1)).isoformat()
+    )
+
+    # Consommation nette par soirée, en centilitres (un retrait crée une ligne négative).
+    centilitres_by_evening = {}
+    for record in records:
+        evening_date, _ = get_evening_reference(record)
+        if not week_start <= evening_date <= week_end:
+            continue
+        centilitres = (
+            (record['pints'] or 0) * 50
+            + (record['half_pints'] or 0) * 25
+            + (record['liters_33'] or 0) * 33
+        )
+        centilitres_by_evening[evening_date] = centilitres_by_evening.get(evening_date, 0) + centilitres
+
+    drinking_days = sorted(
+        evening_date.isoformat()
+        for evening_date, centilitres in centilitres_by_evening.items()
+        if centilitres > 0
+    )
+
     return len(drinking_days) >= weekly_drinking_days_threshold, drinking_days
 
 def calculate_weekly_stats(user_id):

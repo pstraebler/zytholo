@@ -1,5 +1,9 @@
 # Changelog
 
+## 4.2.1 - 2026-10-11
+
+	- fix : consumption bug in check_weekly_drinking_days
+
 ## 4.2 - 2026-09-11
 
 🏆 The records section has been improved: compare your consumption record with those of other users
